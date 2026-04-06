@@ -124,11 +124,38 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:1
 .lp{animation:pulse 1.5s infinite}
 
 .ro{font-size:16px;line-height:1.85;white-space:pre-wrap;padding:22px 26px;background:var(--bg);border-radius:10px;border-left:3px solid var(--amber)}
+
+/* Mobile hamburger */
+.hb{display:none;position:fixed;top:16px;left:16px;z-index:200;width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--line);cursor:pointer;align-items:center;justify-content:center;font-size:22px;color:var(--amber)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}
+
+@media(max-width:800px){
+  .hb{display:flex}
+  .sb{transform:translateX(-100%);transition:transform .25s ease;z-index:150}
+  .sb.open{transform:translateX(0)}
+  .sb-overlay.open{display:block}
+  .mn{margin-left:0;padding:20px 16px;padding-top:68px}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+  .ga{grid-template-columns:1fr}
+  .pt{font-size:26px}
+  .bn{font-size:24px}
+  .hr{flex-direction:column;gap:12px}
+  .chat-msg{max-width:95%}
+  .cd{padding:18px}
+  .api-banner{flex-direction:column;gap:10px;text-align:center}
+  .lt{font-size:12px}
+  .lt th,.lt td{padding:8px 6px}
+}
 </style>
 </head>
 <body>
 
-<nav class="sb">
+<button class="hb" id="hbBtn" onclick="toggleSB()">☰</button>
+<div class="sb-overlay" id="sbOv" onclick="toggleSB()"></div>
+
+<nav class="sb" id="sbNav">
   <div class="sb-brand">
     <div class="t1">Expense</div><div class="t2">Intel</div>
     <div class="sub">QNB PIPELINE · <span id="si" class="sd">LOADING</span></div>
@@ -280,7 +307,25 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:1
   <!-- LEDGER -->
   <div class="vw" id="v-ledger">
     <div class="hr"><h1 class="pt">Full Ledger</h1><div style="font-size:13px;font-family:var(--mono);color:var(--dim)" id="lC"></div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:center">
+      <button class="pl on" id="lfAll" onclick="setLF('all')">All</button>
+      <button class="pl" id="lfMonth" onclick="setLF('month')">This Month</button>
+      <button class="pl" id="lfLast" onclick="setLF('last')">Last Month</button>
+      <button class="pl" id="lfCustom" onclick="setLF('custom')">Custom</button>
+      <div id="lfDates" style="display:none;gap:8px;align-items:center;font-size:13px;color:var(--dim)">
+        <input type="date" class="fi" id="lfFrom" style="width:auto;padding:6px 10px;font-size:13px" onchange="applyLF()">
+        <span>→</span>
+        <input type="date" class="fi" id="lfTo" style="width:auto;padding:6px 10px;font-size:13px" onchange="applyLF()">
+      </div>
+      <div id="lfCatWrap" style="margin-left:auto">
+        <select class="fs" id="lfCat" style="width:auto;padding:6px 10px;font-size:13px" onchange="applyLF()">
+          <option value="all">All Categories</option>
+          <option value="Groceries">◉ Groceries</option><option value="Transport">▷ Transport</option><option value="Dining">◈ Dining</option><option value="Shopping">□ Shopping</option><option value="Bills">⬡ Bills</option><option value="Health">✦ Health</option><option value="Entertainment">♦ Entertainment</option><option value="Subscriptions">◆ Subscriptions</option><option value="Other">○ Other</option>
+        </select>
+      </div>
+    </div>
     <div class="cd"><div style="overflow-x:auto"><table class="lt"><thead><tr><th>Date</th><th>Merchant</th><th>Category</th><th>Amount</th><th>Balance</th><th>Load</th></tr></thead><tbody id="lB"></tbody></table></div></div>
+    <div id="lSummary" style="margin-top:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:var(--mono);color:var(--dim)"></div>
   </div>
 </main>
 
@@ -299,7 +344,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:1
     <div class="fg"><label>Date</label><input type="date" class="fi" id="nDi"></div>
     <div class="fg"><label>Total Liquid Balance (QAR)</label><input type="number" class="fi" id="nAi" placeholder="25000"></div>
     <div class="fg"><label>Note (optional)</label><input type="text" class="fi" id="nNi" placeholder="e.g. Salary received"></div>
-    <div style="font-size:12px;color:var(--dim);font-family:var(--mono);margin-bottom:16px;line-height:1.6">Your real account balance — not the prepaid card. Local only.</div>
+    <div style="font-size:12px;color:var(--dim);font-family:var(--mono);margin-bottom:16px;line-height:1.6">Your real account balance — not the prepaid card.<br>Stored in browser localStorage. Clearing browser data will erase entries.<br><span style="color:var(--cyan)">Future:</span> Sync to a private Google Sheet for cross-device persistence.</div>
     <button class="bt bt-p" style="width:100%" onclick="saveNW()">Save Snapshot</button>
   </div>
 </div>
@@ -315,6 +360,14 @@ body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:1
       Without this, AI features (Digest, Roast, Ask AI) won't work on GitHub Pages. Everything else works fine.
     </div>
     <button class="bt bt-p" style="width:100%" onclick="saveSettings()">Save</button>
+    <div class="dv"></div>
+    <div class="lb">Data Backup</div>
+    <div style="font-size:12px;color:var(--dim);font-family:var(--mono);margin-bottom:12px;line-height:1.6">Net worth & budgets are stored in browser localStorage. Export to back up, import to restore on another device.</div>
+    <div style="display:flex;gap:10px">
+      <button class="bt bt-g" style="font-size:13px;flex:1" onclick="exportLocal()">Export JSON</button>
+      <button class="bt bt-g" style="font-size:13px;flex:1" onclick="document.getElementById('importFile').click()">Import JSON</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importLocal(event)">
+    </div>
   </div>
 </div>
 
@@ -332,7 +385,9 @@ function sJ(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),proxyUrl=lJ('cfo_proxy','');
 
 // Nav
-document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');});});
+function toggleSB(){document.getElementById('sbNav').classList.toggle('open');document.getElementById('sbOv').classList.toggle('open');}
+function closeSB(){document.getElementById('sbNav').classList.remove('open');document.getElementById('sbOv').classList.remove('open');}
+document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');closeSB();});});
 
 // Load detection
 function dL(tx){const ld=[];for(let i=1;i<tx.length;i++){const p=tx[i-1],c=tx[i],ex=p.balance-c.amount;if(c.balance>ex+.5)ld.push({date:c.date,amt:Math.round((c.balance-ex)*100)/100,bb:p.balance,ba:c.balance,m:c.merchant});}return ld;}
@@ -517,10 +572,51 @@ function rNW(){
   document.getElementById('nH').innerHTML=desc.length===0?'<div style="padding:22px;text-align:center;color:var(--dim);font-size:14px">No entries. Your real account balance — separate from card.</div>':desc.map((n,i)=>{const p=desc[i+1];const d=p?n.amount-p.amount:0;return`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-size:13px;font-family:var(--mono);color:var(--dim);min-width:90px">${n.date}</div><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mono)">${f$(n.amount)}</div>${n.note?`<div style="font-size:13px;color:var(--dim);margin-top:3px">${n.note}</div>`:''}</div>${d!==0?`<span style="font-size:13px;font-family:var(--mono);color:${d>=0?'var(--green)':'var(--red)'}">${d>=0?'+':''}${f$(d)}</span>`:''}<button onclick="delNW(${n.id})" style="background:0;border:0;color:var(--dim);cursor:pointer;font-size:13px">✕</button></div>`;}).join('');
 }
 
+// Ledger filter state
+let lfMode='all',lfFrom='',lfTo='',lfCatVal='all';
+
+function setLF(mode){
+  lfMode=mode;
+  document.getElementById('lfAll').className=mode==='all'?'pl on':'pl';
+  document.getElementById('lfMonth').className=mode==='month'?'pl on':'pl';
+  document.getElementById('lfLast').className=mode==='last'?'pl on':'pl';
+  document.getElementById('lfCustom').className=mode==='custom'?'pl on':'pl';
+  document.getElementById('lfDates').style.display=mode==='custom'?'flex':'none';
+  
+  if(mode==='month'){const mr=mR();lfFrom=mr.s;lfTo=mr.e;}
+  else if(mode==='last'){
+    const n=new Date(),y=n.getFullYear(),m=n.getMonth()-1;
+    const s=new Date(y,m,1),e2=new Date(y,m+1,0);
+    lfFrom=s.toISOString().slice(0,10);lfTo=e2.toISOString().slice(0,10);
+  }else if(mode==='all'){lfFrom='';lfTo='';}
+  applyLF();
+}
+
+function applyLF(){
+  if(lfMode==='custom'){lfFrom=document.getElementById('lfFrom').value;lfTo=document.getElementById('lfTo').value;}
+  lfCatVal=document.getElementById('lfCat').value;
+  rLedger();
+}
+
 function rLedger(){
-  document.getElementById('lC').textContent=E.length+' records';
+  let rows=E.slice().reverse();
+  // Date filter
+  if(lfFrom)rows=rows.filter(e=>e.date>=lfFrom);
+  if(lfTo)rows=rows.filter(e=>e.date<=lfTo);
+  // Category filter
+  if(lfCatVal!=='all')rows=rows.filter(e=>e.category===lfCatVal);
+  
+  const total=rows.reduce((s,e)=>s+e.amount,0);
+  document.getElementById('lC').textContent=rows.length+' of '+E.length+' records';
+  
   const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
-  document.getElementById('lB').innerHTML=E.slice().reverse().slice(0,100).map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));return`<tr><td style="font-family:var(--mono);font-size:13px;color:var(--dim)">${e.date}</td><td>${e.merchant}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mono);font-weight:500">${f$(e.amount)}</td><td style="font-family:var(--mono);font-size:13px;color:var(--dim)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}</td></tr>`;}).join('')+(E.length>100?`<tr><td colspan="6" style="text-align:center;font-size:12px;color:var(--dim);font-family:var(--mono)">100 of ${E.length}</td></tr>`:'');
+  const shown=rows.slice(0,200);
+  document.getElementById('lB').innerHTML=shown.map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));return`<tr><td style="font-family:var(--mono);font-size:13px;color:var(--dim)">${e.date}</td><td>${e.merchant}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mono);font-weight:500">${f$(e.amount)}</td><td style="font-family:var(--mono);font-size:13px;color:var(--dim)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}</td></tr>`;}).join('')+(rows.length>200?`<tr><td colspan="6" style="text-align:center;font-size:12px;color:var(--dim);font-family:var(--mono)">Showing 200 of ${rows.length}</td></tr>`:'');
+  
+  // Summary
+  const catMap={};rows.forEach(e=>{catMap[e.category]=(catMap[e.category]||0)+e.amount;});
+  const topCats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
+  document.getElementById('lSummary').innerHTML=`${rows.length} transactions · Total: <span style="color:var(--text)">${f$(total)}</span>${topCats?' · '+topCats:''}`;
 }
 
 // AI
@@ -621,6 +717,29 @@ function remBud(c){delete BU[c];sJ('cfo_b',BU);renderAll();}
 function saveNW(){const d=document.getElementById('nDi').value,a=parseFloat(document.getElementById('nAi').value),n=document.getElementById('nNi').value;if(!d||!a)return;NW.push({id:Date.now(),date:d,amount:a,note:n||''});sJ('cfo_n',NW);closeModal('networth');document.getElementById('nAi').value='';document.getElementById('nNi').value='';renderAll();}
 function delNW(id){NW=NW.filter(n=>n.id!==id);sJ('cfo_n',NW);renderAll();}
 function saveSettings(){proxyUrl=document.getElementById('pUrl').value.trim().replace(/\/$/,'');sJ('cfo_proxy',proxyUrl);closeModal('settings');document.getElementById('apiBanner').style.display=proxyUrl?'none':'flex';}
+
+function exportLocal(){
+  const data={budgets:BU,netWorth:NW,proxyUrl,exportDate:td()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='expense-intel-backup-'+td()+'.json';a.click();URL.revokeObjectURL(a.href);
+}
+
+function importLocal(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(data.budgets){BU=data.budgets;sJ('cfo_b',BU);}
+      if(data.netWorth){NW=data.netWorth;sJ('cfo_n',NW);}
+      if(data.proxyUrl){proxyUrl=data.proxyUrl;sJ('cfo_proxy',proxyUrl);}
+      renderAll();
+      alert('Data imported successfully: '+( data.netWorth?.length||0)+' NW entries, '+(Object.keys(data.budgets||{}).length)+' budgets');
+    }catch(err){alert('Invalid file: '+err.message);}
+  };
+  reader.readAsText(file);
+  evt.target.value='';
+}
 
 // INIT
 fetchData();
