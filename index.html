@@ -6,700 +6,626 @@
 <title>Expense Intel — QNB Pipeline</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0D0E12;
-    --surface: #14161C;
-    --line: #1E2028;
-    --text: #D8D9DE;
-    --dim: #5A5D6E;
-    --amber: #D4A843;
-    --green: #4DAA72;
-    --red: #C95454;
-    --blue: #5490C4;
-    --cyan: #4ABFC4;
-    --display: 'Instrument Serif', Georgia, serif;
-    --body: 'Outfit', 'Segoe UI', sans-serif;
-    --mono: 'IBM Plex Mono', 'Fira Code', monospace;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: var(--body); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+:root{
+  --bg:#0D0E12;--surface:#14161C;--line:#1E2028;--text:#D8D9DE;--dim:#6B6F82;
+  --amber:#D4A843;--green:#4DAA72;--red:#C95454;--cyan:#4ABFC4;
+  --display:'Instrument Serif',Georgia,serif;
+  --body:'Outfit','Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono','Fira Code',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;display:flex;font-size:15px}
 
-  .sidebar { width: 200px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--line); padding: 24px 0; display: flex; flex-direction: column; flex-shrink: 0; position: fixed; top: 0; left: 0; z-index: 100; }
-  .sidebar-brand { padding: 0 20px; margin-bottom: 32px; }
-  .sidebar-brand .t1 { font-family: var(--display); font-size: 24px; line-height: 1; }
-  .sidebar-brand .t2 { font-family: var(--display); font-size: 24px; color: var(--amber); }
-  .sidebar-brand .sub { font-size: 9px; color: var(--dim); font-family: var(--mono); margin-top: 6px; letter-spacing: 0.12em; }
-  .sidebar-nav { flex: 1; }
-  .nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 20px; background: transparent; border: none; border-left: 2px solid transparent; color: var(--dim); font-size: 13px; font-family: var(--body); cursor: pointer; transition: all 0.15s; text-align: left; }
-  .nav-btn:hover { color: var(--text); }
-  .nav-btn.active { background: rgba(212,168,67,0.08); border-left-color: var(--amber); color: var(--amber); font-weight: 600; }
-  .nav-btn .icon { font-size: 14px; width: 18px; text-align: center; }
-  .sidebar-footer { padding: 0 16px; font-size: 9px; color: var(--dim); font-family: var(--mono); line-height: 1.6; }
-  .main { flex: 1; padding: 28px 32px; margin-left: 200px; overflow-y: auto; min-height: 100vh; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; position: relative; overflow: hidden; }
-  .label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); font-family: var(--mono); margin-bottom: 6px; }
-  .big-num { font-size: 26px; font-weight: 700; font-family: var(--display); line-height: 1.1; }
-  .divider { height: 1px; background: var(--line); margin: 20px 0; }
-  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-  .header-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
-  .page-title { font-family: var(--display); font-size: 30px; font-weight: 400; }
-  .page-sub { font-size: 11px; color: var(--dim); font-family: var(--mono); margin-top: 4px; }
-  .btn { padding: 9px 18px; border-radius: 7px; font-size: 13px; font-weight: 600; font-family: var(--body); cursor: pointer; border: none; transition: all 0.15s; }
-  .btn-primary { background: var(--amber); color: #0D0E12; }
-  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
-  .btn:disabled { opacity: 0.5; cursor: default; }
-  .pill { padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; font-family: var(--mono); cursor: pointer; transition: all 0.2s; border: 1px solid var(--line); background: transparent; color: var(--dim); }
-  .pill.active { background: var(--amber); color: #0D0E12; border-color: transparent; }
-  .modal-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); }
-  .modal-box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 28px 26px; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; box-shadow: 0 30px 80px rgba(0,0,0,0.4); }
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
-  .modal-header h3 { font-size: 18px; font-family: var(--display); }
-  .modal-close { background: none; border: none; color: var(--dim); font-size: 18px; cursor: pointer; }
-  .form-group { margin-bottom: 14px; }
-  .form-group label { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); font-family: var(--mono); margin-bottom: 6px; }
-  .form-input, .form-select { width: 100%; padding: 9px 13px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-size: 13px; font-family: var(--body); outline: none; box-sizing: border-box; }
-  .ledger-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .ledger-table th { text-align: left; padding: 10px 12px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; font-weight: 500; border-bottom: 1px solid var(--line); }
-  .ledger-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
-  .tx-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
-  .tx-row:last-child { border-bottom: none; }
-  .config-box { padding: 14px 16px; background: var(--bg); border-radius: 8px; border: 1px solid var(--line); }
-  .view { display: none; }
-  .view.active { display: block; }
-  .status-live { color: var(--green); }
-  .status-demo { color: var(--amber); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .loading-pulse { animation: pulse 1.5s infinite; }
-  .roast-output { font-size: 15px; line-height: 1.8; white-space: pre-wrap; padding: 20px 24px; background: var(--bg); border-radius: 8px; border-left: 3px solid var(--amber); }
-  .env-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-family: var(--mono); }
-  .env-stats .stat-label { color: var(--dim); margin-bottom: 2px; }
-  .topup-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: rgba(74,191,196,0.12); color: var(--cyan); font-size: 11px; font-family: var(--mono); font-weight: 500; }
+/* Sidebar */
+.sb{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--line);padding:28px 0;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;z-index:100}
+.sb-brand{padding:0 22px;margin-bottom:36px}
+.sb-brand .t1{font-family:var(--display);font-size:28px;line-height:1}
+.sb-brand .t2{font-family:var(--display);font-size:28px;color:var(--amber)}
+.sb-brand .sub{font-size:10px;color:var(--dim);font-family:var(--mono);margin-top:8px;letter-spacing:.12em}
+.sb-nav{flex:1}
+.nb{display:flex;align-items:center;gap:12px;width:100%;padding:12px 22px;background:0;border:0;border-left:3px solid transparent;color:var(--dim);font-size:15px;font-family:var(--body);cursor:pointer;transition:.15s;text-align:left}
+.nb:hover{color:var(--text)}
+.nb.on{background:rgba(212,168,67,.08);border-left-color:var(--amber);color:var(--amber);font-weight:600}
+.nb .ic{font-size:15px;width:20px;text-align:center}
+.sb-foot{padding:0 18px;font-size:10px;color:var(--dim);font-family:var(--mono);line-height:1.7}
 
-  /* Chat */
-  .chat-container { display: flex; flex-direction: column; height: calc(100vh - 120px); }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 8px 0; }
-  .chat-msg { margin-bottom: 16px; max-width: 85%; }
-  .chat-msg.user { margin-left: auto; }
-  .chat-msg.ai { margin-right: auto; }
-  .chat-bubble { padding: 14px 18px; border-radius: 14px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
-  .chat-msg.user .chat-bubble { background: var(--amber); color: #0D0E12; border-bottom-right-radius: 4px; }
-  .chat-msg.ai .chat-bubble { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
-  .chat-input-row { display: flex; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
-  .chat-input { flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 14px; font-family: var(--body); outline: none; resize: none; }
-  .chat-input:focus { border-color: var(--amber); }
-  .chat-input::placeholder { color: var(--dim); }
-  .chat-send { padding: 12px 20px; border-radius: 10px; background: var(--amber); color: #0D0E12; border: none; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--body); transition: opacity 0.15s; }
-  .chat-send:disabled { opacity: 0.4; cursor: default; }
-  .chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .chat-suggestion { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--dim); font-size: 12px; font-family: var(--body); cursor: pointer; transition: all 0.15s; }
-  .chat-suggestion:hover { border-color: var(--amber); color: var(--amber); }
-  .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
-  .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); animation: blink 1.4s infinite; }
-  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
+/* Main */
+.mn{flex:1;padding:32px 40px;margin-left:220px;overflow-y:auto;min-height:100vh}
+
+/* Cards */
+.cd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;position:relative;overflow:hidden}
+.lb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--mono);margin-bottom:8px}
+.bn{font-size:30px;font-weight:700;font-family:var(--display);line-height:1.1}
+.dv{height:1px;background:var(--line);margin:22px 0}
+
+/* Grids */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+
+/* Header */
+.hr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px}
+.pt{font-family:var(--display);font-size:34px;font-weight:400}
+.ps{font-size:13px;color:var(--dim);font-family:var(--mono);margin-top:5px}
+
+/* Buttons */
+.bt{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;font-family:var(--body);cursor:pointer;border:0;transition:.15s}
+.bt-p{background:var(--amber);color:#0D0E12}
+.bt-g{background:0;color:var(--text);border:1px solid var(--line)}
+.bt:disabled{opacity:.4;cursor:default}
+.pl{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;font-family:var(--mono);cursor:pointer;transition:.2s;border:1px solid var(--line);background:0;color:var(--dim)}
+.pl.on{background:var(--amber);color:#0D0E12;border-color:transparent}
+
+/* Modal */
+.mo{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(8px)}
+.mb{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:30px 28px;width:100%;max-width:460px;max-height:85vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.mh h3{font-size:20px;font-family:var(--display)}
+.mx{background:0;border:0;color:var(--dim);font-size:20px;cursor:pointer}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--mono);margin-bottom:6px}
+.fi,.fs{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:14px;font-family:var(--body);outline:0;box-sizing:border-box}
+
+/* Table */
+.lt{width:100%;border-collapse:collapse;font-size:14px}
+.lt th{text-align:left;padding:12px 14px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--line)}
+.lt td{padding:12px 14px;border-bottom:1px solid var(--line)}
+
+/* Rows */
+.tr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.tr:last-child{border-bottom:0}
+
+.vw{display:none}.vw.on{display:block}
+.sl{color:var(--green)}.sd{color:var(--amber)}
+
+/* TopUp badge */
+.tu{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;background:rgba(74,191,196,.12);color:var(--cyan);font-size:12px;font-family:var(--mono);font-weight:500}
+
+/* Config box */
+.cb{padding:16px 18px;background:var(--bg);border-radius:10px;border:1px solid var(--line)}
+
+/* Gauge */
+.gg{background:var(--line);border-radius:6px;height:7px;width:100%;position:relative}
+
+/* Chat */
+.chat-c{display:flex;flex-direction:column;height:calc(100vh - 140px)}
+.chat-m{flex:1;overflow-y:auto;padding:10px 0}
+.chat-msg{margin-bottom:18px;max-width:82%}
+.chat-msg.u{margin-left:auto}
+.chat-msg.a{margin-right:auto}
+.chat-b{padding:16px 20px;border-radius:16px;font-size:15px;line-height:1.75;white-space:pre-wrap}
+.chat-msg.u .chat-b{background:var(--amber);color:#0D0E12;border-bottom-right-radius:5px}
+.chat-msg.a .chat-b{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px}
+.chat-ir{display:flex;gap:12px;padding-top:18px;border-top:1px solid var(--line)}
+.chat-i{flex:1;padding:14px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:15px;font-family:var(--body);outline:0;resize:none}
+.chat-i:focus{border-color:var(--amber)}
+.chat-i::placeholder{color:var(--dim)}
+.chat-s{padding:14px 22px;border-radius:12px;background:var(--amber);color:#0D0E12;border:0;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--body)}
+.chat-s:disabled{opacity:.4;cursor:default}
+.chat-sg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.chat-sg button{padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:0;color:var(--dim);font-size:13px;font-family:var(--body);cursor:pointer;transition:.15s}
+.chat-sg button:hover{border-color:var(--amber);color:var(--amber)}
+.td{display:inline-flex;gap:4px;padding:4px 0}
+.td span{width:7px;height:7px;border-radius:50%;background:var(--dim);animation:bk 1.4s infinite}
+.td span:nth-child(2){animation-delay:.2s}
+.td span:nth-child(3){animation-delay:.4s}
+
+/* Env stats */
+.es{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;font-family:var(--mono)}
+.es .sl2{color:var(--dim);margin-bottom:3px}
+
+/* API banner */
+.api-banner{padding:16px 20px;background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.25);border-radius:10px;margin-bottom:22px;font-size:14px;color:var(--amber);display:flex;align-items:center;gap:12px}
+.api-banner button{padding:6px 14px;border-radius:6px;background:var(--amber);color:#0D0E12;border:0;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--body);white-space:nowrap}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes bk{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.lp{animation:pulse 1.5s infinite}
+
+.ro{font-size:16px;line-height:1.85;white-space:pre-wrap;padding:22px 26px;background:var(--bg);border-radius:10px;border-left:3px solid var(--amber)}
 </style>
 </head>
 <body>
 
-<nav class="sidebar">
-  <div class="sidebar-brand">
+<nav class="sb">
+  <div class="sb-brand">
     <div class="t1">Expense</div><div class="t2">Intel</div>
-    <div class="sub">QNB PIPELINE · <span id="statusIndicator" class="status-demo">LOADING</span></div>
-    <div class="sub" id="lastFetchTime"></div>
+    <div class="sub">QNB PIPELINE · <span id="si" class="sd">LOADING</span></div>
+    <div class="sub" id="lft"></div>
   </div>
-  <div class="sidebar-nav">
-    <button class="nav-btn active" data-view="command"><span class="icon">◫</span> Command</button>
-    <button class="nav-btn" data-view="digest"><span class="icon">≋</span> Weekly Digest</button>
-    <button class="nav-btn" data-view="envelopes"><span class="icon">▦</span> Envelopes</button>
-    <button class="nav-btn" data-view="cardflow"><span class="icon">↑</span> Card Flow</button>
-    <button class="nav-btn" data-view="networth"><span class="icon">△</span> Net Worth</button>
-    <button class="nav-btn" data-view="roast"><span class="icon">🔥</span> The Roast</button>
-    <button class="nav-btn" data-view="askai"><span class="icon">✧</span> Ask AI</button>
-    <button class="nav-btn" data-view="ledger"><span class="icon">≡</span> Full Ledger</button>
+  <div class="sb-nav">
+    <button class="nb on" data-v="command"><span class="ic">◫</span>Command</button>
+    <button class="nb" data-v="digest"><span class="ic">≋</span>Weekly Digest</button>
+    <button class="nb" data-v="envelopes"><span class="ic">▦</span>Envelopes</button>
+    <button class="nb" data-v="cardflow"><span class="ic">↑</span>Card Flow</button>
+    <button class="nb" data-v="networth"><span class="ic">△</span>Net Worth</button>
+    <button class="nb" data-v="roast"><span class="ic">🔥</span>The Roast</button>
+    <button class="nb" data-v="askai"><span class="ic">✧</span>Ask AI</button>
+    <button class="nb" data-v="ledger"><span class="ic">≡</span>Full Ledger</button>
   </div>
-  <div class="sidebar-footer">
-    <div id="sheetInfo">Sheet: loading...</div>
-    <div id="recordCount">0 records loaded</div>
-    <div style="margin-top:8px;color:var(--line)">▪ Additive layer only</div>
-    <div style="color:var(--line)">▪ Pipeline untouched</div>
+  <div class="sb-foot">
+    <div id="sI">Sheet: loading...</div>
+    <div id="rC">0 records</div>
+    <div style="margin-top:8px"><button onclick="openModal('settings')" style="background:0;border:0;color:var(--amber);cursor:pointer;font-size:11px;font-family:var(--mono)">⚙ Settings</button></div>
   </div>
 </nav>
 
-<main class="main">
-  <div id="loadingScreen" style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:12px">
-    <div class="loading-pulse" style="font-size:24px;color:var(--amber)">◫</div>
-    <div style="font-size:13px;color:var(--dim);font-family:var(--mono)">Fetching expense data...</div>
+<main class="mn">
+  <div id="ls" style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:14px">
+    <div class="lp" style="font-size:28px;color:var(--amber)">◫</div>
+    <div style="font-size:14px;color:var(--dim);font-family:var(--mono)">Fetching expense data...</div>
   </div>
-  <div id="errorBanner" style="display:none;padding:16px;background:rgba(201,84,84,0.1);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red);margin-bottom:20px"></div>
+  <div id="eb" style="display:none;padding:18px 22px;background:rgba(201,84,84,.1);border:1px solid var(--red);border-radius:10px;font-size:14px;color:var(--red);margin-bottom:22px"></div>
+  
+  <!-- API Setup Banner -->
+  <div id="apiBanner" class="api-banner" style="display:none">
+    <span>⚙ AI features need a proxy URL to work on GitHub Pages.</span>
+    <button onclick="openModal('settings')">Configure</button>
+  </div>
 
   <!-- COMMAND -->
-  <div class="view active" id="view-command">
-    <div class="header-row"><div><h1 class="page-title">Command Center</h1><div class="page-sub" id="weekRange"></div></div><button class="btn btn-ghost" onclick="fetchExpenses()" style="font-size:11px">↻ Refresh</button></div>
-    <div class="grid-4" style="margin-bottom:22px">
-      <div class="card"><div class="label">This Week</div><div class="big-num" id="kpiWeekTotal">—</div><div id="kpiWeekDelta" style="font-size:12px;font-family:var(--mono);margin-top:6px"></div></div>
-      <div class="card"><div class="label">This Month</div><div class="big-num" id="kpiMonthTotal">—</div><div id="kpiMonthCount" style="font-size:12px;font-family:var(--mono);margin-top:6px;color:var(--dim)"></div></div>
-      <div class="card"><div class="label">Card Balance</div><div class="big-num" style="color:var(--amber)" id="kpiBalance">—</div><div style="font-size:12px;font-family:var(--mono);margin-top:6px;color:var(--dim)">Prepaid Visa</div></div>
-      <div class="card"><div class="label">Loaded This Month</div><div class="big-num" style="color:var(--cyan)" id="kpiLoaded">—</div><div id="kpiLoadCount" style="font-size:12px;font-family:var(--mono);margin-top:6px;color:var(--dim)"></div></div>
+  <div class="vw on" id="v-command">
+    <div class="hr"><div><h1 class="pt">Command Center</h1><div class="ps" id="wr"></div></div><button class="bt bt-g" onclick="fetchData()" style="font-size:12px">↻ Refresh</button></div>
+    <div class="g4" style="margin-bottom:24px">
+      <div class="cd"><div class="lb">This Week</div><div class="bn" id="k1">—</div><div id="k1d" style="font-size:13px;font-family:var(--mono);margin-top:8px"></div></div>
+      <div class="cd"><div class="lb">This Month</div><div class="bn" id="k2">—</div><div id="k2d" style="font-size:13px;font-family:var(--mono);margin-top:8px;color:var(--dim)"></div></div>
+      <div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--amber)" id="k3">—</div><div style="font-size:13px;font-family:var(--mono);margin-top:8px;color:var(--dim)">Prepaid Visa</div></div>
+      <div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cyan)" id="k4">—</div><div id="k4d" style="font-size:13px;font-family:var(--mono);margin-top:8px;color:var(--dim)"></div></div>
     </div>
-    <div class="grid-2" style="margin-bottom:22px">
-      <div class="card"><div class="label">14-Day Spend Trend</div><div style="margin-top:12px" id="trendChart"></div></div>
-      <div class="card"><div class="label">Weekly Category Split</div><div style="margin-top:8px" id="catSplitWeek"></div></div>
+    <div class="g2" style="margin-bottom:24px">
+      <div class="cd"><div class="lb">14-Day Spend Trend</div><div style="margin-top:14px" id="tc"></div></div>
+      <div class="cd"><div class="lb">Weekly Category Split</div><div style="margin-top:10px" id="cs"></div></div>
     </div>
-    <div id="budgetAlertsCommand" style="margin-bottom:22px"></div>
-    <div class="grid-2">
-      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div class="label">Card Load History</div><button class="nav-btn" data-view="cardflow" style="width:auto;padding:4px 8px;font-size:11px;color:var(--cyan);font-family:var(--mono)">Details →</button></div><div id="cardLoadGlance" style="margin-top:8px"></div></div>
-      <div class="card"><div class="label">Recent Transactions</div><div style="margin-top:4px" id="recentTx"></div></div>
+    <div id="ba" style="margin-bottom:24px"></div>
+    <div class="g2">
+      <div class="cd"><div style="display:flex;justify-content:space-between;align-items:center"><div class="lb">Card Load History</div><button class="nb" data-v="cardflow" style="width:auto;padding:4px 10px;font-size:12px;color:var(--cyan);font-family:var(--mono)">Details →</button></div><div id="clg" style="margin-top:10px"></div></div>
+      <div class="cd"><div class="lb">Recent Transactions</div><div style="margin-top:6px" id="rt"></div></div>
     </div>
   </div>
 
   <!-- DIGEST -->
-  <div class="view" id="view-digest">
-    <h1 class="page-title" style="margin-bottom:6px">Weekly Digest</h1>
-    <div class="page-sub" style="margin-bottom:24px" id="digestRange"></div>
-    <div class="grid-4" style="margin-bottom:22px">
-      <div class="card"><div class="label">Week Spent</div><div class="big-num" id="digestWeekTotal">—</div><div id="digestWeekDelta" style="font-size:12px;font-family:var(--mono);margin-top:4px"></div></div>
-      <div class="card"><div class="label">Previous Week</div><div class="big-num" style="color:var(--dim)" id="digestLastWeek">—</div></div>
-      <div class="card"><div class="label">Transactions</div><div class="big-num" id="digestTxCount">—</div></div>
-      <div class="card"><div class="label">Card Loads</div><div class="big-num" style="color:var(--cyan)" id="digestLoads">—</div></div>
+  <div class="vw" id="v-digest">
+    <h1 class="pt" style="margin-bottom:6px">Weekly Digest</h1>
+    <div class="ps" style="margin-bottom:26px" id="dr"></div>
+    <div class="g4" style="margin-bottom:24px">
+      <div class="cd"><div class="lb">Week Spent</div><div class="bn" id="d1">—</div><div id="d1d" style="font-size:13px;font-family:var(--mono);margin-top:6px"></div></div>
+      <div class="cd"><div class="lb">Previous Week</div><div class="bn" style="color:var(--dim)" id="d2">—</div></div>
+      <div class="cd"><div class="lb">Transactions</div><div class="bn" id="d3">—</div></div>
+      <div class="cd"><div class="lb">Card Loads</div><div class="bn" style="color:var(--cyan)" id="d4">—</div></div>
     </div>
-    <div class="card" style="margin-bottom:22px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="label">Analyst Brief</div><button class="btn btn-primary" id="btnDigest" onclick="generateDigest()">✧ Generate Digest</button></div>
-      <div id="digestOutput" style="padding:24px;text-align:center;color:var(--dim);font-size:13px">Click Generate to get your AI-written weekly summary.<br><span style="font-size:11px;font-family:var(--mono)">This is what gets sent via WhatsApp every Sunday.</span></div>
+    <div class="cd" style="margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div class="lb">Analyst Brief</div><button class="bt bt-p" id="bD" onclick="genDigest()">✧ Generate Digest</button></div>
+      <div id="dO" style="padding:26px;text-align:center;color:var(--dim);font-size:14px">Click Generate for your AI-written weekly summary.<br><span style="font-size:12px;font-family:var(--mono)">This is what gets sent via WhatsApp every Sunday.</span></div>
     </div>
-    <div class="card">
-      <div class="label">WhatsApp Delivery Configuration</div>
-      <div class="grid-2" style="margin-top:12px">
-        <div class="config-box"><div style="font-size:14px;font-weight:600;margin-bottom:6px">CallMeBot</div><div style="font-size:12px;color:var(--dim);line-height:1.6;font-family:var(--mono)">Free · One-time activation<br>Send "I allow callmebot to send me messages" to +34 644 51 81 84<br>GET https://api.callmebot.com/whatsapp.php?phone=[YOUR]&text=[MSG]&apikey=[KEY]</div><div style="margin-top:8px;font-size:11px;color:var(--green);font-family:var(--mono)">▪ RECOMMENDED</div></div>
-        <div class="config-box"><div style="font-size:14px;font-weight:600;margin-bottom:6px">Twilio</div><div style="font-size:12px;color:var(--dim);line-height:1.6;font-family:var(--mono)">Paid · ~$0.005/msg<br>Requires Twilio account + WhatsApp sandbox<br>More reliable for production</div><div style="margin-top:8px;font-size:11px;color:var(--dim);font-family:var(--mono)">▪ OPTIONAL UPGRADE</div></div>
+    <div class="cd">
+      <div class="lb">WhatsApp Delivery</div>
+      <div class="g2" style="margin-top:14px">
+        <div class="cb"><div style="font-size:16px;font-weight:600;margin-bottom:8px">CallMeBot</div><div style="font-size:13px;color:var(--dim);line-height:1.7;font-family:var(--mono)">Free · One-time activation<br>Send "I allow callmebot to send me messages" to +34 644 51 81 84<br>GET api.callmebot.com/whatsapp.php?phone=&text=&apikey=</div><div style="margin-top:10px;font-size:12px;color:var(--green);font-family:var(--mono)">▪ RECOMMENDED</div></div>
+        <div class="cb"><div style="font-size:16px;font-weight:600;margin-bottom:8px">Twilio</div><div style="font-size:13px;color:var(--dim);line-height:1.7;font-family:var(--mono)">Paid · ~$0.005/msg<br>Requires Twilio account + WhatsApp sandbox<br>More reliable for production</div><div style="margin-top:10px;font-size:12px;color:var(--dim);font-family:var(--mono)">▪ OPTIONAL</div></div>
       </div>
     </div>
   </div>
 
   <!-- ENVELOPES -->
-  <div class="view" id="view-envelopes">
-    <div class="header-row"><div><h1 class="page-title">Budget Envelopes</h1><div class="page-sub" id="envMonthInfo"></div></div><button class="btn btn-primary" onclick="openModal('budget')">+ Set Budget</button></div>
-    <div id="envelopesGrid" class="grid-auto"></div>
+  <div class="vw" id="v-envelopes">
+    <div class="hr"><div><h1 class="pt">Budget Envelopes</h1><div class="ps" id="eI"></div></div><button class="bt bt-p" onclick="openModal('budget')">+ Set Budget</button></div>
+    <div id="eG" class="ga"></div>
   </div>
 
   <!-- CARD FLOW -->
-  <div class="view" id="view-cardflow">
-    <div class="header-row"><div><h1 class="page-title">Card Flow</h1><div class="page-sub">Prepaid Visa · Balance ≠ account worth · Loads detected from balance spikes</div></div></div>
-    <div class="grid-3" style="margin-bottom:22px">
-      <div class="card"><div class="label">Current Card Balance</div><div class="big-num" style="color:var(--amber)" id="cfBalance">—</div><div style="font-size:11px;font-family:var(--mono);color:var(--dim);margin-top:4px">Last SMS reading</div></div>
-      <div class="card"><div class="label">Loaded This Month</div><div class="big-num" style="color:var(--cyan)" id="cfMonthLoaded">—</div><div id="cfMonthLoadCount" style="font-size:11px;font-family:var(--mono);color:var(--dim);margin-top:4px"></div></div>
-      <div class="card"><div class="label">Spent This Month</div><div class="big-num" id="cfMonthSpent">—</div><div id="cfMonthTxCount" style="font-size:11px;font-family:var(--mono);color:var(--dim);margin-top:4px"></div></div>
+  <div class="vw" id="v-cardflow">
+    <div class="hr"><div><h1 class="pt">Card Flow</h1><div class="ps">Prepaid Visa · Balance ≠ account · Loads from balance spikes</div></div></div>
+    <div class="g3" style="margin-bottom:24px">
+      <div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--amber)" id="cf1">—</div><div style="font-size:12px;font-family:var(--mono);color:var(--dim);margin-top:5px">Last SMS</div></div>
+      <div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cyan)" id="cf2">—</div><div id="cf2d" style="font-size:12px;font-family:var(--mono);color:var(--dim);margin-top:5px"></div></div>
+      <div class="cd"><div class="lb">Spent This Month</div><div class="bn" id="cf3">—</div><div id="cf3d" style="font-size:12px;font-family:var(--mono);color:var(--dim);margin-top:5px"></div></div>
     </div>
-    <div class="card" style="margin-bottom:22px"><div class="label">Balance Over Time (cyan dots = loads)</div><div style="margin-top:12px" id="cfBalanceChart"></div></div>
-    <div class="grid-2" style="margin-bottom:22px">
-      <div class="card"><div class="label">Monthly Load Totals</div><div style="margin-top:12px" id="cfMonthlyLoadChart"></div></div>
-      <div class="card"><div class="label">How Detection Works</div><div style="margin-top:8px;font-size:12px;color:var(--dim);line-height:1.8;font-family:var(--mono)">When your balance after a purchase is <strong style="color:var(--text)">higher</strong> than expected (previous balance minus purchase), you loaded the card between transactions.<br><br><span style="color:var(--cyan)">Load</span> = actual balance − (prev balance − purchase)<br><br>Approximate — multiple loads between SMS messages merge into one detected event.</div></div>
+    <div class="cd" style="margin-bottom:24px"><div class="lb">Balance Over Time (cyan = loads)</div><div style="margin-top:14px" id="cfC"></div></div>
+    <div class="g2" style="margin-bottom:24px">
+      <div class="cd"><div class="lb">Monthly Load Totals</div><div style="margin-top:14px" id="cfM"></div></div>
+      <div class="cd"><div class="lb">Detection Logic</div><div style="margin-top:10px;font-size:14px;color:var(--dim);line-height:1.9;font-family:var(--mono)">When balance after purchase is <strong style="color:var(--text)">higher</strong> than expected:<br><br><span style="color:var(--cyan)">Load</span> = actual − (prev balance − purchase)<br><br>Multiple loads between SMS messages merge into one.</div></div>
     </div>
-    <div class="card"><div class="label">All Detected Card Loads</div><div id="cfLoadHistory" style="margin-top:8px"></div></div>
+    <div class="cd"><div class="lb">All Detected Loads</div><div id="cfH" style="margin-top:10px"></div></div>
   </div>
 
   <!-- NET WORTH -->
-  <div class="view" id="view-networth">
-    <div class="header-row"><div><h1 class="page-title">Net Worth Tracker</h1><div class="page-sub">Manual snapshots · Your actual account balance · Completely separate from card</div></div><button class="btn btn-primary" onclick="openModal('networth')">+ Add Snapshot</button></div>
-    <div class="grid-3" style="margin-bottom:22px">
-      <div class="card"><div class="label">Latest Balance</div><div class="big-num" style="color:var(--green)" id="nwLatestVal">—</div><div id="nwLatestDate" style="font-size:11px;font-family:var(--mono);color:var(--dim);margin-top:4px"></div></div>
-      <div class="card"><div class="label">Change</div><div class="big-num" id="nwDeltaVal">—</div><div style="font-size:11px;font-family:var(--mono);color:var(--dim);margin-top:4px">vs previous entry</div></div>
-      <div class="card"><div class="label">Entries</div><div class="big-num" id="nwEntryCount">0</div><div id="nwDaysTracked" style="font-size:11px;font-family:var(--mono);color:var(--dim);margin-top:4px"></div></div>
+  <div class="vw" id="v-networth">
+    <div class="hr"><div><h1 class="pt">Net Worth Tracker</h1><div class="ps">Manual · Your real account balance · Separate from card</div></div><button class="bt bt-p" onclick="openModal('networth')">+ Add Snapshot</button></div>
+    <div class="g3" style="margin-bottom:24px">
+      <div class="cd"><div class="lb">Latest</div><div class="bn" style="color:var(--green)" id="n1">—</div><div id="n1d" style="font-size:12px;font-family:var(--mono);color:var(--dim);margin-top:5px"></div></div>
+      <div class="cd"><div class="lb">Change</div><div class="bn" id="n2">—</div><div style="font-size:12px;font-family:var(--mono);color:var(--dim);margin-top:5px">vs previous</div></div>
+      <div class="cd"><div class="lb">Entries</div><div class="bn" id="n3">0</div><div id="n3d" style="font-size:12px;font-family:var(--mono);color:var(--dim);margin-top:5px"></div></div>
     </div>
-    <div class="card" style="margin-bottom:22px"><div class="label">Trajectory</div><div style="margin-top:12px" id="nwTrendChart"></div></div>
-    <div class="card"><div class="label">Snapshot History</div><div id="nwHistory"></div></div>
+    <div class="cd" style="margin-bottom:24px"><div class="lb">Trajectory</div><div style="margin-top:14px" id="nT"></div></div>
+    <div class="cd"><div class="lb">History</div><div id="nH"></div></div>
   </div>
 
   <!-- ROAST -->
-  <div class="view" id="view-roast">
-    <h1 class="page-title" style="margin-bottom:6px">The Roast</h1>
-    <div class="page-sub" style="margin-bottom:24px">Brutally honest spending commentary · Zero motivational language</div>
-    <div class="card" style="margin-bottom:22px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="display:flex;gap:8px"><button class="pill active" id="roastWeekPill" onclick="setRoastMode('week')">This Week</button><button class="pill" id="roastMonthPill" onclick="setRoastMode('month')">This Month</button></div>
-        <button class="btn btn-primary" id="btnRoast" onclick="generateRoast()">🔥 Roast Me</button>
+  <div class="vw" id="v-roast">
+    <h1 class="pt" style="margin-bottom:8px">The Roast</h1>
+    <div class="ps" style="margin-bottom:26px">Brutally honest · Zero motivational language</div>
+    <div class="cd" style="margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div style="display:flex;gap:10px"><button class="pl on" id="rWP" onclick="setRM('w')">This Week</button><button class="pl" id="rMP" onclick="setRM('m')">This Month</button></div>
+        <button class="bt bt-p" id="bR" onclick="genRoast()">🔥 Roast Me</button>
       </div>
-      <div id="roastOutput"><div style="padding:32px;text-align:center"><div style="font-size:40px;margin-bottom:12px">🔥</div><div style="font-size:14px;color:var(--dim)">Hit the button. If you dare.</div><div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:8px">Claude analyzes spending, repeat merchants, budget breaches, and card burn rate.</div></div></div>
-    </div>
-    <div class="card"><div class="label">WhatsApp On-Demand</div><div style="margin-top:10px;font-size:12px;color:var(--dim);font-family:var(--mono);line-height:1.8">Send "roast me" → Make.com Webhook → Sheets (30 days) → Claude → CallMeBot reply<br>Separate scenario from digest.</div></div>
-  </div>
-
-  <!-- LEDGER -->
-  <div class="view" id="view-askai">
-    <h1 class="page-title" style="margin-bottom:4px">Ask AI</h1>
-    <div class="page-sub" style="margin-bottom:20px">Chat with Claude about your spending · Grounded in your real transaction data</div>
-    <div class="chat-container">
-      <div class="chat-messages" id="chatMessages">
-        <div class="chat-msg ai"><div class="chat-bubble">I have access to your full expense data — transactions, card loads, budgets, and balances. Ask me anything.<br><br>Try questions like the ones below, or ask whatever's on your mind.</div></div>
-      </div>
-      <div class="chat-suggestions" id="chatSuggestions">
-        <button class="chat-suggestion" onclick="askSuggestion(this)">How much did I spend on dining this month?</button>
-        <button class="chat-suggestion" onclick="askSuggestion(this)">Which merchant do I visit most?</button>
-        <button class="chat-suggestion" onclick="askSuggestion(this)">How many times did I load the card this month?</button>
-        <button class="chat-suggestion" onclick="askSuggestion(this)">Am I on track with my budgets?</button>
-        <button class="chat-suggestion" onclick="askSuggestion(this)">What's my average daily spend?</button>
-        <button class="chat-suggestion" onclick="askSuggestion(this)">Compare this week vs last week</button>
-      </div>
-      <div class="chat-input-row">
-        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about your spending..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
-        <button class="chat-send" id="chatSendBtn" onclick="sendChat()">Send</button>
-      </div>
+      <div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dim)">Hit the button. If you dare.</div><div style="font-size:12px;color:var(--dim);font-family:var(--mono);margin-top:10px">Claude analyzes spending, repeats, breaches, and burn rate.</div></div></div>
     </div>
   </div>
 
+  <!-- ASK AI -->
+  <div class="vw" id="v-askai">
+    <h1 class="pt" style="margin-bottom:6px">Ask AI</h1>
+    <div class="ps" style="margin-bottom:22px">Chat with Claude about your spending · Grounded in real data</div>
+    <div class="chat-c">
+      <div class="chat-m" id="cM">
+        <div class="chat-msg a"><div class="chat-b">I have your full expense data — transactions, card loads, budgets, balances. Ask me anything.</div></div>
+      </div>
+      <div class="chat-sg" id="cSg">
+        <button onclick="askQ(this)">How much did I spend on dining this month?</button>
+        <button onclick="askQ(this)">Which merchant do I visit most?</button>
+        <button onclick="askQ(this)">How many times did I load the card?</button>
+        <button onclick="askQ(this)">Am I on track with my budgets?</button>
+        <button onclick="askQ(this)">What's my average daily spend?</button>
+        <button onclick="askQ(this)">Compare this week vs last week</button>
+      </div>
+      <div class="chat-ir">
+        <textarea class="chat-i" id="cI" rows="1" placeholder="Ask about your spending..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendC();}"></textarea>
+        <button class="chat-s" id="cS" onclick="sendC()">Send</button>
+      </div>
+    </div>
+  </div>
+
   <!-- LEDGER -->
-  <div class="view" id="view-ledger">
-    <div class="header-row"><h1 class="page-title">Full Ledger</h1><div style="font-size:12px;font-family:var(--mono);color:var(--dim)" id="ledgerCount"></div></div>
-    <div class="card"><div style="overflow-x:auto"><table class="ledger-table"><thead><tr><th>Date</th><th>Merchant</th><th>Category</th><th>Amount</th><th>Balance</th><th>Card Load</th></tr></thead><tbody id="ledgerBody"></tbody></table></div></div>
+  <div class="vw" id="v-ledger">
+    <div class="hr"><h1 class="pt">Full Ledger</h1><div style="font-size:13px;font-family:var(--mono);color:var(--dim)" id="lC"></div></div>
+    <div class="cd"><div style="overflow-x:auto"><table class="lt"><thead><tr><th>Date</th><th>Merchant</th><th>Category</th><th>Amount</th><th>Balance</th><th>Load</th></tr></thead><tbody id="lB"></tbody></table></div></div>
   </div>
 </main>
 
-<!-- Modals -->
-<div class="modal-overlay" id="modal-budget" style="display:none" onclick="closeModal('budget')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-header"><h3>Set Monthly Budget</h3><button class="modal-close" onclick="closeModal('budget')">✕</button></div>
-    <div class="form-group"><label>Category</label><select class="form-select" id="budgetCatInput"><option value="">Select</option><option value="Groceries">◉ Groceries</option><option value="Transport">▷ Transport</option><option value="Dining">◈ Dining</option><option value="Shopping">□ Shopping</option><option value="Bills">⬡ Bills</option><option value="Health">✦ Health</option><option value="Entertainment">♦ Entertainment</option><option value="Subscriptions">◆ Subscriptions</option><option value="Other">○ Other</option></select></div>
-    <div class="form-group"><label>Monthly Limit (QAR)</label><input type="number" class="form-input" id="budgetAmtInput" placeholder="500"></div>
-    <button class="btn btn-primary" style="width:100%" onclick="saveBudget()">Save Budget</button>
+<!-- MODALS -->
+<div class="mo" id="m-budget" style="display:none" onclick="closeModal('budget')">
+  <div class="mb" onclick="event.stopPropagation()">
+    <div class="mh"><h3>Set Monthly Budget</h3><button class="mx" onclick="closeModal('budget')">✕</button></div>
+    <div class="fg"><label>Category</label><select class="fs" id="bCi"><option value="">Select</option><option value="Groceries">◉ Groceries</option><option value="Transport">▷ Transport</option><option value="Dining">◈ Dining</option><option value="Shopping">□ Shopping</option><option value="Bills">⬡ Bills</option><option value="Health">✦ Health</option><option value="Entertainment">♦ Entertainment</option><option value="Subscriptions">◆ Subscriptions</option><option value="Other">○ Other</option></select></div>
+    <div class="fg"><label>Monthly Limit (QAR)</label><input type="number" class="fi" id="bAi" placeholder="500"></div>
+    <button class="bt bt-p" style="width:100%" onclick="saveBud()">Save Budget</button>
   </div>
 </div>
-<div class="modal-overlay" id="modal-networth" style="display:none" onclick="closeModal('networth')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-header"><h3>Add Net Worth Snapshot</h3><button class="modal-close" onclick="closeModal('networth')">✕</button></div>
-    <div class="form-group"><label>Date</label><input type="date" class="form-input" id="nwDateInput"></div>
-    <div class="form-group"><label>Total Liquid Balance (QAR)</label><input type="number" class="form-input" id="nwAmountInput" placeholder="25000"></div>
-    <div class="form-group"><label>Note (optional)</label><input type="text" class="form-input" id="nwNoteInput" placeholder="e.g. Salary received, loaded card 1000"></div>
-    <div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-bottom:14px;line-height:1.6">Your real account balance — not the prepaid card. Local only.</div>
-    <button class="btn btn-primary" style="width:100%" onclick="saveNetWorth()">Save Snapshot</button>
+<div class="mo" id="m-networth" style="display:none" onclick="closeModal('networth')">
+  <div class="mb" onclick="event.stopPropagation()">
+    <div class="mh"><h3>Add Net Worth Snapshot</h3><button class="mx" onclick="closeModal('networth')">✕</button></div>
+    <div class="fg"><label>Date</label><input type="date" class="fi" id="nDi"></div>
+    <div class="fg"><label>Total Liquid Balance (QAR)</label><input type="number" class="fi" id="nAi" placeholder="25000"></div>
+    <div class="fg"><label>Note (optional)</label><input type="text" class="fi" id="nNi" placeholder="e.g. Salary received"></div>
+    <div style="font-size:12px;color:var(--dim);font-family:var(--mono);margin-bottom:16px;line-height:1.6">Your real account balance — not the prepaid card. Local only.</div>
+    <button class="bt bt-p" style="width:100%" onclick="saveNW()">Save Snapshot</button>
+  </div>
+</div>
+<div class="mo" id="m-settings" style="display:none" onclick="closeModal('settings')">
+  <div class="mb" onclick="event.stopPropagation()">
+    <div class="mh"><h3>Settings</h3><button class="mx" onclick="closeModal('settings')">✕</button></div>
+    <div class="fg"><label>AI Proxy URL (Cloudflare Worker)</label><input type="text" class="fi" id="pUrl" placeholder="https://your-worker.workers.dev"></div>
+    <div style="font-size:12px;color:var(--dim);font-family:var(--mono);margin-bottom:16px;line-height:1.7">
+      The Anthropic API blocks browser requests (CORS). You need a tiny Cloudflare Worker proxy.<br><br>
+      1. Go to dash.cloudflare.com → Workers → Create<br>
+      2. Use the cloudflare-worker-proxy.js file provided<br>
+      3. Paste your worker URL above<br><br>
+      Without this, AI features (Digest, Roast, Ask AI) won't work on GitHub Pages. Everything else works fine.
+    </div>
+    <button class="bt bt-p" style="width:100%" onclick="saveSettings()">Save</button>
   </div>
 </div>
 
 <script>
-const SHEET_ID='1_LQk-qFx6ZbpkNk7vV0m-GyxNzMqmwcStWfPFixORZo';
-const SHEET_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
-const CATS={Groceries:{color:'#5DBE8A',icon:'◉'},Transport:{color:'#C4A1D4',icon:'▷'},Dining:{color:'#E8927C',icon:'◈'},Shopping:{color:'#72A8E8',icon:'□'},Bills:{color:'#E8C872',icon:'⬡'},Health:{color:'#E87C8A',icon:'✦'},Entertainment:{color:'#8BC4E8',icon:'♦'},Subscriptions:{color:'#A1D4B2',icon:'◆'},Other:{color:'#8899AA',icon:'○'}};
-function getCat(n){return CATS[n]||{color:'#8899AA',icon:'○'};}
-function fmt(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
+const SID='1_LQk-qFx6ZbpkNk7vV0m-GyxNzMqmwcStWfPFixORZo';
+const SURL=`https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
+const C={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Shopping:{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Other:{c:'#8899AA',i:'○'}};
+function gc(n){return C[n]||{c:'#8899AA',i:'○'};}
+function f$(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function td(){return new Date().toISOString().slice(0,10);}
-let expenses=[],cardLoads=[],isLive=false,roastMode='week';
-function ldJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
-function svJ(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
-let budgets=ldJ('cfo_budgets',{}),netWorth=ldJ('cfo_nw',[]);
+
+let E=[],CL=[],rm='w';
+function lJ(k,fb){try{return JSON.parse(localStorage.getItem(k))||fb;}catch{return fb;}}
+function sJ(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),proxyUrl=lJ('cfo_proxy','');
 
 // Nav
-document.querySelectorAll('.nav-btn').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.view;if(!v)return;document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelector(`.sidebar .nav-btn[data-view="${v}"]`)?.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById('view-'+v)?.classList.add('active');});});
+document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');});});
 
-// ═══ CARD LOAD DETECTION ═══
-// Between consecutive transactions: if balance is higher than expected, card was loaded.
-// expected = prev_balance - current_purchase
-// load = actual_balance - expected
-function detectLoads(txs){
-  const loads=[];
-  for(let i=1;i<txs.length;i++){
-    const prev=txs[i-1],curr=txs[i];
-    const expected=prev.balance-curr.amount;
-    if(curr.balance>expected+0.5){
-      loads.push({date:curr.date,amount:Math.round((curr.balance-expected)*100)/100,balBefore:prev.balance,balAfter:curr.balance,merchant:curr.merchant,txAmt:curr.amount});
-    }
+// Load detection
+function dL(tx){const ld=[];for(let i=1;i<tx.length;i++){const p=tx[i-1],c=tx[i],ex=p.balance-c.amount;if(c.balance>ex+.5)ld.push({date:c.date,amt:Math.round((c.balance-ex)*100)/100,bb:p.balance,ba:c.balance,m:c.merchant});}return ld;}
+
+// AI call helper
+async function callAI(system, userMsg) {
+  if (!proxyUrl) {
+    throw new Error('No proxy URL configured. Click Settings in the sidebar to set up your Cloudflare Worker proxy.');
   }
-  return loads;
+  const r = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages:[{role:'user',content:userMsg}]})
+  });
+  if (!r.ok) throw new Error(`API returned ${r.status}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+  return d.content?.map(b=>b.text||'').join('') || 'No response.';
 }
 
-// ═══ FETCH ═══
-async function fetchExpenses(){
+async function callAIChat(system, messages) {
+  if (!proxyUrl) throw new Error('No proxy URL configured. Click Settings in the sidebar.');
+  const r = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages})
+  });
+  if (!r.ok) throw new Error(`API returned ${r.status}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+  return d.content?.map(b=>b.text||'').join('') || 'No response.';
+}
+
+// Fetch
+async function fetchData(){
   try{
-    const r=await fetch(SHEET_URL),txt=await r.text();
-    // Google wraps response as: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
-    // Extract just the JSON object between the first { and last }
-    const startIdx=txt.indexOf('{');
-    const endIdx=txt.lastIndexOf('}');
-    if(startIdx===-1||endIdx===-1) throw new Error('No JSON found in response');
-    const j=JSON.parse(txt.substring(startIdx,endIdx+1));
-    expenses=(j.table.rows||[]).map(r=>{const c=r.c||[];let d=c[0]?.v||'';if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)\)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`;}else if(d instanceof Date)d=d.toISOString().slice(0,10);else if(c[0]?.f)d=c[0].f;return{date:String(d).slice(0,10),merchant:c[1]?.v||'',amount:parseFloat(c[2]?.v)||0,currency:c[3]?.v||'QAR',category:c[4]?.v||'Other',balance:parseFloat(c[5]?.v)||0,raw:c[6]?.v||''};}).filter(e=>e.date&&e.amount>0);
-    isLive=true;document.getElementById('statusIndicator').textContent='LIVE';document.getElementById('statusIndicator').className='status-live';document.getElementById('errorBanner').style.display='none';
+    const r=await fetch(SURL),txt=await r.text();
+    const si=txt.indexOf('{'),ei=txt.lastIndexOf('}');
+    if(si===-1||ei===-1)throw new Error('No JSON in response');
+    const j=JSON.parse(txt.substring(si,ei+1));
+    E=(j.table.rows||[]).map(r=>{const c=r.c||[];let d=c[0]?.v||'';if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)\)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`;}else if(d instanceof Date)d=d.toISOString().slice(0,10);else if(c[0]?.f)d=c[0].f;return{date:String(d).slice(0,10),merchant:c[1]?.v||'',amount:parseFloat(c[2]?.v)||0,currency:'QAR',category:c[4]?.v||'Other',balance:parseFloat(c[5]?.v)||0};}).filter(e=>e.date&&e.amount>0);
+    document.getElementById('si').textContent='LIVE';document.getElementById('si').className='sl';document.getElementById('eb').style.display='none';
   }catch(e){
-    isLive=false;document.getElementById('statusIndicator').textContent='DEMO';document.getElementById('statusIndicator').className='status-demo';
-    document.getElementById('errorBanner').textContent='⚠ Sheet fetch failed — demo data shown. '+e.message;document.getElementById('errorBanner').style.display='block';
-    expenses=genDemo();
+    document.getElementById('si').textContent='DEMO';document.getElementById('si').className='sd';
+    document.getElementById('eb').textContent='⚠ Sheet fetch failed — '+e.message;document.getElementById('eb').style.display='block';
+    E=genDemo();
   }
-  cardLoads=detectLoads(expenses);
-  document.getElementById('loadingScreen').style.display='none';
-  document.getElementById('lastFetchTime').textContent='↻ '+new Date().toLocaleTimeString();
-  document.getElementById('sheetInfo').textContent='Sheet: '+SHEET_ID.slice(0,12)+'…';
-  document.getElementById('recordCount').textContent=expenses.length+' records · '+cardLoads.length+' loads';
+  CL=dL(E);
+  document.getElementById('ls').style.display='none';
+  document.getElementById('lft').textContent='↻ '+new Date().toLocaleTimeString();
+  document.getElementById('sI').textContent='Sheet: '+SID.slice(0,12)+'…';
+  document.getElementById('rC').textContent=E.length+' records · '+CL.length+' loads';
+  
+  // Show API banner if no proxy configured
+  document.getElementById('apiBanner').style.display = proxyUrl ? 'none' : 'flex';
+  
   renderAll();
 }
 
 function genDemo(){
-  const ms=[{n:'HOT BAKE CATERING',c:'Dining',a:[35,46,52]},{n:'LULU HYPERMARKET',c:'Groceries',a:[120,85,210]},{n:'UBER TRIP',c:'Transport',a:[18,25,32]},{n:'CARREFOUR',c:'Groceries',a:[65,92]},{n:'NETFLIX',c:'Subscriptions',a:[45]},{n:'ZARA QATAR',c:'Shopping',a:[189,350]},{n:'KAHRAMAA',c:'Bills',a:[280]},{n:'PHARMACY ONE',c:'Health',a:[45]},{n:'VOX CINEMAS',c:'Entertainment',a:[55,85]},{n:'TALABAT ORDER',c:'Dining',a:[42,68]},{n:'WOQOD PETROL',c:'Transport',a:[100,150]}];
-  const data=[];let bal=800;
-  for(let d=45;d>=0;d--){
-    const dt=new Date();dt.setDate(dt.getDate()-d);
-    if(d%12===0&&d>0)bal+=500+Math.floor(Math.random()*1000); // simulate loads
-    const n=Math.floor(Math.random()*3)+1;
-    for(let t=0;t<n;t++){const m=ms[Math.floor(Math.random()*ms.length)];const a=m.a[Math.floor(Math.random()*m.a.length)]+Math.round(Math.random()*10-5);bal=Math.max(bal-a,50);data.push({date:dt.toISOString().slice(0,10),merchant:m.n,amount:Math.max(a,5),currency:'QAR',category:m.c,balance:Math.round(bal*100)/100,raw:''});}
-  }
-  return data;
+  const ms=[{n:'HOT BAKE CATERING',c:'Dining',a:[35,46,52]},{n:'LULU HYPERMARKET',c:'Groceries',a:[120,85,210]},{n:'UBER TRIP',c:'Transport',a:[18,25]},{n:'CARREFOUR',c:'Groceries',a:[65,92]},{n:'NETFLIX',c:'Subscriptions',a:[45]},{n:'ZARA QATAR',c:'Shopping',a:[189,350]},{n:'KAHRAMAA',c:'Bills',a:[280]},{n:'TALABAT ORDER',c:'Dining',a:[42,68]},{n:'WOQOD PETROL',c:'Transport',a:[100,150]}];
+  const d=[];let b=800;
+  for(let i=45;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);if(i%12===0&&i>0)b+=500+Math.floor(Math.random()*1000);const n=Math.floor(Math.random()*3)+1;for(let t=0;t<n;t++){const m=ms[Math.floor(Math.random()*ms.length)];const a=m.a[Math.floor(Math.random()*m.a.length)]+Math.round(Math.random()*10-5);b=Math.max(b-a,50);d.push({date:dt.toISOString().slice(0,10),merchant:m.n,amount:Math.max(a,5),currency:'QAR',category:m.c,balance:Math.round(b*100)/100});}}
+  return d;
 }
 
-// ═══ HELPERS ═══
-function wkRange(w=0){const n=new Date(),e=new Date(n);e.setDate(e.getDate()-w*7);const s=new Date(e);s.setDate(s.getDate()-6);return{s:s.toISOString().slice(0,10),e:e.toISOString().slice(0,10)};}
-function moRange(){const n=new Date();return{s:new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10),e:n.toISOString().slice(0,10),de:n.getDate(),dm:new Date(n.getFullYear(),n.getMonth()+1,0).getDate()};}
-function filt(a,s,e){return a.filter(x=>x.date>=s&&x.date<=e);}
-function catBk(a){const m={};a.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([c,s])=>({cat:c,spent:s,...getCat(c)}));}
+// Helpers
+function wR(w=0){const n=new Date(),e=new Date(n);e.setDate(e.getDate()-w*7);const s=new Date(e);s.setDate(s.getDate()-6);return{s:s.toISOString().slice(0,10),e:e.toISOString().slice(0,10)};}
+function mR(){const n=new Date();return{s:new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10),e:n.toISOString().slice(0,10),de:n.getDate(),dm:new Date(n.getFullYear(),n.getMonth()+1,0).getDate()};}
+function fl(a,s,e){return a.filter(x=>x.date>=s&&x.date<=e);}
+function cb(a){const m={};a.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([c,s])=>({cat:c,spent:s,...gc(c)}));}
 
-function svg(data,color,w,h){
-  if(!data||data.length<2)return`<div style="width:${w}px;height:${h}px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);font-family:var(--mono)">NO DATA</div>`;
+function mkSVG(data,color,w,h){
+  if(!data||data.length<2)return`<div style="height:${h}px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dim);font-family:var(--mono)">NO DATA</div>`;
   const mx=Math.max(...data),mn=Math.min(...data),rg=mx-mn||1;
   const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-4-((v-mn)/rg)*(h-8)}`).join(' ');
   const ly=h-4-((data[data.length-1]-mn)/rg)*(h-8);const id='g'+Math.random().toString(36).slice(2,8);
-  return`<svg width="${w}" height="${h}" style="display:block"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.15"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${pts} ${w},${h}" fill="url(#${id})"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${w}" cy="${ly}" r="3" fill="${color}"/></svg>`;
+  return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.15"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${pts} ${w},${h}" fill="url(#${id})"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${w}" cy="${ly}" r="4" fill="${color}"/></svg>`;
 }
 
-function balChart(txs,loads,w,h){
-  if(txs.length<2)return'<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:13px">Not enough data</div>';
-  const bals=txs.map(t=>t.balance);const mx=Math.max(...bals),mn=Math.min(...bals),rg=mx-mn||1;
-  const pts=bals.map((v,i)=>({x:(i/(bals.length-1))*w,y:h-8-((v-mn)/rg)*(h-16)}));
+function mkBal(tx,ld,w,h){
+  if(tx.length<2)return'<div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:14px">Not enough data</div>';
+  const bs=tx.map(t=>t.balance),mx=Math.max(...bs),mn=Math.min(...bs),rg=mx-mn||1;
+  const pts=bs.map((v,i)=>({x:(i/(bs.length-1))*w,y:h-8-((v-mn)/rg)*(h-16)}));
   const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
-  const loadIdx=new Set();loads.forEach(l=>{const i=txs.findIndex(t=>t.date===l.date&&Math.abs(t.balance-l.balAfter)<1);if(i>=0)loadIdx.add(i);});
+  const li=new Set();ld.forEach(l=>{const i=tx.findIndex(t=>t.date===l.date&&Math.abs(t.balance-l.ba)<1);if(i>=0)li.add(i);});
   const id='bc'+Math.random().toString(36).slice(2,8);
-  let circles='';loadIdx.forEach(i=>{if(pts[i])circles+=`<circle cx="${pts[i].x}" cy="${pts[i].y}" r="5" fill="#4ABFC4" stroke="var(--bg)" stroke-width="2"/><text x="${pts[i].x}" y="${pts[i].y-10}" text-anchor="middle" fill="#4ABFC4" font-size="8" font-family="var(--mono)">↑</text>`;});
-  return`<svg width="${w}" height="${h}" style="display:block"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D4A843" stop-opacity="0.1"/><stop offset="100%" stop-color="#D4A843" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${poly} ${w},${h}" fill="url(#${id})"/><polyline points="${poly}" fill="none" stroke="#D4A843" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>${circles}<text x="${w-4}" y="12" text-anchor="end" fill="var(--dim)" font-size="9" font-family="var(--mono)">${fmt(mx)}</text><text x="${w-4}" y="${h-2}" text-anchor="end" fill="var(--dim)" font-size="9" font-family="var(--mono)">${fmt(mn)}</text></svg><div style="display:flex;gap:16px;margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--dim)"><span><span style="display:inline-block;width:8px;height:2px;background:#D4A843;margin-right:4px;vertical-align:middle"></span>Balance</span><span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ABFC4;margin-right:4px;vertical-align:middle"></span>Load</span></div>`;
+  let circles='';li.forEach(i=>{if(pts[i])circles+=`<circle cx="${pts[i].x}" cy="${pts[i].y}" r="6" fill="#4ABFC4" stroke="var(--bg)" stroke-width="2.5"/>`;});
+  return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D4A843" stop-opacity="0.1"/><stop offset="100%" stop-color="#D4A843" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${poly} ${w},${h}" fill="url(#${id})"/><polyline points="${poly}" fill="none" stroke="#D4A843" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles}</svg><div style="display:flex;gap:18px;margin-top:10px;font-size:11px;font-family:var(--mono);color:var(--dim)"><span><span style="display:inline-block;width:10px;height:3px;background:#D4A843;margin-right:5px;vertical-align:middle"></span>Balance</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4ABFC4;margin-right:5px;vertical-align:middle"></span>Load</span></div>`;
 }
 
-function gauge(v,m,c,h=6){const p=m>0?(v/m)*100:0;const f=p>100?'var(--red)':p>80?'var(--amber)':c;return`<div style="background:var(--line);border-radius:${h}px;height:${h}px;width:100%;position:relative"><div style="width:${Math.min(p,100)}%;height:100%;border-radius:${h}px;background:${f};transition:width 0.5s"></div>${p>100?'<div style="position:absolute;right:0;top:-2px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg)"></div>':''}</div>`;}
+function mkG(v,m,c,h=7){const p=m>0?(v/m)*100:0;const fl=p>100?'var(--red)':p>80?'var(--amber)':c;return`<div class="gg" style="height:${h}px"><div style="width:${Math.min(p,100)}%;height:100%;border-radius:6px;background:${fl};transition:width .5s"></div></div>`;}
 
-// ═══ RENDER ═══
+// RENDER
 function renderAll(){
-  const tw=wkRange(0),lw=wkRange(1),mr=moRange();
-  const wTx=filt(expenses,tw.s,tw.e),lwTx=filt(expenses,lw.s,lw.e),mTx=filt(expenses,mr.s,mr.e);
-  const wT=wTx.reduce((s,e)=>s+e.amount,0),lwT=lwTx.reduce((s,e)=>s+e.amount,0),mT=mTx.reduce((s,e)=>s+e.amount,0);
-  const wD=lwT>0?((wT-lwT)/lwT*100):0;
-  const bal=expenses.length>0?expenses[expenses.length-1].balance:0;
-  const big=wTx.length>0?wTx.reduce((a,b)=>a.amount>b.amount?a:b):null;
-  const mLoads=cardLoads.filter(l=>l.date>=mr.s&&l.date<=mr.e),mLoadT=mLoads.reduce((s,l)=>s+l.amount,0);
-  const wLoads=cardLoads.filter(l=>l.date>=tw.s&&l.date<=tw.e),wLoadT=wLoads.reduce((s,l)=>s+l.amount,0);
+  const tw=wR(0),lw=wR(1),mr=mR();
+  const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);
+  const ws=wT.reduce((s,e)=>s+e.amount,0),ls=lwT.reduce((s,e)=>s+e.amount,0),ms=mT.reduce((s,e)=>s+e.amount,0);
+  const wd=ls>0?((ws-ls)/ls*100):0;
+  const bal=E.length>0?E[E.length-1].balance:0;
+  const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),mLt=mLd.reduce((s,l)=>s+l.amt,0);
+  const wLd=CL.filter(l=>l.date>=tw.s&&l.date<=tw.e),wLt=wLd.reduce((s,l)=>s+l.amt,0);
 
   // Command
-  document.getElementById('weekRange').textContent=`Week of ${tw.s} → ${tw.e}`;
-  document.getElementById('kpiWeekTotal').textContent=fmt(wT);
-  document.getElementById('kpiWeekDelta').textContent=`${wD>0?'↑':'↓'} ${Math.abs(wD).toFixed(1)}% vs last week`;
-  document.getElementById('kpiWeekDelta').style.color=wD>0?'var(--red)':'var(--green)';
-  document.getElementById('kpiMonthTotal').textContent=fmt(mT);
-  document.getElementById('kpiMonthCount').textContent=mTx.length+' transactions';
-  document.getElementById('kpiBalance').textContent=fmt(bal);
-  document.getElementById('kpiLoaded').textContent=fmt(mLoadT);
-  document.getElementById('kpiLoadCount').textContent=mLoads.length+` load${mLoads.length===1?'':'s'}`;
+  document.getElementById('wr').textContent=`Week of ${tw.s} → ${tw.e}`;
+  document.getElementById('k1').textContent=f$(ws);
+  document.getElementById('k1d').textContent=`${wd>0?'↑':'↓'} ${Math.abs(wd).toFixed(1)}% vs last week`;
+  document.getElementById('k1d').style.color=wd>0?'var(--red)':'var(--green)';
+  document.getElementById('k2').textContent=f$(ms);
+  document.getElementById('k2d').textContent=mT.length+' transactions';
+  document.getElementById('k3').textContent=f$(bal);
+  document.getElementById('k4').textContent=f$(mLt);
+  document.getElementById('k4d').textContent=mLd.length+` load${mLd.length===1?'':'s'}`;
 
   // Trend
   const tm={};for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);tm[d.toISOString().slice(0,10)]=0;}
-  expenses.forEach(e=>{if(tm[e.date]!==undefined)tm[e.date]+=e.amount;});
-  document.getElementById('trendChart').innerHTML=svg(Object.values(tm),'#D4A843',440,80);
+  E.forEach(e=>{if(tm[e.date]!==undefined)tm[e.date]+=e.amount;});
+  document.getElementById('tc').innerHTML=mkSVG(Object.values(tm),'#D4A843',480,90);
 
-  // Cat split
-  const wC=catBk(wTx),mxC=wC.length>0?wC[0].spent:1;
-  document.getElementById('catSplitWeek').innerHTML=wC.length===0?'<div style="font-size:13px;color:var(--dim);padding:8px">No spending this week</div>':wC.slice(0,6).map(c=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:12px;width:16px;text-align:center;color:${c.color}">${c.icon}</span><span style="font-size:13px;flex:1;min-width:80px">${c.cat}</span>${gauge(c.spent,mxC,c.color,5)}<span style="font-size:12px;font-family:var(--mono);color:var(--dim);min-width:80px;text-align:right">${fmt(c.spent)}</span></div>`).join('');
+  // Cat
+  const wC=cb(wT),mxC=wC.length>0?wC[0].spent:1;
+  document.getElementById('cs').innerHTML=wC.length===0?'<div style="font-size:14px;color:var(--dim);padding:10px">No spending this week</div>':wC.slice(0,6).map(c=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="font-size:14px;width:18px;text-align:center;color:${c.c}">${c.i}</span><span style="font-size:14px;flex:1;min-width:90px">${c.cat}</span>${mkG(c.spent,mxC,c.c,6)}<span style="font-size:13px;font-family:var(--mono);color:var(--dim);min-width:90px;text-align:right">${f$(c.spent)}</span></div>`).join('');
 
   // Budget alerts
-  const alerts=budgetAlerts(mTx,mr);
-  document.getElementById('budgetAlertsCommand').innerHTML=alerts.length===0?'':`<div class="card"><div class="label">Budget Status — ${new Date().toLocaleString('en',{month:'long'})}</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px">${alerts.map(b=>`<div style="padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid ${b.wb?'rgba(201,84,84,0.3)':'var(--line)'}"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:500">${getCat(b.cat).icon} ${b.cat}</span><span style="font-size:11px;font-family:var(--mono);color:${b.wb?'var(--red)':'var(--green)'}">${b.wb?'⚠ BREACH':'OK'}</span></div>${gauge(b.spent,b.bud,getCat(b.cat).color,5)}<div style="display:flex;justify-content:space-between;margin-top:5px;font-size:10px;font-family:var(--mono);color:var(--dim)"><span>${fmt(b.spent)}/${fmt(b.bud)}</span><span>→${fmt(b.proj)}</span></div></div>`).join('')}</div></div>`;
+  const als=bAlerts(mT,mr);
+  document.getElementById('ba').innerHTML=als.length===0?'':`<div class="cd"><div class="lb">Budget Status — ${new Date().toLocaleString('en',{month:'long'})}</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:14px">${als.map(b=>`<div style="padding:14px 16px;background:var(--bg);border-radius:10px;border:1px solid ${b.wb?'rgba(201,84,84,.3)':'var(--line)'}"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:14px;font-weight:500">${gc(b.cat).i} ${b.cat}</span><span style="font-size:12px;font-family:var(--mono);color:${b.wb?'var(--red)':'var(--green)'}">${b.wb?'⚠ BREACH':'OK'}</span></div>${mkG(b.spent,b.bud,gc(b.cat).c,6)}<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--dim)"><span>${f$(b.spent)}/${f$(b.bud)}</span><span>→${f$(b.proj)}</span></div></div>`).join('')}</div></div>`;
 
   // Card load glance
-  document.getElementById('cardLoadGlance').innerHTML=cardLoads.length===0?'<div style="font-size:13px;color:var(--dim)">No loads detected</div>':cardLoads.slice(-4).reverse().map(l=>`<div class="tx-row"><span class="topup-badge">↑ LOAD</span><span style="flex:1;font-size:13px">${l.date}</span><span style="font-size:13px;font-family:var(--mono);color:var(--cyan)">+${fmt(l.amount)}</span></div>`).join('');
+  document.getElementById('clg').innerHTML=CL.length===0?'<div style="font-size:14px;color:var(--dim)">No loads detected</div>':CL.slice(-4).reverse().map(l=>`<div class="tr"><span class="tu">↑ LOAD</span><span style="flex:1;font-size:14px">${l.date}</span><span style="font-size:14px;font-family:var(--mono);color:var(--cyan)">+${f$(l.amt)}</span></div>`).join('');
 
   // Recent tx
-  document.getElementById('recentTx').innerHTML=expenses.length===0?'<div style="font-size:13px;color:var(--dim);padding:8px">No transactions</div>':expenses.slice(-5).reverse().map(e=>{const c=getCat(e.category);return`<div class="tx-row"><span style="font-size:12px;color:${c.color}">${c.icon}</span><span style="flex:1;font-size:13px">${e.merchant}</span><span style="font-size:12px;font-family:var(--mono);color:var(--dim)">${fmt(e.amount)}</span></div>`;}).join('');
+  document.getElementById('rt').innerHTML=E.length===0?'<div style="font-size:14px;color:var(--dim);padding:10px">No transactions</div>':E.slice(-5).reverse().map(e=>{const c=gc(e.category);return`<div class="tr"><span style="font-size:14px;color:${c.c}">${c.i}</span><span style="flex:1;font-size:14px">${e.merchant}</span><span style="font-size:13px;font-family:var(--mono);color:var(--dim)">${f$(e.amount)}</span></div>`;}).join('');
 
   // Digest
-  document.getElementById('digestRange').textContent=`AI summary · ${tw.s} → ${tw.e}`;
-  document.getElementById('digestWeekTotal').textContent=fmt(wT);
-  document.getElementById('digestLastWeek').textContent=fmt(lwT);
-  document.getElementById('digestWeekDelta').textContent=`${wD>0?'↑':'↓'} ${Math.abs(wD).toFixed(1)}%`;
-  document.getElementById('digestWeekDelta').style.color=wD>0?'var(--red)':'var(--green)';
-  document.getElementById('digestTxCount').textContent=wTx.length;
-  document.getElementById('digestLoads').textContent=wLoads.length>0?`${wLoads.length} · ${fmt(wLoadT)}`:'0';
+  document.getElementById('dr').textContent=`AI summary · ${tw.s} → ${tw.e}`;
+  document.getElementById('d1').textContent=f$(ws);document.getElementById('d2').textContent=f$(ls);
+  document.getElementById('d1d').textContent=`${wd>0?'↑':'↓'} ${Math.abs(wd).toFixed(1)}%`;document.getElementById('d1d').style.color=wd>0?'var(--red)':'var(--green)';
+  document.getElementById('d3').textContent=wT.length;
+  document.getElementById('d4').textContent=wLd.length>0?`${wLd.length} · ${f$(wLt)}`:'0';
 
-  renderEnv(mTx,mr);renderCF(mr,mTx,mLoads,mLoadT,bal);renderNW();renderLedger();
+  rEnv(mT,mr);rCF(mr,mT,mLd,mLt,bal);rNW();rLedger();
 }
 
-function budgetAlerts(mTx,mr){
-  const cm={};mTx.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
+function bAlerts(mT,mr){
+  const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
   const p=mr.dm/Math.max(mr.de,1);
-  return Object.keys(budgets).map(c=>{const s=cm[c]||0,b=budgets[c],pr=Math.round(s*p);return{cat:c,spent:s,bud:b,proj:pr,pct:(s/b)*100,wb:pr>b};});
+  return Object.keys(BU).map(c=>{const s=cm[c]||0,b=BU[c],pr=Math.round(s*p);return{cat:c,spent:s,bud:b,proj:pr,pct:(s/b)*100,wb:pr>b};});
 }
 
-function renderEnv(mTx,mr){
-  document.getElementById('envMonthInfo').textContent=`${new Date().toLocaleString('en',{month:'long',year:'numeric'})} · Day ${mr.de} of ${mr.dm}`;
-  const cm={};mTx.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
-  const all=Object.keys(CATS).map(c=>({cat:c,spent:cm[c]||0,budget:budgets[c]||0,...getCat(c)})).filter(c=>c.budget>0||c.spent>0).sort((a,b)=>b.spent-a.spent);
-  if(!all.length){document.getElementById('envelopesGrid').innerHTML=`<div class="card" style="text-align:center;padding:40px;grid-column:1/-1"><div style="font-size:32px;margin-bottom:12px">▦</div><div style="font-size:14px;color:var(--dim);margin-bottom:16px">No budgets set.</div><button class="btn btn-primary" onclick="openModal('budget')">Set First Budget</button></div>`;return;}
+function rEnv(mT,mr){
+  document.getElementById('eI').textContent=`${new Date().toLocaleString('en',{month:'long',year:'numeric'})} · Day ${mr.de} of ${mr.dm}`;
+  const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
+  const all=Object.keys(C).map(c=>({cat:c,spent:cm[c]||0,budget:BU[c]||0,...gc(c)})).filter(c=>c.budget>0||c.spent>0).sort((a,b)=>b.spent-a.spent);
+  if(!all.length){document.getElementById('eG').innerHTML=`<div class="cd" style="text-align:center;padding:44px;grid-column:1/-1"><div style="font-size:36px;margin-bottom:14px">▦</div><div style="font-size:16px;color:var(--dim);margin-bottom:18px">No budgets set.</div><button class="bt bt-p" onclick="openModal('budget')">Set First Budget</button></div>`;return;}
   const p=mr.dm/Math.max(mr.de,1),dl=mr.dm-mr.de;
-  document.getElementById('envelopesGrid').innerHTML=all.map(c=>{
-    if(!c.budget)return`<div class="card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><span style="color:${c.color};font-size:16px">${c.icon}</span><span style="font-size:16px;font-weight:600">${c.cat}</span></div><div style="font-size:12px;color:var(--dim)">${fmt(c.spent)} spent · No budget<br><button onclick="document.getElementById('budgetCatInput').value='${c.cat}';openModal('budget')" style="background:none;border:none;color:var(--amber);cursor:pointer;font-size:12px;padding:0;margin-top:4px;font-family:var(--mono)">+ Set limit →</button></div></div>`;
-    const pc=(c.spent/c.budget)*100,pr=Math.round(c.spent*p),wb=pr>c.budget,rm=Math.max(c.budget-c.spent,0),da=dl>0?(rm/dl):0;
-    return`<div class="card" ${wb?'style="box-shadow:0 0 30px -10px rgba(201,84,84,0.1)"':''}><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="display:flex;align-items:center;gap:8px"><span style="color:${c.color};font-size:16px">${c.icon}</span><span style="font-size:16px;font-weight:600">${c.cat}</span></div><button onclick="removeBudget('${c.cat}')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px">✕</button></div>${gauge(c.spent,c.budget,c.color,8)}<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-family:var(--mono)"><span>${fmt(c.spent)}</span><span style="color:var(--dim)">${fmt(c.budget)} limit</span></div><div class="divider"></div><div class="env-stats"><div><div class="stat-label">PROJECTED</div><div style="color:${wb?'var(--red)':'var(--green)'}">${fmt(pr)}</div></div><div><div class="stat-label">DAILY LEFT</div><div>${fmt(da)}/day</div></div><div><div class="stat-label">STATUS</div><div style="color:${pc>100?'var(--red)':pc>80?'var(--amber)':'var(--green)'}">${pc>100?'OVER':pc>80?'CAUTION':'OK'}</div></div><div><div class="stat-label">REMAINING</div><div>${fmt(rm)}</div></div></div></div>`;
+  document.getElementById('eG').innerHTML=all.map(c=>{
+    if(!c.budget)return`<div class="cd"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><div style="font-size:14px;color:var(--dim)">${f$(c.spent)} spent · No budget<br><button onclick="document.getElementById('bCi').value='${c.cat}';openModal('budget')" style="background:0;border:0;color:var(--amber);cursor:pointer;font-size:13px;padding:0;margin-top:6px;font-family:var(--mono)">+ Set limit →</button></div></div>`;
+    const pc=(c.spent/c.budget)*100,pr=Math.round(c.spent*p),wb=pr>c.budget,rm2=Math.max(c.budget-c.spent,0),da=dl>0?(rm2/dl):0;
+    return`<div class="cd" ${wb?'style="box-shadow:0 0 30px -10px rgba(201,84,84,.1)"':''}><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="display:flex;align-items:center;gap:10px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><button onclick="remBud('${c.cat}')" style="background:0;border:0;color:var(--dim);cursor:pointer;font-size:14px">✕</button></div>${mkG(c.spent,c.budget,c.c,9)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;font-family:var(--mono)"><span>${f$(c.spent)}</span><span style="color:var(--dim)">${f$(c.budget)} limit</span></div><div class="dv"></div><div class="es"><div><div class="sl2">PROJECTED</div><div style="color:${wb?'var(--red)':'var(--green)'}">${f$(pr)}</div></div><div><div class="sl2">DAILY LEFT</div><div>${f$(da)}/day</div></div><div><div class="sl2">STATUS</div><div style="color:${pc>100?'var(--red)':pc>80?'var(--amber)':'var(--green)'}">${pc>100?'OVER':pc>80?'CAUTION':'OK'}</div></div><div><div class="sl2">REMAINING</div><div>${f$(rm2)}</div></div></div></div>`;
   }).join('');
 }
 
-function renderCF(mr,mTx,mLoads,mLoadT,bal){
-  document.getElementById('cfBalance').textContent=fmt(bal);
-  document.getElementById('cfMonthLoaded').textContent=fmt(mLoadT);
-  document.getElementById('cfMonthLoadCount').textContent=mLoads.length+` load${mLoads.length===1?'':'s'}`;
-  document.getElementById('cfMonthSpent').textContent=fmt(mTx.reduce((s,e)=>s+e.amount,0));
-  document.getElementById('cfMonthTxCount').textContent=mTx.length+' transactions';
-  document.getElementById('cfBalanceChart').innerHTML=balChart(expenses.slice(-60),cardLoads,600,140);
-  // Monthly loads
-  const ml={};cardLoads.forEach(l=>{const k=l.date.slice(0,7);ml[k]=(ml[k]||0)+l.amount;});
-  const mos=Object.keys(ml).sort();
-  document.getElementById('cfMonthlyLoadChart').innerHTML=mos.length>=2?svg(mos.map(m=>ml[m]),'#4ABFC4',280,80)+`<div style="display:flex;justify-content:space-between;font-size:9px;font-family:var(--mono);color:var(--dim);margin-top:4px"><span>${mos[0]}</span><span>${mos[mos.length-1]}</span></div>`:'<div style="height:80px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:11px;font-family:var(--mono)">Need 2+ months for trend</div>';
-  // Load history
-  document.getElementById('cfLoadHistory').innerHTML=cardLoads.length===0?'<div style="padding:20px;text-align:center;color:var(--dim);font-size:13px">No loads detected. Loads appear when balance jumps between transactions.</div>':cardLoads.slice().reverse().map(l=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><div style="font-size:12px;font-family:var(--mono);color:var(--dim);min-width:85px">${l.date}</div><span class="topup-badge">↑ LOAD</span><div style="flex:1"><div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--cyan)">+${fmt(l.amount)}</div><div style="font-size:11px;color:var(--dim);margin-top:2px">${fmt(l.balBefore)} → ${fmt(l.balAfter)} · Near: ${l.merchant}</div></div></div>`).join('');
+function rCF(mr,mT,mLd,mLt,bal){
+  document.getElementById('cf1').textContent=f$(bal);
+  document.getElementById('cf2').textContent=f$(mLt);document.getElementById('cf2d').textContent=mLd.length+` load${mLd.length===1?'':'s'}`;
+  document.getElementById('cf3').textContent=f$(mT.reduce((s,e)=>s+e.amount,0));document.getElementById('cf3d').textContent=mT.length+' transactions';
+  document.getElementById('cfC').innerHTML=mkBal(E.slice(-60),CL,620,150);
+  const ml={};CL.forEach(l=>{const k=l.date.slice(0,7);ml[k]=(ml[k]||0)+l.amt;});const mos=Object.keys(ml).sort();
+  document.getElementById('cfM').innerHTML=mos.length>=2?mkSVG(mos.map(m=>ml[m]),'#4ABFC4',300,90)+`<div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--dim);margin-top:5px"><span>${mos[0]}</span><span>${mos[mos.length-1]}</span></div>`:'<div style="height:90px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:13px;font-family:var(--mono)">Need 2+ months</div>';
+  document.getElementById('cfH').innerHTML=CL.length===0?'<div style="padding:22px;text-align:center;color:var(--dim);font-size:14px">No loads detected.</div>':CL.slice().reverse().map(l=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-size:13px;font-family:var(--mono);color:var(--dim);min-width:90px">${l.date}</div><span class="tu">↑ LOAD</span><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mono);color:var(--cyan)">+${f$(l.amt)}</div><div style="font-size:12px;color:var(--dim);margin-top:3px">${f$(l.bb)} → ${f$(l.ba)} · Near: ${l.m}</div></div></div>`).join('');
 }
 
-function renderNW(){
-  const sorted=[...netWorth].sort((a,b)=>a.date.localeCompare(b.date));
-  const vals=sorted.map(n=>n.amount),latest=sorted.length>0?sorted[sorted.length-1]:null,prev=sorted.length>1?sorted[sorted.length-2]:null;
-  const delta=latest&&prev?latest.amount-prev.amount:0;
-  document.getElementById('nwLatestVal').textContent=latest?fmt(latest.amount):'—';
-  document.getElementById('nwLatestDate').textContent=latest?latest.date:'';
-  document.getElementById('nwDeltaVal').textContent=delta!==0?`${delta>=0?'+':''}${fmt(delta)}`:'—';
-  document.getElementById('nwDeltaVal').style.color=delta>=0?'var(--green)':'var(--red)';
-  document.getElementById('nwEntryCount').textContent=netWorth.length;
-  if(netWorth.length>=2){const days=Math.round((new Date(sorted[sorted.length-1].date)-new Date(sorted[0].date))/86400000);document.getElementById('nwDaysTracked').textContent=days+' days tracked';}
-  document.getElementById('nwTrendChart').innerHTML=vals.length>=2?svg(vals,'#4DAA72',600,120):'<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:13px">Add 2+ snapshots for trajectory</div>';
-  const desc=[...netWorth].sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('nwHistory').innerHTML=desc.length===0?'<div style="padding:20px;text-align:center;color:var(--dim);font-size:13px">No entries. This is your real account balance — separate from prepaid card.</div>':desc.map((n,i)=>{const p=desc[i+1];const d=p?n.amount-p.amount:0;return`<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><div style="font-size:12px;font-family:var(--mono);color:var(--dim);min-width:85px">${n.date}</div><div style="flex:1"><div style="font-size:15px;font-weight:600;font-family:var(--mono)">${fmt(n.amount)}</div>${n.note?`<div style="font-size:12px;color:var(--dim);margin-top:2px">${n.note}</div>`:''}</div>${d!==0?`<span style="font-size:12px;font-family:var(--mono);color:${d>=0?'var(--green)':'var(--red)'}">${d>=0?'+':''}${fmt(d)}</span>`:''}<button onclick="deleteNW(${n.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px">✕</button></div>`;}).join('');
+function rNW(){
+  const so=[...NW].sort((a,b)=>a.date.localeCompare(b.date)),vs=so.map(n=>n.amount);
+  const la=so.length>0?so[so.length-1]:null,pv=so.length>1?so[so.length-2]:null,dl=la&&pv?la.amount-pv.amount:0;
+  document.getElementById('n1').textContent=la?f$(la.amount):'—';document.getElementById('n1d').textContent=la?la.date:'';
+  document.getElementById('n2').textContent=dl!==0?`${dl>=0?'+':''}${f$(dl)}`:'—';document.getElementById('n2').style.color=dl>=0?'var(--green)':'var(--red)';
+  document.getElementById('n3').textContent=NW.length;
+  if(NW.length>=2){const ds=Math.round((new Date(so[so.length-1].date)-new Date(so[0].date))/86400000);document.getElementById('n3d').textContent=ds+' days tracked';}
+  document.getElementById('nT').innerHTML=vs.length>=2?mkSVG(vs,'#4DAA72',620,130):'<div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:14px">Add 2+ snapshots for trajectory</div>';
+  const desc=[...NW].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('nH').innerHTML=desc.length===0?'<div style="padding:22px;text-align:center;color:var(--dim);font-size:14px">No entries. Your real account balance — separate from card.</div>':desc.map((n,i)=>{const p=desc[i+1];const d=p?n.amount-p.amount:0;return`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-size:13px;font-family:var(--mono);color:var(--dim);min-width:90px">${n.date}</div><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mono)">${f$(n.amount)}</div>${n.note?`<div style="font-size:13px;color:var(--dim);margin-top:3px">${n.note}</div>`:''}</div>${d!==0?`<span style="font-size:13px;font-family:var(--mono);color:${d>=0?'var(--green)':'var(--red)'}">${d>=0?'+':''}${f$(d)}</span>`:''}<button onclick="delNW(${n.id})" style="background:0;border:0;color:var(--dim);cursor:pointer;font-size:13px">✕</button></div>`;}).join('');
 }
 
-function renderLedger(){
-  document.getElementById('ledgerCount').textContent=expenses.length+' records';
-  const loadMap=new Map();cardLoads.forEach(l=>loadMap.set(l.date+'|'+l.balAfter.toFixed(2),l.amount));
-  document.getElementById('ledgerBody').innerHTML=expenses.slice().reverse().slice(0,100).map(e=>{const c=getCat(e.category);const ld=loadMap.get(e.date+'|'+e.balance.toFixed(2));return`<tr><td style="font-family:var(--mono);font-size:12px;color:var(--dim)">${e.date}</td><td>${e.merchant}</td><td><span style="color:${c.color}">${c.icon}</span> ${e.category}</td><td style="font-family:var(--mono);font-weight:500">${fmt(e.amount)}</td><td style="font-family:var(--mono);font-size:12px;color:var(--dim)">${fmt(e.balance)}</td><td>${ld?`<span class="topup-badge">↑ +${fmt(ld)}</span>`:''}</td></tr>`;}).join('')+(expenses.length>100?`<tr><td colspan="6" style="text-align:center;font-size:11px;color:var(--dim);font-family:var(--mono)">100 of ${expenses.length}</td></tr>`:'');
+function rLedger(){
+  document.getElementById('lC').textContent=E.length+' records';
+  const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
+  document.getElementById('lB').innerHTML=E.slice().reverse().slice(0,100).map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));return`<tr><td style="font-family:var(--mono);font-size:13px;color:var(--dim)">${e.date}</td><td>${e.merchant}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mono);font-weight:500">${f$(e.amount)}</td><td style="font-family:var(--mono);font-size:13px;color:var(--dim)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}</td></tr>`;}).join('')+(E.length>100?`<tr><td colspan="6" style="text-align:center;font-size:12px;color:var(--dim);font-family:var(--mono)">100 of ${E.length}</td></tr>`:'');
 }
 
-// ═══ AI ═══
-async function generateDigest(){
-  const btn=document.getElementById('btnDigest');btn.disabled=true;btn.textContent='Generating...';
-  const tw=wkRange(0),lw=wkRange(1),mr=moRange();
-  const wTx=filt(expenses,tw.s,tw.e),lwTx=filt(expenses,lw.s,lw.e);
-  const wT=wTx.reduce((s,e)=>s+e.amount,0),lwT=lwTx.reduce((s,e)=>s+e.amount,0),wD=lwT>0?((wT-lwT)/lwT*100):0;
-  const big=wTx.length>0?wTx.reduce((a,b)=>a.amount>b.amount?a:b):null;
-  const mTx=filt(expenses,mr.s,mr.e),als=budgetAlerts(mTx,mr);
-  const wL=cardLoads.filter(l=>l.date>=tw.s&&l.date<=tw.e);
-  const payload={weekTotal:wT,lastWeekTotal:lwT,weekDelta:wD.toFixed(1),cardBalance:expenses.length>0?expenses[expenses.length-1].balance:0,biggestTx:big?{merchant:big.merchant,amount:big.amount}:null,categories:catBk(wTx),budgetAlerts:als.filter(b=>b.wb),cardLoads:wL.map(l=>({date:l.date,amount:l.amount})),totalLoaded:wL.reduce((s,l)=>s+l.amount,0),range:`${tw.s} to ${tw.e}`,context:'Card balance is a prepaid Visa Saif loads manually. Loads are transfers from account to card, not income.'};
+// AI
+async function genDigest(){
+  const btn=document.getElementById('bD');btn.disabled=true;btn.textContent='Generating...';
+  const tw=wR(0),lw=wR(1),mr=mR();
+  const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e);
+  const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),wd=ls2>0?((ws-ls2)/ls2*100):0;
+  const big=wT.length>0?wT.reduce((a,b)=>a.amount>b.amount?a:b):null;
+  const mT=fl(E,mr.s,mr.e),als=bAlerts(mT,mr);
+  const wL=CL.filter(l=>l.date>=tw.s&&l.date<=tw.e);
+  const payload=JSON.stringify({weekTotal:ws,lastWeekTotal:ls2,weekDelta:wd.toFixed(1),cardBalance:E.length>0?E[E.length-1].balance:0,biggest:big?{m:big.merchant,a:big.amount}:null,categories:cb(wT),budgetAlerts:als.filter(b=>b.wb),cardLoads:wL.map(l=>({date:l.date,amount:l.amt})),totalLoaded:wL.reduce((s,l)=>s+l.amt,0),range:`${tw.s} to ${tw.e}`});
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are a sharp financial analyst briefing Saif weekly. QAR currency. His card is prepaid Visa — balance is just what's loaded, not his net worth. When loads appear, note how much was moved to the card (not income). Be direct, sentences only, no tables/bullets/bold. Include: total vs last week, categories, biggest tx, card balance, loads, 1-2 observations. Flag budget breaches. One actionable tip. Under 180 words.`,messages:[{role:'user',content:JSON.stringify(payload)}]})});
-    const d=await r.json();document.getElementById('digestOutput').innerHTML=`<div style="font-size:14px;line-height:1.8;white-space:pre-wrap">${d.content?.map(b=>b.text||'').join('')||'Failed.'}</div>`;
-  }catch(e){document.getElementById('digestOutput').innerHTML=`<div style="color:var(--red);font-size:13px">Failed: ${e.message}</div>`;}
+    const text=await callAI(`Sharp financial analyst briefing Saif weekly. QAR. Card is prepaid Visa — balance is card-only, not net worth. Loads are transfers from account to card, not income. Be direct, sentences only, no tables/bullets/bold/markdown. Total vs last week, categories, biggest tx, balance, loads, 1-2 observations. Flag budget breaches. One actionable tip. Under 180 words.`,payload);
+    document.getElementById('dO').innerHTML=`<div style="font-size:16px;line-height:1.85;white-space:pre-wrap">${text}</div>`;
+  }catch(e){document.getElementById('dO').innerHTML=`<div style="color:var(--red);font-size:14px">Error: ${e.message}</div>`;}
   btn.disabled=false;btn.textContent='✧ Generate Digest';
 }
 
-async function generateRoast(){
-  const btn=document.getElementById('btnRoast');btn.disabled=true;btn.textContent='Roasting...';
-  const tw=wkRange(0),mr=moRange();
-  const txs=roastMode==='week'?filt(expenses,tw.s,tw.e):filt(expenses,mr.s,mr.e);
-  const total=txs.reduce((s,e)=>s+e.amount,0);
-  const merch={};txs.forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1;});
+async function genRoast(){
+  const btn=document.getElementById('bR');btn.disabled=true;btn.textContent='Roasting...';
+  const tw=wR(0),mr=mR();
+  const tx=rm==='w'?fl(E,tw.s,tw.e):fl(E,mr.s,mr.e);
+  const total=tx.reduce((s,e)=>s+e.amount,0);
+  const merch={};tx.forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1;});
   const reps=Object.entries(merch).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
-  const cm={};txs.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
-  const mTx=filt(expenses,mr.s,mr.e),als=budgetAlerts(mTx,mr);
-  const pLoads=roastMode==='week'?cardLoads.filter(l=>l.date>=tw.s&&l.date<=tw.e):cardLoads.filter(l=>l.date>=mr.s&&l.date<=mr.e);
-  const payload={period:roastMode==='week'?'7 days':'this month',total,txCount:txs.length,categorySpend:cm,repeats:reps.slice(0,8),biggest:txs.length>0?txs.reduce((a,b)=>a.amount>b.amount?a:b):null,breaches:als.filter(b=>b.pct>100),recent:txs.slice(-15).map(e=>({m:e.merchant,a:e.amount,c:e.category})),loads:pLoads.map(l=>({date:l.date,amount:l.amount})),totalLoaded:pLoads.reduce((s,l)=>s+l.amount,0),cardBal:expenses.length>0?expenses[expenses.length-1].balance:0,context:'Prepaid Visa. If loaded a lot and burned through it fast, roast the burn rate.'};
+  const cm={};tx.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
+  const mT=fl(E,mr.s,mr.e),als=bAlerts(mT,mr);
+  const pL=rm==='w'?CL.filter(l=>l.date>=tw.s&&l.date<=tw.e):CL.filter(l=>l.date>=mr.s&&l.date<=mr.e);
+  const payload=JSON.stringify({period:rm==='w'?'7 days':'this month',total,txCount:tx.length,categorySpend:cm,repeats:reps.slice(0,8),biggest:tx.length>0?tx.reduce((a,b)=>a.amount>b.amount?a:b):null,breaches:als.filter(b=>b.pct>100),recent:tx.slice(-15).map(e=>({m:e.merchant,a:e.amount,c:e.category})),loads:pL.map(l=>({date:l.date,amount:l.amt})),totalLoaded:pL.reduce((s,l)=>s+l.amt,0),cardBal:E.length>0?E[E.length-1].balance:0});
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`Brutally honest financial roast of Saif's spending in Doha. QAR. His card is prepaid — if he loaded and burned through fast, roast that burn rate hard. Reference merchant names and amounts. Notice repeat visits. Zero motivational language. If budget breached, drag. End with ONE useful observation in sarcasm. 120-200 words. No markdown. Raw paragraphs.`,messages:[{role:'user',content:JSON.stringify(payload)}]})});
-    const d=await r.json();document.getElementById('roastOutput').innerHTML=`<div class="roast-output">${d.content?.map(b=>b.text||'').join('')||'Failed.'}</div>`;
-  }catch(e){document.getElementById('roastOutput').innerHTML=`<div style="color:var(--red);padding:20px">Failed: ${e.message}</div>`;}
+    const text=await callAI(`Brutally honest financial roast of Saif's spending in Doha. QAR. Prepaid Visa — if loaded and burned fast, roast burn rate. Reference merchant names and amounts. Repeat visits. Zero motivational language. Budget breaches get dragged. ONE useful observation in sarcasm. 120-200 words. No markdown. Raw paragraphs.`,payload);
+    document.getElementById('rO').innerHTML=`<div class="ro">${text}</div>`;
+  }catch(e){document.getElementById('rO').innerHTML=`<div style="color:var(--red);padding:22px;font-size:14px">Error: ${e.message}</div>`;}
   btn.disabled=false;btn.textContent='🔥 Roast Me';
 }
 
-function setRoastMode(m){roastMode=m;document.getElementById('roastWeekPill').className=m==='week'?'pill active':'pill';document.getElementById('roastMonthPill').className=m==='month'?'pill active':'pill';}
+function setRM(m){rm=m;document.getElementById('rWP').className=m==='w'?'pl on':'pl';document.getElementById('rMP').className=m==='m'?'pl on':'pl';}
 
-// ═══ ASK AI CHAT ═══
-let chatHistory = [];
+// Chat
+let cH=[];
 
-function buildDataContext() {
-  const tw = wkRange(0), lw = wkRange(1), mr = moRange();
-  const wTx = filt(expenses, tw.s, tw.e), lwTx = filt(expenses, lw.s, lw.e), mTx = filt(expenses, mr.s, mr.e);
-  const wT = wTx.reduce((s,e) => s+e.amount, 0), lwT = lwTx.reduce((s,e) => s+e.amount, 0);
-  const mT = mTx.reduce((s,e) => s+e.amount, 0);
-  const bal = expenses.length > 0 ? expenses[expenses.length-1].balance : 0;
-
-  // Category breakdowns
-  const mCats = {}; mTx.forEach(e => { mCats[e.category] = (mCats[e.category]||0) + e.amount; });
-  const wCats = {}; wTx.forEach(e => { wCats[e.category] = (wCats[e.category]||0) + e.amount; });
-
-  // Merchant frequency
-  const merchAll = {}; expenses.forEach(e => { merchAll[e.merchant] = (merchAll[e.merchant]||0) + 1; });
-  const merchMonth = {}; mTx.forEach(e => { merchMonth[e.merchant] = (merchMonth[e.merchant]||0) + 1; });
-
-  // Card loads
-  const mLoads = cardLoads.filter(l => l.date >= mr.s && l.date <= mr.e);
-  const wLoads = cardLoads.filter(l => l.date >= tw.s && l.date <= tw.e);
-
-  // Budgets
-  const als = budgetAlerts(mTx, mr);
-
-  // Net worth
-  const nwSorted = [...netWorth].sort((a,b) => a.date.localeCompare(b.date));
-
-  return `EXPENSE DATA SNAPSHOT (as of ${new Date().toISOString().slice(0,10)}):
-Currency: QAR
-Card type: Prepaid Visa (balance is card-only, NOT account/net worth)
-
-THIS WEEK (${tw.s} to ${tw.e}):
-- Total spent: ${wT.toFixed(2)}
-- Transactions: ${wTx.length}
-- Categories: ${JSON.stringify(wCats)}
-- Card loads: ${wLoads.length} loads totalling ${wLoads.reduce((s,l)=>s+l.amount,0).toFixed(2)}
-
-LAST WEEK (${lw.s} to ${lw.e}):
-- Total spent: ${lwT.toFixed(2)}
-- Transactions: ${lwTx.length}
-
-THIS MONTH (${mr.s} to ${mr.e}, day ${mr.de} of ${mr.dm}):
-- Total spent: ${mT.toFixed(2)}
-- Transactions: ${mTx.length}
-- Categories: ${JSON.stringify(mCats)}
-- Card loads: ${mLoads.length} loads totalling ${mLoads.reduce((s,l)=>s+l.amount,0).toFixed(2)}
-- Card load details: ${JSON.stringify(mLoads.map(l=>({date:l.date,amount:l.amount})))}
-
-CARD BALANCE: ${bal.toFixed(2)}
-
-MERCHANT FREQUENCY (this month): ${JSON.stringify(Object.entries(merchMonth).sort((a,b)=>b[1]-a[1]).slice(0,15))}
-MERCHANT FREQUENCY (all time): ${JSON.stringify(Object.entries(merchAll).sort((a,b)=>b[1]-a[1]).slice(0,15))}
-
-BUDGETS: ${JSON.stringify(budgets)}
-BUDGET STATUS: ${JSON.stringify(als.map(a=>({cat:a.cat,spent:a.spent,budget:a.bud,projected:a.proj,willBreach:a.wb})))}
-
-ALL CARD LOADS (${cardLoads.length} total): ${JSON.stringify(cardLoads.map(l=>({date:l.date,amount:l.amount})))}
-
-NET WORTH ENTRIES: ${JSON.stringify(nwSorted.map(n=>({date:n.date,amount:n.amount,note:n.note})))}
-
-FULL TRANSACTION LIST (last 60):
-${expenses.slice(-60).map(e=>`${e.date} | ${e.merchant} | ${e.category} | ${e.amount} | bal:${e.balance}`).join('\n')}`;
+function buildCtx(){
+  const tw=wR(0),lw=wR(1),mr=mR();
+  const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);
+  const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),ms=mT.reduce((s,e)=>s+e.amount,0);
+  const mC={};mT.forEach(e=>{mC[e.category]=(mC[e.category]||0)+e.amount;});
+  const mm={};mT.forEach(e=>{mm[e.merchant]=(mm[e.merchant]||0)+1;});
+  const mL=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),als=bAlerts(mT,mr);
+  return`DATA (${td()}): QAR, Prepaid Visa (balance=card only)
+WEEK ${tw.s}-${tw.e}: spent ${ws.toFixed(2)}, ${wT.length} tx
+LAST WEEK: spent ${ls2.toFixed(2)}, ${lwT.length} tx
+MONTH ${mr.s}-${mr.e} (day ${mr.de}/${mr.dm}): spent ${ms.toFixed(2)}, ${mT.length} tx
+Categories: ${JSON.stringify(mC)}
+Merchants: ${JSON.stringify(Object.entries(mm).sort((a,b)=>b[1]-a[1]).slice(0,12))}
+Card balance: ${E.length>0?E[E.length-1].balance:0}
+Month loads: ${mL.length} totalling ${mL.reduce((s,l)=>s+l.amt,0).toFixed(2)}
+Budgets: ${JSON.stringify(BU)}
+Budget status: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,w:a.wb})))}
+NW entries: ${JSON.stringify(NW.map(n=>({d:n.date,a:n.amount,n:n.note})))}
+Last 40 tx:\n${E.slice(-40).map(e=>`${e.date}|${e.merchant}|${e.category}|${e.amount}|bal:${e.balance}`).join('\n')}`;
 }
 
-function addChatMessage(role, content) {
-  const container = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = `chat-msg ${role}`;
-  div.innerHTML = `<div class="chat-bubble">${content}</div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
+function addMsg(role,txt){
+  const ct=document.getElementById('cM'),d=document.createElement('div');
+  d.className=`chat-msg ${role==='user'?'u':'a'}`;
+  d.innerHTML=`<div class="chat-b">${txt}</div>`;
+  ct.appendChild(d);ct.scrollTop=ct.scrollHeight;
 }
+function addTD(){const ct=document.getElementById('cM'),d=document.createElement('div');d.className='chat-msg a';d.id='tdi';d.innerHTML='<div class="chat-b"><div class="td"><span></span><span></span><span></span></div></div>';ct.appendChild(d);ct.scrollTop=ct.scrollHeight;}
+function remTD(){const e=document.getElementById('tdi');if(e)e.remove();}
+function askQ(b){document.getElementById('cI').value=b.textContent;sendC();document.getElementById('cSg').style.display='none';}
 
-function addTypingIndicator() {
-  const container = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'chat-msg ai';
-  div.id = 'typing-indicator';
-  div.innerHTML = `<div class="chat-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
-
-function removeTypingIndicator() {
-  const el = document.getElementById('typing-indicator');
-  if (el) el.remove();
-}
-
-function askSuggestion(btn) {
-  document.getElementById('chatInput').value = btn.textContent;
-  sendChat();
-  // Hide suggestions after first use
-  document.getElementById('chatSuggestions').style.display = 'none';
-}
-
-async function sendChat() {
-  const input = document.getElementById('chatInput');
-  const sendBtn = document.getElementById('chatSendBtn');
-  const message = input.value.trim();
-  if (!message) return;
-
-  input.value = '';
-  input.style.height = 'auto';
-  sendBtn.disabled = true;
-
-  // Hide suggestions
-  document.getElementById('chatSuggestions').style.display = 'none';
-
-  addChatMessage('user', message);
-  addTypingIndicator();
-
-  // Build conversation with data context
-  chatHistory.push({ role: 'user', content: message });
-
-  // Include data context in first message, refresh every 5 messages
-  const dataCtx = buildDataContext();
-  const messages = chatHistory.map((m, i) => {
-    if (i === 0 || (i > 0 && i % 10 === 0)) {
-      return { role: m.role, content: `[DATA CONTEXT]\n${dataCtx}\n\n[QUESTION]\n${m.content}` };
-    }
+async function sendC(){
+  const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();
+  if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;
+  document.getElementById('cSg').style.display='none';
+  addMsg('user',msg);addTD();
+  cH.push({role:'user',content:msg});
+  const ctx=buildCtx();
+  const msgs=cH.map((m,i)=>{
+    if(i===0||i%10===0)return{role:m.role,content:`[DATA]\n${ctx}\n\n[Q]\n${m.content}`};
     return m;
   });
-
-  // Keep conversation manageable
-  if (messages.length > 20) {
-    messages.splice(0, messages.length - 20);
-  }
-
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are Saif's personal financial analyst assistant for his QNB expense tracking system in Doha. Currency is QAR.
-
-KEY CONTEXT:
-- The "balance" in the data is a PREPAID VISA card balance, NOT his bank account or net worth
-- Card loads (top-ups) are detected when the balance spikes between transactions — these are transfers from his account to the card, not income
-- Net worth is tracked separately and manually — it represents his actual account balance
-- Budgets are monthly soft limits per category
-
-RULES:
-- Answer questions directly using the actual data provided
-- Reference specific amounts, merchants, dates when relevant
-- Be concise and direct — no filler
-- Use plain numbers with QAR, not fancy formatting
-- If asked something the data can't answer, say so clearly
-- You can do calculations, comparisons, averages, projections
-- Keep responses focused — no need to dump all data, just answer what's asked
-- Don't use markdown formatting (no bold, no headers, no bullets). Write in natural sentences.`,
-        messages: messages,
-      }),
-    });
-    const d = await r.json();
-    const reply = d.content?.map(b => b.text || '').join('') || 'Sorry, I couldn\'t process that. Try again.';
-    removeTypingIndicator();
-    addChatMessage('ai', reply);
-    chatHistory.push({ role: 'assistant', content: reply });
-  } catch (e) {
-    removeTypingIndicator();
-    addChatMessage('ai', `Connection error: ${e.message}. Check your network and try again.`);
-  }
-
-  sendBtn.disabled = false;
-  input.focus();
+  if(msgs.length>20)msgs.splice(0,msgs.length-20);
+  try{
+    const text=await callAIChat(`Saif's financial analyst. QAR. Card is prepaid Visa (balance=card only, not net worth). Loads=transfers to card, not income. NW tracked separately. Answer with specific numbers, merchants, dates. Concise, direct. No markdown/bold/bullets. Natural sentences.`,msgs);
+    remTD();addMsg('ai',text);cH.push({role:'assistant',content:text});
+  }catch(e){remTD();addMsg('ai',`Error: ${e.message}`);}
+  btn.disabled=false;inp.focus();
 }
 
-
-// ═══ CRUD ═══
-function openModal(t){document.getElementById('modal-'+t).style.display='flex';if(t==='networth')document.getElementById('nwDateInput').value=td();}
-function closeModal(t){document.getElementById('modal-'+t).style.display='none';}
-function saveBudget(){const c=document.getElementById('budgetCatInput').value,a=parseFloat(document.getElementById('budgetAmtInput').value);if(!c||!a)return;budgets[c]=a;svJ('cfo_budgets',budgets);closeModal('budget');document.getElementById('budgetCatInput').value='';document.getElementById('budgetAmtInput').value='';renderAll();}
-function removeBudget(c){delete budgets[c];svJ('cfo_budgets',budgets);renderAll();}
-function saveNetWorth(){const d=document.getElementById('nwDateInput').value,a=parseFloat(document.getElementById('nwAmountInput').value),n=document.getElementById('nwNoteInput').value;if(!d||!a)return;netWorth.push({id:Date.now(),date:d,amount:a,note:n||''});svJ('cfo_nw',netWorth);closeModal('networth');document.getElementById('nwAmountInput').value='';document.getElementById('nwNoteInput').value='';renderAll();}
-function deleteNW(id){netWorth=netWorth.filter(n=>n.id!==id);svJ('cfo_nw',netWorth);renderAll();}
+// CRUD
+function openModal(t){document.getElementById('m-'+t).style.display='flex';if(t==='networth')document.getElementById('nDi').value=td();if(t==='settings')document.getElementById('pUrl').value=proxyUrl;}
+function closeModal(t){document.getElementById('m-'+t).style.display='none';}
+function saveBud(){const c=document.getElementById('bCi').value,a=parseFloat(document.getElementById('bAi').value);if(!c||!a)return;BU[c]=a;sJ('cfo_b',BU);closeModal('budget');document.getElementById('bCi').value='';document.getElementById('bAi').value='';renderAll();}
+function remBud(c){delete BU[c];sJ('cfo_b',BU);renderAll();}
+function saveNW(){const d=document.getElementById('nDi').value,a=parseFloat(document.getElementById('nAi').value),n=document.getElementById('nNi').value;if(!d||!a)return;NW.push({id:Date.now(),date:d,amount:a,note:n||''});sJ('cfo_n',NW);closeModal('networth');document.getElementById('nAi').value='';document.getElementById('nNi').value='';renderAll();}
+function delNW(id){NW=NW.filter(n=>n.id!==id);sJ('cfo_n',NW);renderAll();}
+function saveSettings(){proxyUrl=document.getElementById('pUrl').value.trim().replace(/\/$/,'');sJ('cfo_proxy',proxyUrl);closeModal('settings');document.getElementById('apiBanner').style.display=proxyUrl?'none':'flex';}
 
 // INIT
-fetchExpenses();
-setInterval(fetchExpenses,60000);
-document.getElementById('chatInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+fetchData();
+setInterval(fetchData,60000);
+document.getElementById('cI').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
 </script>
 </body>
 </html>
