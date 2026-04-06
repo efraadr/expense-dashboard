@@ -312,7 +312,12 @@ function detectLoads(txs){
 async function fetchExpenses(){
   try{
     const r=await fetch(SHEET_URL),txt=await r.text();
-    const j=JSON.parse(txt.replace(/.*google\.visualization\.Query\.setResponse\(/,'').replace(/\);?\s*$/,''));
+    // Google wraps response as: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
+    // Extract just the JSON object between the first { and last }
+    const startIdx=txt.indexOf('{');
+    const endIdx=txt.lastIndexOf('}');
+    if(startIdx===-1||endIdx===-1) throw new Error('No JSON found in response');
+    const j=JSON.parse(txt.substring(startIdx,endIdx+1));
     expenses=(j.table.rows||[]).map(r=>{const c=r.c||[];let d=c[0]?.v||'';if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)\)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`;}else if(d instanceof Date)d=d.toISOString().slice(0,10);else if(c[0]?.f)d=c[0].f;return{date:String(d).slice(0,10),merchant:c[1]?.v||'',amount:parseFloat(c[2]?.v)||0,currency:c[3]?.v||'QAR',category:c[4]?.v||'Other',balance:parseFloat(c[5]?.v)||0,raw:c[6]?.v||''};}).filter(e=>e.date&&e.amount>0);
     isLive=true;document.getElementById('statusIndicator').textContent='LIVE';document.getElementById('statusIndicator').className='status-live';document.getElementById('errorBanner').style.display='none';
   }catch(e){
