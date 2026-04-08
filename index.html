@@ -236,16 +236,31 @@ let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),PX=lJ('cfo_px','');
 function parseSMS(raw){
   if(!raw)return null;
   const r={merchant:'',amount:0,balance:0,currency:'QAR',category:'Other'};
-  // Amount: المبلغ: QAR 46 or المبلغ: 46
-  const am=raw.match(/المبلغ[:\s]*(?:QAR\s*)?([\d,.]+)/);
+  // Normalize whitespace
+  const t=raw.replace(/\s+/g,' ');
+  // Amount: المبلغ: QAR 46 or المبلغ: 46 or QAR 46 after المبلغ
+  const am=t.match(/المبلغ\s*[:：]\s*(?:QAR\s*)?([\d,.]+)/i)||t.match(/المبلغ[^0-9]*([\d,.]+)/);
   if(am)r.amount=parseFloat(am[1].replace(',',''));
-  // Merchant: الموقع: HOT BAKE CATERING
-  const mc=raw.match(/الموقع[:\s]*([^\n]+)/);
-  if(mc)r.merchant=mc[1].trim();
+  // Merchant: الموقع: HOT BAKE CATERING (grab everything until next Arabic or newline)
+  const mc=t.match(/الموقع\s*[:：]\s*([A-Za-z0-9\s&'.,-]+)/)||t.match(/الموقع\s*[:：]\s*([^\n]+)/);
+  if(mc)r.merchant=mc[1].trim().replace(/\s+الرصيد.*$/,'').replace(/\s+استخدم.*$/,'').trim();
   // Balance: الرصيد: QAR 58.71
-  const bl=raw.match(/الرصيد[:\s]*(?:QAR\s*)?([\d,.]+)/);
+  const bl=t.match(/الرصيد\s*[:：]\s*(?:QAR\s*)?([\d,.]+)/i)||t.match(/الرصيد[^0-9]*([\d,.]+)/);
   if(bl)r.balance=parseFloat(bl[1].replace(',',''));
-  // Category from merchant keywords
+  // If no Arabic parsing worked, try generic QAR number extraction
+  if(r.amount===0){
+    const nums=raw.match(/QAR\s*([\d,.]+)/g);
+    if(nums&&nums.length>=1)r.amount=parseFloat(nums[0].replace(/QAR\s*/,'').replace(',',''));
+    if(nums&&nums.length>=2)r.balance=parseFloat(nums[nums.length-1].replace(/QAR\s*/,'').replace(',',''));
+  }
+  // Try to find merchant as any English text block
+  if(!r.merchant){
+    const eng=raw.match(/[A-Z][A-Z0-9\s&'.,-]{3,}/g);
+    if(eng){
+      const skip=/^(QAR|QNB|SMS|OTP|PIN)\b/;
+      r.merchant=(eng.find(e=>!skip.test(e))||'').trim();
+    }
+  }
   r.category=categorize(r.merchant);
   return r;
 }
@@ -288,35 +303,51 @@ async function fetchD(){
     E=[];
     for(const row of rows){
       const c=row.c||[];
-      // Get date
+      // Get date — handle multiple formats
       let d=c[0]?.v||'';
       if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)\)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`;}
       else if(d instanceof Date)d=d.toISOString().slice(0,10);
-      else if(c[0]?.f)d=c[0].f;
-      d=String(d).slice(0,10);
-      if(!d)continue;
-
-      // Try to get raw SMS from column G (index 6) or B (index 1)
-      const rawG=c[6]?.v||'';
-      const rawB=c[1]?.v||'';
-      const raw=rawG||rawB;
-
-      // Check if pre-parsed columns exist (legacy rows from Make.com)
-      const preMerchant=rawG?c[1]?.v:''; // if G has raw, B has merchant
-      const preAmount=parseFloat(c[2]?.v)||0;
-      const preCurrency=c[3]?.v||'';
-      const preCategory=c[4]?.v||'';
-      const preBalance=parseFloat(c[5]?.v)||0;
-
-      if(preMerchant&&preAmount>0){
-        // Legacy pre-parsed row
-        E.push({date:d,merchant:preMerchant,amount:preAmount,currency:preCurrency||'QAR',category:preCategory||categorize(preMerchant),balance:preBalance,raw:rawG});
-      }else if(raw){
-        // New raw-only row — parse SMS client-side
-        const p=parseSMS(raw);
-        if(p&&p.amount>0){
-          E.push({date:d,merchant:p.merchant,amount:p.amount,currency:p.currency,category:p.category,balance:p.balance,raw:raw});
+      else if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}/.test(d))d=d.slice(0,10);
+      else{
+        // Try parsing natural date like "8 Apr 2026 at 5:30" or "Apr 8, 2026"
+        const fd=c[0]?.f||d;
+        const pd=new Date(fd.replace(/\s+at\s+.*/i,''));
+        if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);
+        else{
+          // Last resort: try the formatted value
+          const pd2=new Date(d);
+          if(!isNaN(pd2.getTime()))d=pd2.toISOString().slice(0,10);
+          else d='';
         }
+      }
+      if(!d||d.length<10)continue;
+
+      // Get values — treat dashes and empty as null
+      const valB=c[1]?.v;const rawB=(valB&&valB!=='-')?valB:'';
+      const valC=c[2]?.v;const numC=(valC&&valC!=='-')?parseFloat(valC):0;
+      const valG=c[6]?.v;const rawG=(valG&&valG!=='-')?valG:'';
+
+      // Detect row type
+      const hasArabicInG=rawG&&/[\u0600-\u06FF]/.test(rawG);
+      const hasArabicInB=rawB&&/[\u0600-\u06FF]/.test(rawB);
+      const isLegacy=rawG&&numC>0&&rawB; // G has SMS, C has amount, B has merchant
+      const isRawG=hasArabicInG&&!numC; // G has Arabic SMS, C is empty/dash
+      const isRawB=hasArabicInB&&!numC; // B has Arabic SMS, C is empty/dash
+
+      if(isLegacy){
+        const preCurrency=c[3]?.v||'QAR';
+        const preCategory=c[4]?.v||categorize(rawB);
+        const preBalance=parseFloat(c[5]?.v)||0;
+        E.push({date:d,merchant:rawB,amount:numC,currency:preCurrency==='- '?'QAR':preCurrency,category:preCategory==='-'?categorize(rawB):preCategory,balance:preBalance,raw:rawG});
+      }else if(isRawG){
+        const p=parseSMS(rawG);
+        if(p&&p.amount>0)E.push({date:d,merchant:p.merchant,amount:p.amount,currency:p.currency,category:p.category,balance:p.balance,raw:rawG});
+      }else if(isRawB){
+        const p=parseSMS(rawB);
+        if(p&&p.amount>0)E.push({date:d,merchant:p.merchant,amount:p.amount,currency:p.currency,category:p.category,balance:p.balance,raw:rawB});
+      }else if(rawB&&numC>0){
+        // B is merchant, C has amount, no G
+        E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB),balance:parseFloat(c[5]?.v)||0,raw:''});
       }
     }
     document.getElementById('si').textContent='LIVE';document.getElementById('si').style.color='var(--gn)';
