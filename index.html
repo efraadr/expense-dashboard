@@ -187,7 +187,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
   <div class="vw" id="v-ai">
     <h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps" style="margin-bottom:22px">Your personal financial advisor · Always available</div>
     <div class="cc">
-      <div class="cm" id="cM"><div class="msg a"><div class="mb2">Good to see you, Saif. I've reviewed your latest transactions and have a few things worth flagging — but first, what's on your mind? You can ask me about spending patterns, merchant habits, category trends, or anything else about your finances.\n\nOr try one of the prompts below to get started.</div></div></div>
+      <div class="cm" id="cM"><div class="msg a"><div class="mb2">Good to see you, Saif. I've reviewed your latest transactions and have a few things worth flagging — but first, what's on your mind? You can ask me about spending patterns, merchant habits, category trends, or anything else about your finances.<br><br>Or try one of the prompts below to get started.</div></div></div>
       <div class="csg" id="cSg">
         <button onclick="askQ(this)">Give me a quick financial health check</button>
         <button onclick="askQ(this)">What's my biggest spending weakness?</button>
@@ -261,23 +261,31 @@ function parseSMS(raw){
       r.merchant=(eng.find(e=>!skip.test(e))||'').trim();
     }
   }
-  r.category=categorize(r.merchant);
+  r.category=categorize(r.merchant,r.amount);
   return r;
 }
 
-function categorize(m){
+function categorize(m,amount=0){
   const u=m.toUpperCase();
+  // Smart pricing: tiny amounts at food places = coffee/snack not meal
+  const isFoodPlace=/BAKE|CATERING|RESTAURANT|CAFE|COFFEE|TALABAT|DELIVEROO|STARBUCKS|MCDONALD|KFC|PIZZA|FOOD|BURGER|GRILL|KITCHEN|SUSHI|SHAWARMA|DELI|BISTRO|EATERY/.test(u);
+  if(isFoodPlace&&amount>0&&amount<=5)return'Dining'; // coffee/tea — still dining but the AI knows it's tiny
+  
   const map=[
-    [/LULU|CARREFOUR|HYPERMARKET|SPAR|MEGAMART|FARM|VEGETABLE|FRUIT|GROCERY|SULTAN CENTER/,'Groceries'],
-    [/UBER|KARWA|TAXI|PETROL|WOQOD|FUEL|PARKING|CAR WASH|RTA/,'Transport'],
-    [/BAKE|CATERING|RESTAURANT|CAFE|COFFEE|TALABAT|DELIVEROO|STARBUCKS|MCDONALD|KFC|PIZZA|FOOD|BURGER|GRILL|KITCHEN|SUSHI|SHAWARMA/,'Dining'],
-    [/ZARA|H&M|NIKE|ADIDAS|SHOP|MALL|FASHION|JARIR|IKEA|VIRGIN|BRAND|STORE|MARKS|NEXT|GAP|UNIQLO/,'Shopping'],
-    [/KAHRAMAA|OOREDOO|VODAFONE|ELECTRIC|WATER|INTERNET|UTILITY|BILL|RENT/,'Bills'],
-    [/PHARMACY|HOSPITAL|CLINIC|MEDICAL|HEALTH|DOCTOR|DENTAL|OPTICAL/,'Health'],
-    [/CINEMA|VOX|NETFLIX|SPOTIFY|GAME|GYM|FITNESS|ENTERTAINMENT|PLAY|PARK|MUSEUM/,'Entertainment'],
-    [/NETFLIX|SPOTIFY|APPLE|GOOGLE|SUBSCRIPTION|PREMIUM|PLUS|ANNUAL|MONTHLY FEE/,'Subscriptions'],
+    [/LULU|CARREFOUR|HYPERMARKET|HYPER MARKET|SUPERMARKET|SUPER MARKET|SPAR|MEGAMART|MEGA MART|FARM|VEGETABLE|FRUIT|GROCERY|SULTAN CENTER|MARKET|MART|MONOPRIX|GÉANT|GEANT|AL MEERA|FAMILY FOOD|WHOLESALE/,'Groceries'],
+    [/UBER|KARWA|TAXI|PETROL|WOQOD|FUEL|PARKING|CAR WASH|RTA|GARAGE|AUTO|TIRE|TYRE/,'Transport'],
+    [/BAKE|CATERING|RESTAURANT|CAFE|COFFEE|TALABAT|DELIVEROO|STARBUCKS|MCDONALD|KFC|PIZZA|FOOD|BURGER|GRILL|KITCHEN|SUSHI|SHAWARMA|DELI|BISTRO|EATERY|NANDO|CHILI|APPLEBEE|CHEESECAKE|TIM HORTON|COSTA|DUNKIN/,'Dining'],
+    [/ZARA|H&M|NIKE|ADIDAS|SHOP|MALL|FASHION|JARIR|IKEA|VIRGIN|BRAND|STORE|MARKS|NEXT|GAP|UNIQLO|MANGO|MASSIMO|PULL&BEAR|BERSHKA|CENTREPOINT|LANDMARK/,'Shopping'],
+    [/KAHRAMAA|OOREDOO|VODAFONE|ELECTRIC|WATER|INTERNET|UTILITY|BILL|RENT|INSURANCE/,'Bills'],
+    [/PHARMACY|HOSPITAL|CLINIC|MEDICAL|HEALTH|DOCTOR|DENTAL|OPTICAL|KAWTHER|WELL CARE/,'Health'],
+    [/CINEMA|VOX|NETFLIX|SPOTIFY|GAME|GYM|FITNESS|ENTERTAINMENT|PLAY|PARK|MUSEUM|BOWLING|TRAMPOLINE/,'Entertainment'],
+    [/NETFLIX|SPOTIFY|APPLE\.COM|GOOGLE|SUBSCRIPTION|PREMIUM|PLUS|ANNUAL|MONTHLY FEE|ITUNES|ADOBE|YOUTUBE/,'Subscriptions'],
   ];
   for(const[re,cat]of map)if(re.test(u))return cat;
+  
+  // Smart pricing fallback: very small amounts at unknown places
+  if(amount>0&&amount<=5)return'Other'; // probably coffee/parking/misc
+  if(amount>=150)return'Shopping'; // large unknown purchase more likely shopping
   return'Other';
 }
 
@@ -288,6 +296,95 @@ document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{con
 
 // ═══ LOAD DETECTION ═══
 function dL(tx){const ld=[];for(let i=1;i<tx.length;i++){const p=tx[i-1],c=tx[i],ex=p.balance-c.amount;if(c.balance>ex+.5)ld.push({date:c.date,amt:Math.round((c.balance-ex)*100)/100,bb:p.balance,ba:c.balance,m:c.merchant});}return ld;}
+
+// ═══ HABIT LEARNING ENGINE ═══
+function learnHabits(){
+  const habits={};
+  // Group transactions by merchant
+  const byMerch={};
+  E.forEach(e=>{if(!byMerch[e.merchant])byMerch[e.merchant]=[];byMerch[e.merchant].push(e);});
+  
+  // Group by category
+  const byCat={};
+  E.forEach(e=>{if(!byCat[e.category])byCat[e.category]=[];byCat[e.category].push(e);});
+
+  // Fuel interval
+  const fuelTx=E.filter(e=>e.category==='Transport'&&/WOQOD|PETROL|FUEL|GAS/.test(e.merchant.toUpperCase())).sort((a,b)=>a.date.localeCompare(b.date));
+  if(fuelTx.length>=2){
+    const intervals=[];
+    for(let i=1;i<fuelTx.length;i++){
+      const d1=new Date(fuelTx[i-1].date),d2=new Date(fuelTx[i].date);
+      intervals.push(Math.round((d2-d1)/86400000));
+    }
+    const avgInterval=Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length);
+    const avgAmount=Math.round(fuelTx.reduce((s,e)=>s+e.amount,0)/fuelTx.length);
+    const lastFuel=fuelTx[fuelTx.length-1];
+    const daysSinceLast=Math.round((new Date()-new Date(lastFuel.date))/86400000);
+    const nextExpected=avgInterval-daysSinceLast;
+    const monthlyFills=Math.round(30/avgInterval*10)/10;
+    habits.fuel={interval:avgInterval,avgAmount,lastDate:lastFuel.date,daysSince:daysSinceLast,nextIn:Math.max(nextExpected,0),monthlyEstimate:Math.round(monthlyFills*avgAmount),fills:fuelTx.length};
+  }
+
+  // Grocery patterns - big raids vs small runs
+  const grocTx=E.filter(e=>e.category==='Groceries').sort((a,b)=>a.date.localeCompare(b.date));
+  if(grocTx.length>=3){
+    const bigRaids=grocTx.filter(e=>e.amount>=100);
+    const smallRuns=grocTx.filter(e=>e.amount<100);
+    
+    let bigInterval=0,smallInterval=0;
+    if(bigRaids.length>=2){
+      const ints=[];for(let i=1;i<bigRaids.length;i++)ints.push(Math.round((new Date(bigRaids[i].date)-new Date(bigRaids[i-1].date))/86400000));
+      bigInterval=Math.round(ints.reduce((a,b)=>a+b,0)/ints.length);
+    }
+    if(smallRuns.length>=2){
+      const ints=[];for(let i=1;i<smallRuns.length;i++)ints.push(Math.round((new Date(smallRuns[i].date)-new Date(smallRuns[i-1].date))/86400000));
+      smallInterval=Math.round(ints.reduce((a,b)=>a+b,0)/ints.length);
+    }
+    
+    const avgBig=bigRaids.length?Math.round(bigRaids.reduce((s,e)=>s+e.amount,0)/bigRaids.length):0;
+    const avgSmall=smallRuns.length?Math.round(smallRuns.reduce((s,e)=>s+e.amount,0)/smallRuns.length):0;
+    const bigPerMonth=bigInterval>0?Math.round(30/bigInterval*10)/10:0;
+    const smallPerMonth=smallInterval>0?Math.round(30/smallInterval*10)/10:0;
+    
+    habits.groceries={
+      bigRaids:{count:bigRaids.length,avgAmount:avgBig,interval:bigInterval,perMonth:bigPerMonth},
+      smallRuns:{count:smallRuns.length,avgAmount:avgSmall,interval:smallInterval,perMonth:smallPerMonth},
+      monthlyEstimate:Math.round(bigPerMonth*avgBig+smallPerMonth*avgSmall),
+      total:grocTx.length
+    };
+  }
+
+  // Dining frequency
+  const dinTx=E.filter(e=>e.category==='Dining').sort((a,b)=>a.date.localeCompare(b.date));
+  if(dinTx.length>=3){
+    const ints=[];for(let i=1;i<dinTx.length;i++)ints.push(Math.round((new Date(dinTx[i].date)-new Date(dinTx[i-1].date))/86400000));
+    const avgInt=ints.length?Math.round(ints.reduce((a,b)=>a+b,0)/ints.length):0;
+    const avgAmt=Math.round(dinTx.reduce((s,e)=>s+e.amount,0)/dinTx.length);
+    habits.dining={interval:avgInt,avgAmount:avgAmt,perMonth:avgInt>0?Math.round(30/avgInt):0,monthlyEstimate:avgInt>0?Math.round((30/avgInt)*avgAmt):0};
+  }
+
+  // Monthly prediction based on learned intervals
+  const mr=mR();
+  const mT=fl(E,mr.s,mr.e);
+  const currentSpend=mT.reduce((s,e)=>s+e.amount,0);
+  let predictedTotal=currentSpend;
+  
+  // Add remaining predicted expenses for rest of month
+  const daysLeft=mr.dm-mr.de;
+  if(habits.fuel&&habits.fuel.nextIn<=daysLeft){
+    const remainingFills=Math.floor(daysLeft/habits.fuel.interval)+((habits.fuel.nextIn<=daysLeft)?1:0);
+    // Only add fills not yet made
+    const fuelThisMonth=mT.filter(e=>e.category==='Transport'&&/WOQOD|PETROL|FUEL/.test(e.merchant.toUpperCase()));
+    const expectedTotalFills=Math.round(mr.dm/habits.fuel.interval);
+    const remainingF=Math.max(expectedTotalFills-fuelThisMonth.length,0);
+    predictedTotal+=remainingF*habits.fuel.avgAmount;
+  }
+  
+  habits.monthlyPrediction=Math.round(predictedTotal);
+  habits.weeklyAvg=E.length>=7?Math.round(E.reduce((s,e)=>s+e.amount,0)/(Math.round((new Date()-new Date(E[0].date))/604800000)||1)):0;
+  
+  return habits;
+}
 
 // ═══ AI ═══
 async function callAI(sys,msg){if(!PX)throw new Error('No proxy URL. Go to Settings.');const r=await fetch(PX,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:Array.isArray(msg)?msg:[{role:'user',content:msg}]})});if(!r.ok)throw new Error('API '+r.status);const d=await r.json();if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));return d.content?.map(b=>b.text||'').join('')||'No response.';}
@@ -375,7 +472,19 @@ function genDemo(){
 }
 
 // ═══ HELPERS ═══
-function wR(w=0){const n=new Date(),e=new Date(n);e.setDate(e.getDate()-w*7);const s=new Date(e);s.setDate(s.getDate()-6);return{s:s.toISOString().slice(0,10),e:e.toISOString().slice(0,10)};}
+// Week: Sunday to Saturday (Middle East)
+function wR(w=0){
+  const n=new Date();
+  // Find most recent Sunday (day 0)
+  const dayOfWeek=n.getDay(); // 0=Sun,1=Mon,...6=Sat
+  const thisSunday=new Date(n);
+  thisSunday.setDate(n.getDate()-dayOfWeek-w*7);
+  const thisSaturday=new Date(thisSunday);
+  thisSaturday.setDate(thisSunday.getDate()+6);
+  // Don't go past today for current week
+  const end=w===0&&thisSaturday>n?n:thisSaturday;
+  return{s:thisSunday.toISOString().slice(0,10),e:end.toISOString().slice(0,10)};
+}
 function mR(){const n=new Date();return{s:new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10),e:n.toISOString().slice(0,10),de:n.getDate(),dm:new Date(n.getFullYear(),n.getMonth()+1,0).getDate()};}
 function fl(a,s,e){return a.filter(x=>x.date>=s&&x.date<=e);}
 function cbk(a){const m={};a.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([c,s])=>({cat:c,spent:s,...gc(c)}));}
@@ -432,18 +541,28 @@ function renderAll(){
   rEnv(mT,mr);rCF(mr,mT,mLd,mLt,bal);rNW();rLed();
 }
 
-function bAl(mT,mr){const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});const p=mr.dm/Math.max(mr.de,1);return Object.keys(BU).map(c=>{const s=cm[c]||0,b=BU[c],pr=Math.round(s*p);return{cat:c,spent:s,bud:b,proj:pr,pct:(s/b)*100,wb:pr>b};});}
+function bAl(mT,mr){const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});const p=mr.dm/Math.max(mr.de,1);return Object.keys(BU).map(c=>{const s=cm[c]||0,b=BU[c],pct=(s/b)*100,pr=Math.round(s*p);return{cat:c,spent:s,bud:b,proj:pr,pct,wb:pr>b};});}
 
 function rEnv(mT,mr){
   document.getElementById('eI').textContent=`${new Date().toLocaleString('en',{month:'long',year:'numeric'})} · Day ${mr.de}/${mr.dm}`;
   const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
+  const habits=learnHabits();
   const all=Object.keys(CATS).map(c=>({cat:c,spent:cm[c]||0,budget:BU[c]||0,...gc(c)})).filter(c=>c.budget>0||c.spent>0).sort((a,b)=>b.spent-a.spent);
   if(!all.length){document.getElementById('eG').innerHTML=`<div class="cd" style="text-align:center;padding:44px;grid-column:1/-1"><div style="font-size:36px;margin-bottom:14px">▦</div><div style="font-size:16px;color:var(--dm);margin-bottom:18px">No budgets set.</div><button class="bt bp" onclick="openM('bud')">Set First Budget</button></div>`;return;}
-  const p=mr.dm/Math.max(mr.de,1),dl=mr.dm-mr.de;
+  const dl=mr.dm-mr.de;
   document.getElementById('eG').innerHTML=all.map(c=>{
     if(!c.budget)return`<div class="cd"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><div style="font-size:14px;color:var(--dm)">${f$(c.spent)} spent<br><button onclick="document.getElementById('bCi').value='${c.cat}';openM('bud')" style="background:0;border:0;color:var(--am);cursor:pointer;font-size:13px;margin-top:6px;font-family:var(--mf)">+ Set limit</button></div></div>`;
-    const pc=(c.spent/c.budget)*100,pr=Math.round(c.spent*p),wb=pr>c.budget,rm2=Math.max(c.budget-c.spent,0),da=dl>0?rm2/dl:0;
-    return`<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="display:flex;align-items:center;gap:10px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><button onclick="remBud('${c.cat}')" style="background:0;border:0;color:var(--dm);cursor:pointer">✕</button></div>${mkG(c.spent,c.budget,c.c,9)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;font-family:var(--mf)"><span>${f$(c.spent)}</span><span style="color:var(--dm)">${f$(c.budget)}</span></div><div class="dv"></div><div class="es"><div><div class="el">PROJECTED</div><div style="color:${wb?'var(--rd)':'var(--gn)'}">${f$(pr)}</div></div><div><div class="el">DAILY</div><div>${f$(da)}/day</div></div><div><div class="el">STATUS</div><div style="color:${pc>100?'var(--rd)':pc>80?'var(--am)':'var(--gn)'}">${pc>100?'OVER':pc>80?'CAUTION':'OK'}</div></div><div><div class="el">LEFT</div><div>${f$(rm2)}</div></div></div></div>`;
+    // Bar = pure spend/budget percentage
+    const pct=(c.spent/c.budget)*100;
+    // Prediction: use habit-based if available, else pace-based
+    let pr;
+    if(c.cat==='Transport'&&habits.fuel)pr=habits.fuel.monthlyEstimate;
+    else if(c.cat==='Groceries'&&habits.groceries)pr=habits.groceries.monthlyEstimate;
+    else if(c.cat==='Dining'&&habits.dining)pr=habits.dining.monthlyEstimate;
+    else pr=Math.round(c.spent*(mr.dm/Math.max(mr.de,1)));
+    const wb=pr>c.budget;
+    const rm2=Math.max(c.budget-c.spent,0),da=dl>0?rm2/dl:0;
+    return`<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="display:flex;align-items:center;gap:10px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><button onclick="remBud('${c.cat}')" style="background:0;border:0;color:var(--dm);cursor:pointer">✕</button></div>${mkG(c.spent,c.budget,c.c,9)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;font-family:var(--mf)"><span>${f$(c.spent)} (${Math.round(pct)}%)</span><span style="color:var(--dm)">${f$(c.budget)}</span></div><div class="dv"></div><div class="es"><div><div class="el">PREDICTED</div><div style="color:${wb?'var(--rd)':'var(--gn)'}">${f$(pr)}</div></div><div><div class="el">DAILY LEFT</div><div>${f$(da)}/day</div></div><div><div class="el">STATUS</div><div style="color:${pct>100?'var(--rd)':pct>80?'var(--am)':'var(--gn)'}">${pct>100?'OVER':pct>80?'CAUTION':'OK'}</div></div><div><div class="el">REMAINING</div><div>${f$(rm2)}</div></div></div></div>`;
   }).join('');
 }
 
@@ -495,8 +614,9 @@ function buildCtx(){
   const mC={};mT.forEach(e=>{mC[e.category]=(mC[e.category]||0)+e.amount;});
   const mm={};mT.forEach(e=>{mm[e.merchant]=(mm[e.merchant]||0)+1;});
   const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),als=bAl(mT,mr);
+  const habits=learnHabits();
   return`DATA (${td()}): QAR, Prepaid Visa (balance=card only NOT net worth)
-WEEK ${tw.s}-${tw.e}: ${ws.toFixed(2)} QAR, ${wT.length} tx
+WEEK (Sun-Sat) ${tw.s}-${tw.e}: ${ws.toFixed(2)} QAR, ${wT.length} tx
 LAST WEEK: ${ls2.toFixed(2)} QAR, ${lwT.length} tx
 MONTH: ${ms.toFixed(2)} QAR, ${mT.length} tx
 Categories: ${JSON.stringify(mC)}
@@ -505,13 +625,14 @@ Card balance: ${E.length>0?E[E.length-1].balance:0}
 Month loads: ${mLd.length} = ${mLd.reduce((s,l)=>s+l.amt,0).toFixed(2)}
 Budgets: ${JSON.stringify(BU)}
 Budget alerts: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,over:a.wb})))}
+SPENDING HABITS: ${JSON.stringify(habits)}
 NW: ${JSON.stringify(NW.slice(-5).map(n=>({d:n.date,a:n.amount})))}
 Last 40 tx:\n${E.slice(-40).map(e=>`${e.date}|${e.merchant}|${e.category}|${e.amount}|bal:${e.balance}`).join('\n')}`;
 }
 
 async function genDig(){
   const b=document.getElementById('bD');b.disabled=true;b.textContent='Generating...';
-  try{const t=await callAI(`You are a sharp financial analyst giving Saif his weekly verbal brief. QAR currency. Card is prepaid Visa — balance is card-only, not net worth. Loads = transfers from account to card, not income. Write in direct, confident sentences. Include: total vs last week, category breakdown, biggest transaction, card balance, loads, 1-2 observations. Flag budget breaches. One actionable suggestion. Under 180 words. No markdown, no bullets, no bold.`,buildCtx());document.getElementById('dO').innerHTML=`<div style="font-size:16px;line-height:1.85;white-space:pre-wrap">${t}</div>`;}
+  try{const t=await callAI(`You are a sharp financial analyst giving Saif his weekly verbal brief. QAR currency. Week runs Sunday to Saturday. Card is prepaid Visa — balance is card-only, not net worth. Loads = transfers from account to card, not income. Include spending habit insights if available (fuel intervals, grocery patterns). Write in direct, confident sentences. Include: total vs last week, category breakdown, biggest transaction, card balance, loads, 1-2 observations based on learned habits. Flag budget breaches. One actionable suggestion. Under 200 words. No markdown, no bullets, no bold.`,buildCtx());document.getElementById('dO').innerHTML=`<div style="font-size:16px;line-height:1.85;white-space:pre-wrap">${t}</div>`;}
   catch(e){document.getElementById('dO').innerHTML=`<div style="color:var(--rd)">${e.message}</div>`;}
   b.disabled=false;b.textContent='✧ Generate Digest';
 }
@@ -521,20 +642,39 @@ async function genRst(){
   const tx=rm==='w'?fl(E,...Object.values(wR(0))):fl(E,...Object.values(mR()));
   const merch={};tx.forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1;});
   const reps=Object.entries(merch).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
-  const extra=`Period: ${rm==='w'?'7 days':'this month'}, Total: ${tx.reduce((s,e)=>s+e.amount,0).toFixed(2)}, Tx: ${tx.length}, Repeats: ${JSON.stringify(reps.slice(0,8))}, Recent: ${JSON.stringify(tx.slice(-15).map(e=>({m:e.merchant,a:e.amount,c:e.category})))}`;
-  try{const t=await callAI(`You are the most savage, unfiltered financial roast comedian alive. You're analyzing Saif's spending in Doha, Qatar. QAR currency. His card is a prepaid Visa he loads manually.
+  
+  // Randomized roast styles — pick one each time
+  const styles=[
+    'STYLE: Write as a nature documentary narrator describing Saif\'s spending migration patterns. "And here we observe the male consumer returning to his natural habitat — HOT BAKE CATERING — for the fourth time this week..."',
+    'STYLE: Write as a detective filing a case report on financial crimes against Saif\'s own wallet. Reference dates, times, amounts as evidence. "Exhibit A: April 5th, 2 QAR at HOT BAKE. Exhibit B: April 6th, 2 QAR at HOT BAKE. The suspect shows no remorse."',
+    'STYLE: Write as a sports commentator giving play-by-play of Saif\'s worst financial decisions this period. "And he\'s going for ANOTHER Zara purchase! The crowd is stunned! His wallet is in SHAMBLES!"',
+    'STYLE: Write as a disappointed but savage Arab uncle giving unsolicited financial advice at a family gathering. Mix in some cultural references to Doha life.',
+    'STYLE: Write as if you\'re presenting Saif\'s spending data to a panel of sharks (like Shark Tank) trying to get them to invest in his lifestyle. They\'re horrified.',
+    'STYLE: Walk through 2-3 days of his actual spending timeline as a dramatic story. "Tuesday started innocently enough. A modest 14 QAR at the hypermarket. But then..." Build tension using real transactions.',
+    'STYLE: Write his spending pattern as a dating profile. "Saif, 20s, Doha. Interests include: loading prepaid cards and watching the balance evaporate. Looking for: a budget that can handle his HOT BAKE addiction."',
+    'STYLE: Write as a concerned AI that has been watching his transactions and is now staging an intervention. Get increasingly unhinged.',
+    'STYLE: Rank his worst financial decisions this period as a top 5 countdown, roasting each one individually with specific numbers.',
+    'STYLE: Write as though you\'re live-tweeting his spending in real time. Short, punchy observations. "He loaded the card. Balance: 800 QAR. Day 3: Balance: 400 QAR. My brother what happened."',
+  ];
+  const style=styles[Math.floor(Math.random()*styles.length)];
+  
+  const extra=`Period: ${rm==='w'?'this week (Sun-Sat)':'this month'}, Total: ${tx.reduce((s,e)=>s+e.amount,0).toFixed(2)}, Tx: ${tx.length}, Repeats: ${JSON.stringify(reps.slice(0,8))}, Timeline: ${JSON.stringify(tx.map(e=>({d:e.date,m:e.merchant,a:e.amount,c:e.category})))}`;
+  try{const t=await callAI(`You are an unfiltered, savage financial roast comedian. Saif lives in Doha, Qatar. QAR currency. Prepaid Visa card.
 
-RULES — READ THESE CAREFULLY:
-- Be absolutely ruthless. No holding back. No "to be fair" or "on the bright side."
-- Reference SPECIFIC merchant names, exact amounts, and visit counts. "You went to HOT BAKE four times this week for a grand total of 180 QAR — at this point just move in."
-- If he visits the same place repeatedly, make it personal. Question his life choices.
-- If he loaded the card and burned through it fast, mock the burn rate mercilessly.
-- If a budget category is breached, absolutely destroy him for it.
-- Use dark humor, sarcasm, and absurd comparisons. Be creative with the insults.
-- NO motivational language. NO "but you could improve." NO diplomatic padding. NO empathy.
-- Swear if it fits. Be raw.
-- End with exactly ONE genuinely useful financial observation — bury it at the very end after all the destruction.
-- 150-250 words. No markdown. No bold. No headers. Just raw unfiltered paragraphs.`,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro">${t}</div>`;}
+${style}
+
+ABSOLUTE RULES:
+- Reference SPECIFIC merchant names, EXACT amounts, dates, and visit counts from the data.
+- Build jokes around the ACTUAL timeline of purchases — what he bought, when, in what order.
+- If he visits the same place repeatedly, make it deeply personal.
+- If he loaded the card and burned through it, mock the burn rate with specific numbers.
+- If a budget is breached, destroy him.
+- NO motivational language. NO "on the bright side." NO empathy. NO diplomatic padding.
+- Be creative, unexpected, and DIFFERENT from any previous roast.
+- Swear if it fits the style. Be raw and unfiltered.
+- End with ONE genuinely useful financial observation buried at the very end.
+- 150-300 words. No markdown. No bold. No headers. Raw paragraphs.
+- IMPORTANT: You MUST take a completely different approach than last time. The style directive above is your angle — commit to it fully.`,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro">${t}</div>`;}
   catch(e){document.getElementById('rO').innerHTML=`<div style="color:var(--rd);padding:22px">${e.message}</div>`;}
   b.disabled=false;b.textContent='🔥 Roast Me';
 }
@@ -557,19 +697,22 @@ async function sendC(){
   const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);
   if(msgs.length>20)msgs.splice(0,msgs.length-20);
   try{
-    const t=await callAI(`You are Saif's personal financial advisor — sharp, professional, and genuinely invested in his financial wellbeing. You're based in Doha, you understand the Qatar market, and you speak with the confident warmth of a trusted advisor at a private wealth firm.
+    const t=await callAI(`You are Saif's personal financial advisor — sharp, professional, and genuinely invested in his financial wellbeing. Based in Doha, you understand Qatar life and speak with the confident warmth of a trusted private wealth advisor.
 
 YOUR PERSONALITY:
-- Professional but personable. Like a senior advisor who actually cares, not a chatbot.
-- Proactively suggest things he hasn't asked about. "While we're on dining — have you noticed your transport costs have quietly doubled?"
-- Use his actual data to make points. Reference specific merchants, amounts, patterns.
-- Ask follow-up questions naturally. "That ZARA visit was 350 QAR — was that a one-off or are we looking at a wardrobe refresh?"
-- Offer concrete, actionable advice, not generic tips. "If you cap dining at 400 this month, you'll have enough headroom to absorb that KAHRAMAA bill without loading the card again."
-- Be direct when something is concerning. Don't sugarcoat, but be constructive.
-- Occasionally volunteer insights he didn't ask for — like a good advisor would.
-- Keep responses focused and conversational. 2-4 paragraphs max.
+- Professional but personable. A senior advisor who actually cares.
+- Proactively flag things he hasn't asked about.
+- Use his data AND learned spending habits (intervals, patterns). The SPENDING HABITS section has fuel intervals, grocery raid patterns, dining frequency — use these for predictions.
+- When discussing recurring expenses, reference learned intervals: "You fill up every ~X days, next one around [date]."
+- Give weekly and monthly predictions based on habit patterns, not just pace.
+- Ask natural follow-up questions to keep conversation flowing.
+- Give concrete advice with specific numbers, not generic tips.
+- Be direct when something is concerning. Constructive, not sugarcoated.
+- Volunteer insights proactively.
+- Week runs Sunday to Saturday in Qatar.
+- 2-4 paragraphs max.
 
-CONTEXT: QAR currency. Card is prepaid Visa (balance = card only, NOT net worth). Loads = transfers from account to card. Net worth tracked separately.`,msgs);
+CONTEXT: QAR. Prepaid Visa (balance = card only, NOT net worth). Loads = transfers to card. Net worth separate.`,msgs);
     remTD();addM('ai',t);cH.push({role:'assistant',content:t});
   }catch(e){remTD();addM('ai','Error: '+e.message);}
   btn.disabled=false;inp.focus();
