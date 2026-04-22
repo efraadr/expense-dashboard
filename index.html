@@ -3,504 +3,386 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Expense Intel — QNB Pipeline</title>
+<title>Expense Intel</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0D0E12;--sf:#14161C;--ln:#1E2028;--tx:#D8D9DE;--dm:#6B6F82;--am:#D4A843;--gn:#4DAA72;--rd:#C95454;--cy:#4ABFC4;--df:'Instrument Serif',Georgia,serif;--bf:'Outfit',sans-serif;--mf:'IBM Plex Mono',monospace}
+:root{--bg:#0D0E12;--sf:#14161C;--ln:#1E2028;--tx:#D8D9DE;--dm:#6B6F82;--am:#D4A843;--gn:#4DAA72;--rd:#C95454;--cy:#4ABFC4;--or:#D4853A;--df:'Instrument Serif',Georgia,serif;--bf:'Outfit',sans-serif;--mf:'IBM Plex Mono',monospace}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh;display:flex;font-size:15px}
-
 .sb{width:220px;min-height:100vh;background:var(--sf);border-right:1px solid var(--ln);padding:28px 0;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;z-index:150}
-.sb-b{padding:0 22px;margin-bottom:36px}
-.sb-b .s1{font-family:var(--df);font-size:28px;line-height:1}
-.sb-b .s2{font-family:var(--df);font-size:28px;color:var(--am)}
-.sb-b .s3{font-size:10px;color:var(--dm);font-family:var(--mf);margin-top:8px;letter-spacing:.12em}
-.sn{flex:1}
-.nb{display:flex;align-items:center;gap:12px;width:100%;padding:12px 22px;background:0;border:0;border-left:3px solid transparent;color:var(--dm);font-size:15px;font-family:var(--bf);cursor:pointer;transition:.15s;text-align:left}
-.nb:hover{color:var(--tx)}.nb.on{background:rgba(212,168,67,.08);border-left-color:var(--am);color:var(--am);font-weight:600}
+.sb-b{padding:0 22px;margin-bottom:36px}.sb-b .s1{font-family:var(--df);font-size:28px;line-height:1}.sb-b .s2{font-family:var(--df);font-size:28px;color:var(--am)}.sb-b .s3{font-size:10px;color:var(--dm);font-family:var(--mf);margin-top:8px;letter-spacing:.12em}
+.sn{flex:1}.nb{display:flex;align-items:center;gap:12px;width:100%;padding:12px 22px;background:0;border:0;border-left:3px solid transparent;color:var(--dm);font-size:15px;font-family:var(--bf);cursor:pointer;transition:.15s;text-align:left}.nb:hover{color:var(--tx)}.nb.on{background:rgba(212,168,67,.08);border-left-color:var(--am);color:var(--am);font-weight:600}
 .sf{padding:0 18px;font-size:10px;color:var(--dm);font-family:var(--mf);line-height:1.7}
 .mn{flex:1;padding:32px 40px;margin-left:220px;overflow-y:auto;min-height:100vh}
-
 .cd{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:24px;position:relative;overflow:hidden}
 .lb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dm);font-family:var(--mf);margin-bottom:8px}
 .bn{font-size:30px;font-weight:700;font-family:var(--df);line-height:1.1}
 .dv{height:1px;background:var(--ln);margin:22px 0}
-
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-
-.hr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px}
-.pt{font-family:var(--df);font-size:34px;font-weight:400}
-.ps{font-size:13px;color:var(--dm);font-family:var(--mf);margin-top:5px}
-
-.bt{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;font-family:var(--bf);cursor:pointer;border:0;transition:.15s}
-.bp{background:var(--am);color:#0D0E12}.bg{background:0;color:var(--tx);border:1px solid var(--ln)}
-.bt:disabled{opacity:.4;cursor:default}
-.pl{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;font-family:var(--mf);cursor:pointer;border:1px solid var(--ln);background:0;color:var(--dm)}
-.pl.on{background:var(--am);color:#0D0E12;border-color:transparent}
-
-.mo{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(8px)}
-.mb{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:30px 28px;width:100%;max-width:460px;max-height:85vh;overflow-y:auto}
-.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-.mh h3{font-size:20px;font-family:var(--df)}.mx{background:0;border:0;color:var(--dm);font-size:20px;cursor:pointer}
-.fg{margin-bottom:16px}
-.fg label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dm);font-family:var(--mf);margin-bottom:6px}
-.fi,.fs{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font-size:14px;font-family:var(--bf);outline:0;box-sizing:border-box}
-
-.lt{width:100%;border-collapse:collapse;font-size:14px}
-.lt th{text-align:left;padding:12px 14px;font-family:var(--mf);font-size:11px;letter-spacing:.1em;color:var(--dm);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--ln)}
-.lt td{padding:12px 14px;border-bottom:1px solid var(--ln)}
-
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.hr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px}.pt{font-family:var(--df);font-size:34px;font-weight:400}.ps{font-size:13px;color:var(--dm);font-family:var(--mf);margin-top:5px}
+.bt{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;font-family:var(--bf);cursor:pointer;border:0;transition:.15s}.bp{background:var(--am);color:#0D0E12}.bg2{background:0;color:var(--tx);border:1px solid var(--ln)}.bt:disabled{opacity:.4;cursor:default}
+.pl{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;font-family:var(--mf);cursor:pointer;border:1px solid var(--ln);background:0;color:var(--dm)}.pl.on{background:var(--am);color:#0D0E12;border-color:transparent}
+.mo{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(8px)}.mb2m{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:30px 28px;width:100%;max-width:460px;max-height:85vh;overflow-y:auto}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.mh h3{font-size:20px;font-family:var(--df)}.mx{background:0;border:0;color:var(--dm);font-size:20px;cursor:pointer}
+.fg{margin-bottom:16px}.fg label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dm);font-family:var(--mf);margin-bottom:6px}.fi,.fsel{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font-size:14px;font-family:var(--bf);outline:0;box-sizing:border-box}
+.lt{width:100%;border-collapse:collapse;font-size:14px}.lt th{text-align:left;padding:12px 14px;font-family:var(--mf);font-size:11px;letter-spacing:.1em;color:var(--dm);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--ln)}.lt td{padding:12px 14px;border-bottom:1px solid var(--ln)}
 .tr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--ln)}.tr:last-child{border-bottom:0}
 .vw{display:none}.vw.on{display:block}
 .tu{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;background:rgba(74,191,196,.12);color:var(--cy);font-size:12px;font-family:var(--mf);font-weight:500}
+.miss-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;background:rgba(212,133,58,.12);color:var(--or);font-size:12px;font-family:var(--mf);font-weight:500}
 .cb{padding:16px 18px;background:var(--bg);border-radius:10px;border:1px solid var(--ln)}
-
-/* Chat */
-.cc{display:flex;flex-direction:column;height:calc(100vh - 140px)}
-.cm{flex:1;overflow-y:auto;padding:10px 0}
+.cc{display:flex;flex-direction:column;height:calc(100vh - 140px)}.cm{flex:1;overflow-y:auto;padding:10px 0}
 .msg{margin-bottom:18px;max-width:82%}.msg.u{margin-left:auto}.msg.a{margin-right:auto}
 .mb2{padding:16px 20px;border-radius:16px;font-size:15px;line-height:1.75;white-space:pre-wrap}
-.msg.u .mb2{background:var(--am);color:#0D0E12;border-bottom-right-radius:5px}
-.msg.a .mb2{background:var(--sf);border:1px solid var(--ln);border-bottom-left-radius:5px}
-.cir{display:flex;gap:12px;padding-top:18px;border-top:1px solid var(--ln)}
-.ci{flex:1;padding:14px 18px;border-radius:12px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);font-size:15px;font-family:var(--bf);outline:0;resize:none}
-.ci:focus{border-color:var(--am)}.ci::placeholder{color:var(--dm)}
-.cs2{padding:14px 22px;border-radius:12px;background:var(--am);color:#0D0E12;border:0;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--bf)}
-.cs2:disabled{opacity:.4}
-.csg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
-.csg button{padding:10px 16px;border-radius:10px;border:1px solid var(--ln);background:0;color:var(--dm);font-size:13px;font-family:var(--bf);cursor:pointer;transition:.15s}
-.csg button:hover{border-color:var(--am);color:var(--am)}
-
+.msg.u .mb2{background:var(--am);color:#0D0E12;border-bottom-right-radius:5px}.msg.a .mb2{background:var(--sf);border:1px solid var(--ln);border-bottom-left-radius:5px}
+.cir{display:flex;gap:12px;padding-top:18px;border-top:1px solid var(--ln)}.ci{flex:1;padding:14px 18px;border-radius:12px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);font-size:15px;font-family:var(--bf);outline:0;resize:none}.ci:focus{border-color:var(--am)}.ci::placeholder{color:var(--dm)}
+.cs2{padding:14px 22px;border-radius:12px;background:var(--am);color:#0D0E12;border:0;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--bf)}.cs2:disabled{opacity:.4}
+.csg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}.csg button{padding:10px 16px;border-radius:10px;border:1px solid var(--ln);background:0;color:var(--dm);font-size:13px;font-family:var(--bf);cursor:pointer;transition:.15s}.csg button:hover{border-color:var(--am);color:var(--am)}
 .ro{font-size:16px;line-height:1.85;white-space:pre-wrap;padding:22px 26px;background:var(--bg);border-radius:10px;border-left:3px solid var(--am)}
-.es{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;font-family:var(--mf)}
-.es .el{color:var(--dm);margin-bottom:3px}
+.es{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;font-family:var(--mf)}.es .el{color:var(--dm);margin-bottom:3px}
 .api-b{padding:16px 20px;background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.25);border-radius:10px;margin-bottom:22px;font-size:14px;color:var(--am);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .api-b button{padding:6px 14px;border-radius:6px;background:var(--am);color:#0D0E12;border:0;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .nw-b{padding:16px 20px;background:rgba(77,170,114,.08);border:1px solid rgba(77,170,114,.25);border-radius:10px;margin-bottom:22px;font-size:14px;color:var(--gn);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .nw-b button{padding:6px 14px;border-radius:6px;background:var(--gn);color:#0D0E12;border:0;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
-
-/* Search */
+.gap-b{padding:16px 20px;background:rgba(212,133,58,.08);border:1px solid rgba(212,133,58,.25);border-radius:10px;margin-bottom:22px;font-size:14px;color:var(--or)}
+.gap-b a{color:var(--or);text-decoration:underline;cursor:pointer}
 .search-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
 .search-bar input,.search-bar select{padding:8px 14px;border-radius:8px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);font-size:14px;font-family:var(--bf);outline:0}
-.search-bar input{flex:1;min-width:180px}
-.search-bar select{min-width:140px}
-
-/* Hamburger */
+.search-bar input{flex:1;min-width:180px}.search-bar select{min-width:140px}
 .hb{display:none;position:fixed;top:16px;left:16px;z-index:200;width:44px;height:44px;border-radius:10px;background:var(--sf);border:1px solid var(--ln);cursor:pointer;align-items:center;justify-content:center;font-size:22px;color:var(--am)}
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140}
-
-@media(max-width:800px){
-  .hb{display:flex}
-  .sb{transform:translateX(-100%);transition:transform .25s ease}
-  .sb.open{transform:translateX(0)}
-  .ov.open{display:block}
-  .mn{margin-left:0;padding:20px 16px;padding-top:68px}
-  .g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}
-  .ga{grid-template-columns:1fr}
-  .pt{font-size:26px}.bn{font-size:24px}
-  .hr{flex-direction:column;gap:12px}
-  .msg{max-width:95%}
-  .lt{font-size:12px}.lt th,.lt td{padding:8px 6px}
-}
-
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes bk{0%,80%,100%{opacity:.3}40%{opacity:1}}
-.lp{animation:pulse 1.5s infinite}
-.td{display:inline-flex;gap:4px;padding:4px 0}
-.td span{width:7px;height:7px;border-radius:50%;background:var(--dm);animation:bk 1.4s infinite}
-.td span:nth-child(2){animation-delay:.2s}
-.td span:nth-child(3){animation-delay:.4s}
+.confirmed{color:var(--gn)}.estimated{color:var(--am)}
+@media(max-width:800px){.hb{display:flex}.sb{transform:translateX(-100%);transition:transform .25s ease}.sb.open{transform:translateX(0)}.ov.open{display:block}.mn{margin-left:0;padding:20px 16px;padding-top:68px}.g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}.ga{grid-template-columns:1fr}.pt{font-size:26px}.bn{font-size:24px}.hr{flex-direction:column;gap:12px}.msg{max-width:95%}.lt{font-size:12px}.lt th,.lt td{padding:8px 6px}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}@keyframes bk{0%,80%,100%{opacity:.3}40%{opacity:1}}.lp{animation:pulse 1.5s infinite}.td{display:inline-flex;gap:4px;padding:4px 0}.td span{width:7px;height:7px;border-radius:50%;background:var(--dm);animation:bk 1.4s infinite}.td span:nth-child(2){animation-delay:.2s}.td span:nth-child(3){animation-delay:.4s}
 </style>
 </head>
 <body>
-
-<button class="hb" onclick="tSB()">☰</button>
-<div class="ov" id="ov" onclick="tSB()"></div>
-
+<button class="hb" onclick="tSB()">☰</button><div class="ov" id="ov" onclick="tSB()"></div>
 <nav class="sb" id="sb">
-  <div class="sb-b"><div class="s1">Expense</div><div class="s2">Intel</div><div class="s3">QNB · <span id="si" style="color:var(--am)">LOADING</span></div><div class="s3" id="lf"></div></div>
-  <div class="sn">
-    <button class="nb on" data-v="cmd"><span>◫</span>Command</button>
-    <button class="nb" data-v="dig"><span>≋</span>Weekly Digest</button>
-    <button class="nb" data-v="env"><span>▦</span>Envelopes</button>
-    <button class="nb" data-v="cfl"><span>↑</span>Card Flow</button>
-    <button class="nb" data-v="nw"><span>△</span>Net Worth</button>
-    <button class="nb" data-v="rst"><span>🔥</span>The Roast</button>
-    <button class="nb" data-v="ai"><span>✧</span>Ask AI</button>
-    <button class="nb" data-v="led"><span>≡</span>Full Ledger</button>
-  </div>
-  <div class="sf"><div id="sI2"></div><div id="rC"></div><div style="margin-top:8px"><button onclick="openM('set')" style="background:0;border:0;color:var(--am);cursor:pointer;font-size:11px;font-family:var(--mf)">⚙ Settings</button></div></div>
+<div class="sb-b"><div class="s1">Expense</div><div class="s2">Intel</div><div class="s3">QNB · <span id="si" style="color:var(--am)">LOADING</span></div><div class="s3" id="lf"></div></div>
+<div class="sn">
+<button class="nb on" data-v="cmd"><span>◫</span>Command</button>
+<button class="nb" data-v="dig"><span>≋</span>Digest</button>
+<button class="nb" data-v="env"><span>▦</span>Envelopes</button>
+<button class="nb" data-v="cfl"><span>↑</span>Card Flow</button>
+<button class="nb" data-v="nw"><span>△</span>Net Worth</button>
+<button class="nb" data-v="rst"><span>🔥</span>The Roast</button>
+<button class="nb" data-v="ai"><span>✧</span>Ask AI</button>
+<button class="nb" data-v="led"><span>≡</span>Ledger</button>
+</div>
+<div class="sf"><div id="sI2"></div><div id="rC"></div><div style="margin-top:8px"><button onclick="openM('set')" style="background:0;border:0;color:var(--am);cursor:pointer;font-size:11px;font-family:var(--mf)">⚙ Settings</button></div></div>
 </nav>
-
 <main class="mn">
-  <div id="ls" style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:14px"><div class="lp" style="font-size:28px;color:var(--am)">◫</div><div style="font-size:14px;color:var(--dm);font-family:var(--mf)">Fetching expense data...</div></div>
-  <div id="eb" style="display:none;padding:18px;background:rgba(201,84,84,.1);border:1px solid var(--rd);border-radius:10px;font-size:14px;color:var(--rd);margin-bottom:22px"></div>
-  <div id="ab" class="api-b" style="display:none"><span>⚙ AI features need a proxy URL.</span><button onclick="openM('set')">Configure</button></div>
-  <div id="nwB" class="nw-b" style="display:none"><span id="nwBT"></span><button onclick="openM('nw')">+ Snapshot</button><button onclick="dismissNW()" style="background:0;border:0;color:var(--gn);cursor:pointer;font-size:16px;opacity:.6">✕</button></div>
+<div id="ls" style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:14px"><div class="lp" style="font-size:28px;color:var(--am)">◫</div><div style="font-size:14px;color:var(--dm);font-family:var(--mf)">Fetching...</div></div>
+<div id="eb" style="display:none;padding:18px;background:rgba(201,84,84,.1);border:1px solid var(--rd);border-radius:10px;font-size:14px;color:var(--rd);margin-bottom:22px"></div>
+<div id="ab" class="api-b" style="display:none"><span>⚙ AI features need a proxy URL.</span><button onclick="openM('set')">Configure</button></div>
+<div id="nwB" class="nw-b" style="display:none"><span id="nwBT"></span><button onclick="openM('nw')">+ Snapshot</button><button onclick="dismissNW()" style="background:0;border:0;color:var(--gn);cursor:pointer;font-size:16px;opacity:.6">✕</button></div>
+<div id="gapB" class="gap-b" style="display:none"></div>
 
-  <!-- CMD -->
-  <div class="vw on" id="v-cmd">
-    <div class="hr"><div><h1 class="pt">Command Center</h1><div class="ps" id="wr"></div></div><button class="bt bg" onclick="fetchD()" style="font-size:12px">↻ Refresh</button></div>
-    <div class="g4" style="margin-bottom:24px"><div class="cd"><div class="lb">This Week</div><div class="bn" id="k1">—</div><div id="k1d" style="font-size:13px;font-family:var(--mf);margin-top:8px"></div></div><div class="cd"><div class="lb">This Month</div><div class="bn" id="k2">—</div><div id="k2d" style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)"></div></div><div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--am)" id="k3">—</div><div style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)">Prepaid Visa</div></div><div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cy)" id="k4">—</div><div id="k4d" style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)"></div></div></div>
-    <div class="g2" style="margin-bottom:24px"><div class="cd"><div class="lb">14-Day Trend</div><div style="margin-top:14px" id="tc"></div></div><div class="cd"><div class="lb">Category Split</div><div style="margin-top:10px" id="cs"></div></div></div>
-    <div id="ba" style="margin-bottom:24px"></div>
-    <div class="g2"><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center"><div class="lb">Card Loads</div><button class="nb" data-v="cfl" style="width:auto;padding:4px 10px;font-size:12px;color:var(--cy);font-family:var(--mf)">Details →</button></div><div id="clg" style="margin-top:10px"></div></div><div class="cd"><div class="lb">Recent</div><div style="margin-top:6px" id="rt"></div></div></div>
-  </div>
+<!-- CMD -->
+<div class="vw on" id="v-cmd">
+<div class="hr"><div><h1 class="pt">Command Center</h1><div class="ps" id="wr"></div></div><button class="bt bg2" onclick="fetchD()" style="font-size:12px">↻ Refresh</button></div>
+<div class="g4" style="margin-bottom:24px">
+<div class="cd"><div class="lb">This Week</div><div class="bn" id="k1">—</div><div id="k1d" style="font-size:13px;font-family:var(--mf);margin-top:8px"></div></div>
+<div class="cd"><div class="lb">This Month</div><div class="bn" id="k2">—</div><div id="k2d" style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)"></div></div>
+<div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--am)" id="k3">—</div><div style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)">Prepaid Visa</div></div>
+<div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cy)" id="k4">—</div><div id="k4d" style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)"></div></div>
+</div>
+<div class="g2" style="margin-bottom:24px"><div class="cd"><div class="lb">14-Day Trend</div><div style="margin-top:14px" id="tc"></div></div><div class="cd"><div class="lb">Category Split</div><div style="margin-top:10px" id="cs"></div></div></div>
+<div id="ba" style="margin-bottom:24px"></div>
+<div class="g2"><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center"><div class="lb">Card Loads</div><button class="nb" data-v="cfl" style="width:auto;padding:4px 10px;font-size:12px;color:var(--cy);font-family:var(--mf)">Details →</button></div><div id="clg" style="margin-top:10px"></div></div><div class="cd"><div class="lb">Recent</div><div style="margin-top:6px" id="rt"></div></div></div>
+</div>
 
-  <!-- DIGEST -->
-  <div class="vw" id="v-dig">
-    <h1 class="pt" style="margin-bottom:6px">Weekly Digest</h1><div class="ps" style="margin-bottom:26px" id="dr"></div>
-    <div class="g4" style="margin-bottom:24px"><div class="cd"><div class="lb">Week Spent</div><div class="bn" id="d1">—</div><div id="d1d" style="font-size:13px;font-family:var(--mf);margin-top:6px"></div></div><div class="cd"><div class="lb">Previous</div><div class="bn" style="color:var(--dm)" id="d2">—</div></div><div class="cd"><div class="lb">Transactions</div><div class="bn" id="d3">—</div></div><div class="cd"><div class="lb">Card Loads</div><div class="bn" style="color:var(--cy)" id="d4">—</div></div></div>
-    <div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div class="lb">Analyst Brief</div><button class="bt bp" id="bD" onclick="genDig()">✧ Generate Digest</button></div><div id="dO" style="padding:26px;text-align:center;color:var(--dm);font-size:14px">Click Generate for your weekly summary.</div></div>
-    <div class="cd"><div class="lb">WhatsApp Delivery</div><div class="g2" style="margin-top:14px"><div class="cb"><div style="font-size:16px;font-weight:600;margin-bottom:8px">CallMeBot</div><div style="font-size:13px;color:var(--dm);line-height:1.7;font-family:var(--mf)">Free · One-time activation<br>Send "I allow callmebot to send me messages" to +34 644 51 81 84</div><div style="margin-top:10px;font-size:12px;color:var(--gn);font-family:var(--mf)">▪ RECOMMENDED</div></div><div class="cb"><div style="font-size:16px;font-weight:600;margin-bottom:8px">Twilio</div><div style="font-size:13px;color:var(--dm);line-height:1.7;font-family:var(--mf)">Paid · ~$0.005/msg<br>More reliable for production</div></div></div></div>
-  </div>
+<!-- DIGEST -->
+<div class="vw" id="v-dig">
+<h1 class="pt" style="margin-bottom:6px">Quick Digest</h1><div class="ps" style="margin-bottom:26px" id="dr"></div>
+<div style="display:flex;gap:10px;margin-bottom:22px"><button class="pl on" id="dgW" onclick="setDM('w')">Weekly</button><button class="pl" id="dgM" onclick="setDM('m')">Monthly</button></div>
+<div class="g4" style="margin-bottom:24px">
+<div class="cd"><div class="lb" id="dgL1">This Week</div><div class="bn" id="d1">—</div><div id="d1d" style="font-size:13px;font-family:var(--mf);margin-top:6px"></div></div>
+<div class="cd"><div class="lb" id="dgL2">Previous</div><div class="bn" style="color:var(--dm)" id="d2">—</div></div>
+<div class="cd"><div class="lb">Transactions</div><div class="bn" id="d3">—</div></div>
+<div class="cd"><div class="lb">Card Loads</div><div class="bn" style="color:var(--cy)" id="d4">—</div></div>
+</div>
+<div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div class="lb">Analyst Brief</div><button class="bt bp" id="bD" onclick="genDig()">✧ Generate</button></div><div id="dO" style="padding:26px;text-align:center;color:var(--dm);font-size:14px">Click Generate for your digest.</div></div>
+</div>
 
-  <!-- ENVELOPES -->
-  <div class="vw" id="v-env"><div class="hr"><div><h1 class="pt">Budget Envelopes</h1><div class="ps" id="eI"></div></div><button class="bt bp" onclick="openM('bud')">+ Set Budget</button></div><div id="eG" class="ga"></div></div>
+<!-- ENVELOPES -->
+<div class="vw" id="v-env"><div class="hr"><div><h1 class="pt">Budget Envelopes</h1><div class="ps" id="eI"></div></div><button class="bt bp" onclick="openM('bud')">+ Set Budget</button></div>
+<div id="totalEnv" style="margin-bottom:24px"></div>
+<div id="eG" class="ga"></div></div>
 
-  <!-- CARD FLOW -->
-  <div class="vw" id="v-cfl">
-    <div class="hr"><div><h1 class="pt">Card Flow</h1><div class="ps">Prepaid Visa · Balance ≠ account · Loads from spikes</div></div></div>
-    <div class="g3" style="margin-bottom:24px"><div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--am)" id="cf1">—</div></div><div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cy)" id="cf2">—</div><div id="cf2d" style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px"></div></div><div class="cd"><div class="lb">Spent This Month</div><div class="bn" id="cf3">—</div></div></div>
-    <div class="cd" style="margin-bottom:24px"><div class="lb">Balance Over Time</div><div style="margin-top:14px" id="cfC"></div></div>
-    <div class="cd"><div class="lb">All Detected Loads</div><div id="cfH" style="margin-top:10px"></div></div>
-  </div>
+<!-- CARD FLOW -->
+<div class="vw" id="v-cfl">
+<div class="hr"><div><h1 class="pt">Card Flow</h1><div class="ps">Prepaid Visa · Balance ≠ account</div></div></div>
+<div class="g3" style="margin-bottom:24px"><div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--am)" id="cf1">—</div></div><div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cy)" id="cf2">—</div><div id="cf2d" style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px"></div></div><div class="cd"><div class="lb">Spent This Month</div><div class="bn" id="cf3">—</div></div></div>
+<div class="cd" style="margin-bottom:24px"><div class="lb">Balance Over Time</div><div style="margin-top:14px" id="cfC"></div></div>
+<div class="cd"><div class="lb">All Loads</div><div id="cfH" style="margin-top:10px"></div></div>
+</div>
 
-  <!-- NET WORTH -->
-  <div class="vw" id="v-nw">
-    <div class="hr"><div><h1 class="pt">Net Worth Tracker</h1><div class="ps">Manual · Separate from card</div></div><button class="bt bp" onclick="openM('nw')">+ Snapshot</button></div>
-    <div class="g3" style="margin-bottom:24px"><div class="cd"><div class="lb">Latest</div><div class="bn" style="color:var(--gn)" id="n1">—</div><div id="n1d" style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px"></div></div><div class="cd"><div class="lb">Change</div><div class="bn" id="n2">—</div></div><div class="cd"><div class="lb">Entries</div><div class="bn" id="n3">0</div></div></div>
-    <div class="cd" style="margin-bottom:24px"><div class="lb">Trajectory</div><div style="margin-top:14px" id="nT"></div></div>
-    <div class="cd"><div class="lb">History</div><div id="nH"></div></div>
-  </div>
+<!-- NET WORTH -->
+<div class="vw" id="v-nw">
+<div class="hr"><div><h1 class="pt">Net Worth</h1><div class="ps">Manual · Separate from card</div></div><div style="display:flex;gap:10px"><button class="bt bp" onclick="openM('nw')">+ Snapshot</button><button class="bt bg2" onclick="openM('nwgoal')" style="font-size:13px">🎯 Set Goal</button></div></div>
+<div class="g3" style="margin-bottom:24px">
+<div class="cd"><div class="lb">Latest</div><div class="bn" style="color:var(--gn)" id="n1">—</div><div id="n1d" style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px"></div></div>
+<div class="cd"><div class="lb">Change</div><div class="bn" id="n2">—</div></div>
+<div class="cd"><div class="lb">Yearly Goal</div><div class="bn" id="n4" style="color:var(--am)">—</div><div id="n4d" style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px"></div></div>
+</div>
+<div id="nwGoalBar" style="margin-bottom:24px"></div>
+<div class="cd" style="margin-bottom:24px"><div class="lb">Trajectory</div><div style="margin-top:14px" id="nT"></div></div>
+<div class="cd"><div class="lb">History</div><div id="nH"></div></div>
+</div>
 
-  <!-- ROAST -->
-  <div class="vw" id="v-rst">
-    <h1 class="pt" style="margin-bottom:8px">The Roast</h1><div class="ps" style="margin-bottom:26px">No filter. No mercy. No motivational language.</div>
-    <div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div style="display:flex;gap:10px"><button class="pl on" id="rW" onclick="sRM('w')">This Week</button><button class="pl" id="rM" onclick="sRM('m')">This Month</button></div><button class="bt bp" id="bR" onclick="genRst()">🔥 Roast Me</button></div><div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dm)">Hit the button. If you dare.</div></div></div></div>
-  </div>
+<!-- ROAST -->
+<div class="vw" id="v-rst">
+<h1 class="pt" style="margin-bottom:8px">The Roast</h1><div class="ps" style="margin-bottom:26px">No filter. No mercy.</div>
+<div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div style="display:flex;gap:10px"><button class="pl on" id="rW" onclick="sRM('w')">This Week</button><button class="pl" id="rM" onclick="sRM('m')">This Month</button></div><button class="bt bp" id="bR" onclick="genRst()">🔥 Roast Me</button></div><div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dm)">Hit the button.</div></div></div></div>
+</div>
 
-  <!-- ASK AI -->
-  <div class="vw" id="v-ai">
-    <h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps" style="margin-bottom:22px">Your personal financial advisor · Always available</div>
-    <div class="cc">
-      <div class="cm" id="cM"><div class="msg a"><div class="mb2">Good to see you, Saif. I've reviewed your latest transactions and have a few things worth flagging — but first, what's on your mind? You can ask me about spending patterns, merchant habits, category trends, or anything else about your finances.<br><br>Or try one of the prompts below to get started.</div></div></div>
-      <div class="csg" id="cSg">
-        <button onclick="askQ(this)">Give me a quick financial health check</button>
-        <button onclick="askQ(this)">What's my biggest spending weakness?</button>
-        <button onclick="askQ(this)">How does this week compare to last?</button>
-        <button onclick="askQ(this)">Which merchants am I visiting too often?</button>
-        <button onclick="askQ(this)">If I keep spending like this, where will I be in 3 months?</button>
-        <button onclick="askQ(this)">What should I cut first to save more?</button>
-      </div>
-      <div class="cir"><textarea class="ci" id="cI" rows="1" placeholder="Ask me anything about your finances..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendC();}"></textarea><button class="cs2" id="cS" onclick="sendC()">Send</button></div>
-    </div>
-  </div>
+<!-- ASK AI -->
+<div class="vw" id="v-ai">
+<h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps" style="margin-bottom:22px">Your financial advisor</div>
+<div class="cc">
+<div class="cm" id="cM"><div class="msg a"><div class="mb2">Good to see you, Saif. I've reviewed your latest transactions and have a few things worth flagging — but first, what's on your mind?<br><br>Or try one of the prompts below.</div></div></div>
+<div class="csg" id="cSg">
+<button onclick="askQ(this)">Give me a quick financial health check</button>
+<button onclick="askQ(this)">What's my biggest spending weakness?</button>
+<button onclick="askQ(this)">How does this week compare to last?</button>
+<button onclick="askQ(this)">Which merchants am I visiting too often?</button>
+<button onclick="askQ(this)">Predict my end-of-month total</button>
+<button onclick="askQ(this)">What should I cut first?</button>
+</div>
+<div class="cir"><textarea class="ci" id="cI" rows="1" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendC();}"></textarea><button class="cs2" id="cS" onclick="sendC()">Send</button></div>
+</div>
+</div>
 
-  <!-- LEDGER -->
-  <div class="vw" id="v-led">
-    <div class="hr"><h1 class="pt">Full Ledger</h1><div style="font-size:13px;font-family:var(--mf);color:var(--dm)" id="lC"></div></div>
-    <div class="search-bar">
-      <input type="text" id="lS" placeholder="Search merchant..." oninput="rLed()">
-      <select id="lCat" onchange="rLed()"><option value="">All Categories</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Other</option></select>
-      <select id="lP" onchange="rLed()"><option value="">All Time</option><option value="week">This Week</option><option value="month">This Month</option><option value="last">Last Month</option></select>
-    </div>
-    <div class="cd"><div style="overflow-x:auto"><table class="lt"><thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Balance</th><th>Load</th></tr></thead><tbody id="lB"></tbody></table></div></div>
-    <div id="lSm" style="margin-top:14px;padding:14px 18px;background:var(--sf);border:1px solid var(--ln);border-radius:10px;font-size:14px;font-family:var(--mf);color:var(--dm)"></div>
-  </div>
+<!-- LEDGER -->
+<div class="vw" id="v-led">
+<div class="hr"><h1 class="pt">Ledger</h1><div style="font-size:13px;font-family:var(--mf);color:var(--dm)" id="lC"></div></div>
+<div class="search-bar">
+<input type="text" id="lS" placeholder="Search merchant..." oninput="rLed()">
+<select id="lCat" onchange="rLed()"><option value="">All Categories</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Clothing</option><option>Electronics</option><option>Home</option><option>Personal Care</option><option>General Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Other</option><option value="_missing">⚠ Missing TX</option></select>
+<select id="lP" onchange="rLed()"><option value="">All Time</option><option value="week">This Week</option><option value="month">This Month</option><option value="last">Last Month</option></select>
+</div>
+<div class="cd"><div style="overflow-x:auto"><table class="lt"><thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Balance</th><th>Flag</th></tr></thead><tbody id="lB"></tbody></table></div></div>
+<div id="lSm" style="margin-top:14px;padding:14px 18px;background:var(--sf);border:1px solid var(--ln);border-radius:10px;font-size:14px;font-family:var(--mf);color:var(--dm)"></div>
+</div>
 </main>
 
 <!-- MODALS -->
-<div class="mo" id="m-bud" style="display:none" onclick="closeM('bud')"><div class="mb" onclick="event.stopPropagation()"><div class="mh"><h3>Set Budget</h3><button class="mx" onclick="closeM('bud')">✕</button></div><div class="fg"><label>Category</label><select class="fs" id="bCi"><option value="">Select</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Other</option></select></div><div class="fg"><label>Monthly Limit (QAR)</label><input type="number" class="fi" id="bAi" placeholder="500"></div><button class="bt bp" style="width:100%" onclick="saveBud()">Save</button></div></div>
-<div class="mo" id="m-nw" style="display:none" onclick="closeM('nw')"><div class="mb" onclick="event.stopPropagation()"><div class="mh"><h3>Net Worth Snapshot</h3><button class="mx" onclick="closeM('nw')">✕</button></div><div class="fg"><label>Date</label><input type="date" class="fi" id="nDi"></div><div class="fg"><label>Total Balance (QAR)</label><input type="number" class="fi" id="nAi" placeholder="25000"></div><div class="fg"><label>Note</label><input type="text" class="fi" id="nNi" placeholder="e.g. Salary received"></div><div style="font-size:12px;color:var(--dm);font-family:var(--mf);margin-bottom:16px;line-height:1.6">Real account balance — not card. Browser storage.<br><span style="color:var(--cy)">Future:</span> Sync to private sheet.</div><button class="bt bp" style="width:100%" onclick="saveNW()">Save</button></div></div>
-<div class="mo" id="m-set" style="display:none" onclick="closeM('set')"><div class="mb" onclick="event.stopPropagation()"><div class="mh"><h3>Settings</h3><button class="mx" onclick="closeM('set')">✕</button></div><div class="fg"><label>AI Proxy URL</label><input type="text" class="fi" id="pU" placeholder="https://your-worker.workers.dev"></div><div style="font-size:12px;color:var(--dm);font-family:var(--mf);margin-bottom:16px;line-height:1.7">Needed for AI features on GitHub Pages.<br>Deploy the Cloudflare Worker proxy, paste URL here.</div><button class="bt bp" style="width:100%" onclick="savSet()">Save</button><div class="dv"></div><div class="lb">Data Backup</div><div style="display:flex;gap:10px;margin-top:10px"><button class="bt bg" style="flex:1;font-size:13px" onclick="expD()">Export</button><button class="bt bg" style="flex:1;font-size:13px" onclick="document.getElementById('impF').click()">Import</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impD(event)"></div></div></div>
+<div class="mo" id="m-bud" style="display:none" onclick="closeM('bud')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Set Budget</h3><button class="mx" onclick="closeM('bud')">✕</button></div>
+<div class="fg"><label>Type</label><select class="fsel" id="bType" onchange="toggleBudCat()"><option value="category">Category Budget</option><option value="weekly">Total Weekly</option><option value="monthly">Total Monthly</option></select></div>
+<div id="budCatRow" class="fg"><label>Category</label><select class="fsel" id="bCi"><option value="">Select</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Clothing</option><option>Electronics</option><option>Home</option><option>Personal Care</option><option>General Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Other</option></select></div>
+<div class="fg"><label>Limit (QAR)</label><input type="number" class="fi" id="bAi" placeholder="500"></div>
+<button class="bt bp" style="width:100%" onclick="saveBud()">Save</button></div></div>
+
+<div class="mo" id="m-nw" style="display:none" onclick="closeM('nw')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Net Worth Snapshot</h3><button class="mx" onclick="closeM('nw')">✕</button></div><div class="fg"><label>Date</label><input type="date" class="fi" id="nDi"></div><div class="fg"><label>Total Balance (QAR)</label><input type="number" class="fi" id="nAi" placeholder="25000"></div><div class="fg"><label>Note</label><input type="text" class="fi" id="nNi" placeholder="e.g. Salary received"></div><button class="bt bp" style="width:100%" onclick="saveNW()">Save</button></div></div>
+
+<div class="mo" id="m-nwgoal" style="display:none" onclick="closeM('nwgoal')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Yearly Goal</h3><button class="mx" onclick="closeM('nwgoal')">✕</button></div><div class="fg"><label>Target Net Worth by End of Year (QAR)</label><input type="number" class="fi" id="nwGi" placeholder="100000"></div><button class="bt bp" style="width:100%" onclick="saveNWGoal()">Save</button></div></div>
+
+<div class="mo" id="m-set" style="display:none" onclick="closeM('set')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Settings</h3><button class="mx" onclick="closeM('set')">✕</button></div><div class="fg"><label>AI Proxy URL</label><input type="text" class="fi" id="pU" placeholder="https://your-worker.workers.dev"></div><button class="bt bp" style="width:100%" onclick="savSet()">Save</button><div class="dv"></div><div class="lb">Data Backup</div><div style="display:flex;gap:10px;margin-top:10px"><button class="bt bg2" style="flex:1;font-size:13px" onclick="expD()">Export</button><button class="bt bg2" style="flex:1;font-size:13px" onclick="document.getElementById('impF').click()">Import</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impD(event)"></div></div></div>
 
 <script>
 const SID='1_LQk-qFx6ZbpkNk7vV0m-GyxNzMqmwcStWfPFixORZo';
 const SURL=`https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
-const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Shopping:{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Other:{c:'#8899AA',i:'○'}};
-function gc(n){return CATS[n]||CATS.Other;}
-function f$(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function td(){return new Date().toISOString().slice(0,10);}
+const FX_RATES={USD:3.64,EUR:3.98,GBP:4.62,SAR:0.97,AED:0.99,KWD:11.88,BHD:9.66};
+const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Clothing:{c:'#72A8E8',i:'👔'},Electronics:{c:'#5490C4',i:'⚡'},Home:{c:'#8BC4E8',i:'⌂'},'Personal Care':{c:'#D4A1C4',i:'✿'},'General Shopping':{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Other:{c:'#8899AA',i:'○'}};
+function gc(n){return CATS[n]||CATS.Other}
+function f$(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function td(){return new Date().toISOString().slice(0,10)}
 
-let E=[],CL=[],rm='w';
-function lJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
-function sJ(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
-let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),PX=lJ('cfo_px','');
+let E=[],CL=[],gaps=[],rm='w',dgm='w';
+function lJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f}catch{return f}}
+function sJ(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),PX=lJ('cfo_px',''),NWGOAL=lJ('cfo_nwg',0),TBUDGET=lJ('cfo_tb',{});
 
 // ═══ SMS PARSER ═══
-// Parses raw QNB Arabic SMS into structured data client-side
 function parseSMS(raw){
   if(!raw)return null;
-  const r={merchant:'',amount:0,balance:0,currency:'QAR',category:'Other'};
-  // Normalize whitespace
+  const r={merchant:'',amount:0,balance:0,currency:'QAR',category:'Other',fxConfirmed:true,isMissing:false};
   const t=raw.replace(/\s+/g,' ');
-  // Amount: المبلغ: QAR 46 or المبلغ: 46 or QAR 46 after المبلغ
-  const am=t.match(/المبلغ\s*[:：]\s*(?:QAR\s*)?([\d,.]+)/i)||t.match(/المبلغ[^0-9]*([\d,.]+)/);
-  if(am)r.amount=parseFloat(am[1].replace(',',''));
-  // Merchant: الموقع: HOT BAKE CATERING (grab everything until next Arabic or newline)
-  const mc=t.match(/الموقع\s*[:：]\s*([A-Za-z0-9\s&'.,-]+)/)||t.match(/الموقع\s*[:：]\s*([^\n]+)/);
-  if(mc)r.merchant=mc[1].trim().replace(/\s+الرصيد.*$/,'').replace(/\s+استخدم.*$/,'').trim();
-  // Balance: الرصيد: QAR 58.71
-  const bl=t.match(/الرصيد\s*[:：]\s*(?:QAR\s*)?([\d,.]+)/i)||t.match(/الرصيد[^0-9]*([\d,.]+)/);
-  if(bl)r.balance=parseFloat(bl[1].replace(',',''));
-  // If no Arabic parsing worked, try generic QAR number extraction
-  if(r.amount===0){
-    const nums=raw.match(/QAR\s*([\d,.]+)/g);
-    if(nums&&nums.length>=1)r.amount=parseFloat(nums[0].replace(/QAR\s*/,'').replace(',',''));
-    if(nums&&nums.length>=2)r.balance=parseFloat(nums[nums.length-1].replace(/QAR\s*/,'').replace(',',''));
-  }
-  // Try to find merchant as any English text block
-  if(!r.merchant){
-    const eng=raw.match(/[A-Z][A-Z0-9\s&'.,-]{3,}/g);
-    if(eng){
-      const skip=/^(QAR|QNB|SMS|OTP|PIN)\b/;
-      r.merchant=(eng.find(e=>!skip.test(e))||'').trim();
+  // Check if manual/missing recovery
+  const stdEnd=/في حال كانت العملية/;
+  const hasStd=stdEnd.test(raw);
+  const extraText=raw.replace(/تمت عملية[\s\S]*?الاتصال على \d+/,'').trim();
+  if(extraText.length>3||/missing|missed|forgot|manual|old|backfill|ناقص|مفقود/i.test(raw))r.isMissing=true;
+  // Detect currency
+  const amMatch=t.match(/المبلغ\s*[:：]\s*(?:(QAR|USD|EUR|GBP|SAR|AED|KWD|BHD)\s*)?(?:تقريباً\s*)?([\d,.]+)/i)||t.match(/المبلغ\s*[:：]\s*([\d,.]+)\s*(QAR|USD|EUR|GBP|SAR|AED|KWD|BHD)?/i);
+  if(amMatch){
+    const groups=amMatch.filter(g=>g);
+    let cur='QAR',amt=0;
+    for(const g of groups){if(/^[A-Z]{3}$/i.test(g))cur=g.toUpperCase();if(/^\d/.test(g))amt=parseFloat(g.replace(',',''));}
+    r.amount=amt;
+    if(cur!=='QAR'&&FX_RATES[cur]){
+      r.amount=Math.round(amt*FX_RATES[cur]*100)/100;
+      r.currency=cur;
+      r.originalAmount=amt;
+      r.fxConfirmed=false; // will cross-check with balance
     }
   }
+  const mc=t.match(/الموقع\s*[:：]\s*([A-Za-z0-9\s&'.,-\/]+)/)||t.match(/الموقع\s*[:：]\s*([^\n]+)/);
+  if(mc)r.merchant=mc[1].trim().replace(/\s+الرصيد.*$/,'').replace(/\s+استخدم.*$/,'').trim();
+  const bl=t.match(/الرصيد\s*[:：]\s*(?:QAR\s*)?([\d,.]+)/i);
+  if(bl)r.balance=parseFloat(bl[1].replace(',',''));
+  if(r.amount===0){const nums=raw.match(/QAR\s*([\d,.]+)/g);if(nums&&nums.length>=1)r.amount=parseFloat(nums[0].replace(/QAR\s*/,'').replace(',',''));if(nums&&nums.length>=2)r.balance=parseFloat(nums[nums.length-1].replace(/QAR\s*/,'').replace(',',''));}
+  if(!r.merchant){const eng=raw.match(/[A-Z][A-Z0-9\s&'.,-]{3,}/g);if(eng){const skip=/^(QAR|QNB|USD|EUR|SMS|OTP|PIN)\b/;r.merchant=(eng.find(e=>!skip.test(e))||'').trim();}}
   r.category=categorize(r.merchant,r.amount);
   return r;
 }
 
 function categorize(m,amount=0){
-  const u=m.toUpperCase();
-  // Smart pricing: tiny amounts at food places = coffee/snack not meal
-  const isFoodPlace=/BAKE|CATERING|RESTAURANT|CAFE|COFFEE|TALABAT|DELIVEROO|STARBUCKS|MCDONALD|KFC|PIZZA|FOOD|BURGER|GRILL|KITCHEN|SUSHI|SHAWARMA|DELI|BISTRO|EATERY/.test(u);
-  if(isFoodPlace&&amount>0&&amount<=5)return'Dining'; // coffee/tea — still dining but the AI knows it's tiny
-  
+  const u=(m||'').toUpperCase();
   const map=[
-    [/LULU|CARREFOUR|HYPERMARKET|HYPER MARKET|SUPERMARKET|SUPER MARKET|SPAR|MEGAMART|MEGA MART|FARM|VEGETABLE|FRUIT|GROCERY|SULTAN CENTER|MARKET|MART|MONOPRIX|GÉANT|GEANT|AL MEERA|FAMILY FOOD|WHOLESALE/,'Groceries'],
+    [/LULU|CARREFOUR|HYPERMARKET|HYPER MARKET|SUPERMARKET|SUPER MARKET|SPAR|MEGAMART|MEGA MART|FARM|VEGETABLE|FRUIT|GROCERY|SULTAN CENTER|MONOPRIX|GÉANT|GEANT|AL MEERA|FAMILY FOOD|WHOLESALE|WATAN.*MARKET|MARKET\s*WLL/,'Groceries'],
     [/UBER|KARWA|TAXI|PETROL|WOQOD|FUEL|PARKING|CAR WASH|RTA|GARAGE|AUTO|TIRE|TYRE/,'Transport'],
-    [/BAKE|CATERING|RESTAURANT|CAFE|COFFEE|TALABAT|DELIVEROO|STARBUCKS|MCDONALD|KFC|PIZZA|FOOD|BURGER|GRILL|KITCHEN|SUSHI|SHAWARMA|DELI|BISTRO|EATERY|NANDO|CHILI|APPLEBEE|CHEESECAKE|TIM HORTON|COSTA|DUNKIN/,'Dining'],
-    [/ZARA|H&M|NIKE|ADIDAS|SHOP|MALL|FASHION|JARIR|IKEA|VIRGIN|BRAND|STORE|MARKS|NEXT|GAP|UNIQLO|MANGO|MASSIMO|PULL&BEAR|BERSHKA|CENTREPOINT|LANDMARK/,'Shopping'],
+    [/BAKE|CATERING|RESTAURANT|CAFE|COFFEE|TALABAT|DELIVEROO|STARBUCKS|MCDONALD|KFC|PIZZA|FOOD|BURGER|GRILL|KITCHEN|SUSHI|SHAWARMA|DELI|BISTRO|EATERY|NANDO|CHILI|APPLEBEE|CHEESECAKE|TIM HORTON|COSTA|DUNKIN|SMAISMA/,'Dining'],
+    [/ZARA|H&M|NIKE|ADIDAS|FASHION|MANGO|MASSIMO|PULL.BEAR|BERSHKA|GAP|UNIQLO|NEXT|MARKS.*SPENCER/,'Clothing'],
+    [/JARIR|VIRGIN|APPLE STORE|SAMSUNG|ELECTRONICS|TECH|COMPUTER|PHONE|DIGITAL/,'Electronics'],
+    [/IKEA|HOME|DECOR|FURNITURE|POTTERY|BED BATH|CRATE|WEST ELM/,'Home'],
+    [/PERFUME|COSMETIC|SALON|BARBER|SPA|BEAUTY|SEPHORA|BATH.*BODY/,'Personal Care'],
+    [/SHOP|MALL|STORE|CENTREPOINT|LANDMARK|BRAND|PLAZA|LAGOON/,'General Shopping'],
     [/KAHRAMAA|OOREDOO|VODAFONE|ELECTRIC|WATER|INTERNET|UTILITY|BILL|RENT|INSURANCE/,'Bills'],
-    [/PHARMACY|HOSPITAL|CLINIC|MEDICAL|HEALTH|DOCTOR|DENTAL|OPTICAL|KAWTHER|WELL CARE/,'Health'],
-    [/CINEMA|VOX|NETFLIX|SPOTIFY|GAME|GYM|FITNESS|ENTERTAINMENT|PLAY|PARK|MUSEUM|BOWLING|TRAMPOLINE/,'Entertainment'],
-    [/NETFLIX|SPOTIFY|APPLE\.COM|GOOGLE|SUBSCRIPTION|PREMIUM|PLUS|ANNUAL|MONTHLY FEE|ITUNES|ADOBE|YOUTUBE/,'Subscriptions'],
+    [/PHARMACY|HOSPITAL|CLINIC|MEDICAL|HEALTH|DOCTOR|DENTAL|OPTICAL|KAWTHER/,'Health'],
+    [/CINEMA|VOX|GYM|FITNESS|PLAY|PARK|MUSEUM|BOWLING|TRAMPOLINE|GAME/,'Entertainment'],
+    [/NETFLIX|SPOTIFY|APPLE\.COM|GOOGLE|SUBSCRIPTION|PREMIUM|ITUNES|ADOBE|YOUTUBE|DISNEY/,'Subscriptions'],
   ];
   for(const[re,cat]of map)if(re.test(u))return cat;
-  
-  // Smart pricing fallback: very small amounts at unknown places
-  if(amount>0&&amount<=5)return'Other'; // probably coffee/parking/misc
-  if(amount>=150)return'Shopping'; // large unknown purchase more likely shopping
   return'Other';
 }
 
 // ═══ NAV ═══
-function tSB(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('open');}
-function cSB(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('open');}
-document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');cSB();});});
+function tSB(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('open')}
+function cSB(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('open')}
+document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');cSB()})});
 
-// ═══ LOAD DETECTION ═══
-function dL(tx){const ld=[];for(let i=1;i<tx.length;i++){const p=tx[i-1],c=tx[i],ex=p.balance-c.amount;if(c.balance>ex+.5)ld.push({date:c.date,amt:Math.round((c.balance-ex)*100)/100,bb:p.balance,ba:c.balance,m:c.merchant});}return ld;}
-
-// ═══ HABIT LEARNING ENGINE ═══
-function learnHabits(){
-  const habits={};
-  // Group transactions by merchant
-  const byMerch={};
-  E.forEach(e=>{if(!byMerch[e.merchant])byMerch[e.merchant]=[];byMerch[e.merchant].push(e);});
-  
-  // Group by category
-  const byCat={};
-  E.forEach(e=>{if(!byCat[e.category])byCat[e.category]=[];byCat[e.category].push(e);});
-
-  // Fuel interval
-  const fuelTx=E.filter(e=>e.category==='Transport'&&/WOQOD|PETROL|FUEL|GAS/.test(e.merchant.toUpperCase())).sort((a,b)=>a.date.localeCompare(b.date));
-  if(fuelTx.length>=2){
-    const intervals=[];
-    for(let i=1;i<fuelTx.length;i++){
-      const d1=new Date(fuelTx[i-1].date),d2=new Date(fuelTx[i].date);
-      intervals.push(Math.round((d2-d1)/86400000));
+// ═══ LOAD + GAP DETECTION ═══
+function dL(tx){
+  const ld=[]; gaps=[];
+  for(let i=1;i<tx.length;i++){
+    const p=tx[i-1],c=tx[i],ex=p.balance-c.amount;
+    if(c.balance>ex+.5){
+      ld.push({date:c.date,amt:Math.round((c.balance-ex)*100)/100,bb:p.balance,ba:c.balance,m:c.merchant});
+    }else if(c.balance<ex-.5){
+      // Balance dropped more than expected = missing transaction
+      const missing=Math.round((ex-c.balance)*100)/100;
+      gaps.push({dateFrom:p.date,dateTo:c.date,amount:missing,balBefore:p.balance,balAfter:c.balance,expectedBal:Math.round(ex*100)/100});
     }
-    const avgInterval=Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length);
-    const avgAmount=Math.round(fuelTx.reduce((s,e)=>s+e.amount,0)/fuelTx.length);
-    const lastFuel=fuelTx[fuelTx.length-1];
-    const daysSinceLast=Math.round((new Date()-new Date(lastFuel.date))/86400000);
-    const nextExpected=avgInterval-daysSinceLast;
-    const monthlyFills=Math.round(30/avgInterval*10)/10;
-    habits.fuel={interval:avgInterval,avgAmount,lastDate:lastFuel.date,daysSince:daysSinceLast,nextIn:Math.max(nextExpected,0),monthlyEstimate:Math.round(monthlyFills*avgAmount),fills:fuelTx.length};
   }
+  return ld;
+}
 
-  // Grocery patterns - big raids vs small runs
-  const grocTx=E.filter(e=>e.category==='Groceries').sort((a,b)=>a.date.localeCompare(b.date));
-  if(grocTx.length>=3){
-    const bigRaids=grocTx.filter(e=>e.amount>=100);
-    const smallRuns=grocTx.filter(e=>e.amount<100);
-    
-    let bigInterval=0,smallInterval=0;
-    if(bigRaids.length>=2){
-      const ints=[];for(let i=1;i<bigRaids.length;i++)ints.push(Math.round((new Date(bigRaids[i].date)-new Date(bigRaids[i-1].date))/86400000));
-      bigInterval=Math.round(ints.reduce((a,b)=>a+b,0)/ints.length);
+// Cross-check FX conversion with balance
+function crossCheckFX(txs){
+  for(let i=1;i<txs.length;i++){
+    const e=txs[i];
+    if(e.fxConfirmed===false){
+      const prev=txs[i-1];
+      const actualDrop=Math.round((prev.balance-e.balance)*100)/100;
+      if(Math.abs(actualDrop-e.amount)<=0.02){
+        e.fxConfirmed=true; // converted amount matches balance drop
+      }else{
+        e.amount=actualDrop; // use balance-derived amount
+        e.fxConfirmed='estimated';
+      }
     }
-    if(smallRuns.length>=2){
-      const ints=[];for(let i=1;i<smallRuns.length;i++)ints.push(Math.round((new Date(smallRuns[i].date)-new Date(smallRuns[i-1].date))/86400000));
-      smallInterval=Math.round(ints.reduce((a,b)=>a+b,0)/ints.length);
-    }
-    
-    const avgBig=bigRaids.length?Math.round(bigRaids.reduce((s,e)=>s+e.amount,0)/bigRaids.length):0;
-    const avgSmall=smallRuns.length?Math.round(smallRuns.reduce((s,e)=>s+e.amount,0)/smallRuns.length):0;
-    const bigPerMonth=bigInterval>0?Math.round(30/bigInterval*10)/10:0;
-    const smallPerMonth=smallInterval>0?Math.round(30/smallInterval*10)/10:0;
-    
-    habits.groceries={
-      bigRaids:{count:bigRaids.length,avgAmount:avgBig,interval:bigInterval,perMonth:bigPerMonth},
-      smallRuns:{count:smallRuns.length,avgAmount:avgSmall,interval:smallInterval,perMonth:smallPerMonth},
-      monthlyEstimate:Math.round(bigPerMonth*avgBig+smallPerMonth*avgSmall),
-      total:grocTx.length
-    };
   }
-
-  // Dining frequency
-  const dinTx=E.filter(e=>e.category==='Dining').sort((a,b)=>a.date.localeCompare(b.date));
-  if(dinTx.length>=3){
-    const ints=[];for(let i=1;i<dinTx.length;i++)ints.push(Math.round((new Date(dinTx[i].date)-new Date(dinTx[i-1].date))/86400000));
-    const avgInt=ints.length?Math.round(ints.reduce((a,b)=>a+b,0)/ints.length):0;
-    const avgAmt=Math.round(dinTx.reduce((s,e)=>s+e.amount,0)/dinTx.length);
-    habits.dining={interval:avgInt,avgAmount:avgAmt,perMonth:avgInt>0?Math.round(30/avgInt):0,monthlyEstimate:avgInt>0?Math.round((30/avgInt)*avgAmt):0};
-  }
-
-  // Monthly prediction based on learned intervals
-  const mr=mR();
-  const mT=fl(E,mr.s,mr.e);
-  const currentSpend=mT.reduce((s,e)=>s+e.amount,0);
-  let predictedTotal=currentSpend;
-  
-  // Add remaining predicted expenses for rest of month
-  const daysLeft=mr.dm-mr.de;
-  if(habits.fuel&&habits.fuel.nextIn<=daysLeft){
-    const remainingFills=Math.floor(daysLeft/habits.fuel.interval)+((habits.fuel.nextIn<=daysLeft)?1:0);
-    // Only add fills not yet made
-    const fuelThisMonth=mT.filter(e=>e.category==='Transport'&&/WOQOD|PETROL|FUEL/.test(e.merchant.toUpperCase()));
-    const expectedTotalFills=Math.round(mr.dm/habits.fuel.interval);
-    const remainingF=Math.max(expectedTotalFills-fuelThisMonth.length,0);
-    predictedTotal+=remainingF*habits.fuel.avgAmount;
-  }
-  
-  habits.monthlyPrediction=Math.round(predictedTotal);
-  habits.weeklyAvg=E.length>=7?Math.round(E.reduce((s,e)=>s+e.amount,0)/(Math.round((new Date()-new Date(E[0].date))/604800000)||1)):0;
-  
-  return habits;
 }
 
 // ═══ AI ═══
-async function callAI(sys,msg){if(!PX)throw new Error('No proxy URL. Go to Settings.');const r=await fetch(PX,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:Array.isArray(msg)?msg:[{role:'user',content:msg}]})});if(!r.ok)throw new Error('API '+r.status);const d=await r.json();if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));return d.content?.map(b=>b.text||'').join('')||'No response.';}
+async function callAI(sys,msg){if(!PX)throw new Error('No proxy URL. Go to Settings.');const r=await fetch(PX,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:Array.isArray(msg)?msg:[{role:'user',content:msg}]})});if(!r.ok)throw new Error('API '+r.status);const d=await r.json();if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));return d.content?.map(b=>b.text||'').join('')||'No response.'}
+
+// ═══ HABIT ENGINE ═══
+function learnHabits(){
+  const h={};
+  const fuelTx=E.filter(e=>e.category==='Transport'&&/WOQOD|PETROL|FUEL|GAS/i.test(e.merchant)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(fuelTx.length>=2){const ints=[];for(let i=1;i<fuelTx.length;i++)ints.push(Math.round((new Date(fuelTx[i].date)-new Date(fuelTx[i-1].date))/864e5));const ai=Math.round(ints.reduce((a,b)=>a+b,0)/ints.length);const aa=Math.round(fuelTx.reduce((s,e)=>s+e.amount,0)/fuelTx.length);const ds=Math.round((new Date()-new Date(fuelTx[fuelTx.length-1].date))/864e5);h.fuel={interval:ai,avgAmount:aa,daysSince:ds,nextIn:Math.max(ai-ds,0),monthlyEst:Math.round(30/ai*aa)}}
+  const grocTx=E.filter(e=>e.category==='Groceries').sort((a,b)=>a.date.localeCompare(b.date));
+  if(grocTx.length>=3){const big=grocTx.filter(e=>e.amount>=80),sm=grocTx.filter(e=>e.amount<80);let bi=0,si=0;if(big.length>=2){const ii=[];for(let i=1;i<big.length;i++)ii.push(Math.round((new Date(big[i].date)-new Date(big[i-1].date))/864e5));bi=Math.round(ii.reduce((a,b)=>a+b,0)/ii.length)}if(sm.length>=2){const ii=[];for(let i=1;i<sm.length;i++)ii.push(Math.round((new Date(sm[i].date)-new Date(sm[i-1].date))/864e5));si=Math.round(ii.reduce((a,b)=>a+b,0)/ii.length)}const ab=big.length?Math.round(big.reduce((s,e)=>s+e.amount,0)/big.length):0;const as=sm.length?Math.round(sm.reduce((s,e)=>s+e.amount,0)/sm.length):0;h.groceries={bigInterval:bi,bigAvg:ab,smallInterval:si,smallAvg:as,monthlyEst:Math.round((bi>0?30/bi*ab:0)+(si>0?30/si*as:0))}}
+  const dinTx=E.filter(e=>e.category==='Dining');
+  if(dinTx.length>=3){const aa=Math.round(dinTx.reduce((s,e)=>s+e.amount,0)/dinTx.length);h.dining={avgAmount:aa,perMonth:Math.round(30*dinTx.length/Math.max(Math.round((new Date()-new Date(E[0].date))/864e5),1)),monthlyEst:Math.round(aa*30*dinTx.length/Math.max(Math.round((new Date()-new Date(E[0].date))/864e5),1))}}
+  h.weeklyAvg=E.length>=7?Math.round(E.reduce((s,e)=>s+e.amount,0)/(Math.round((new Date()-new Date(E[0].date))/604800000)||1)):0;
+  return h;
+}
 
 // ═══ FETCH ═══
 async function fetchD(){
   try{
     const r=await fetch(SURL),txt=await r.text();
-    const si=txt.indexOf('{'),ei=txt.lastIndexOf('}');
-    if(si===-1)throw new Error('No JSON');
-    const j=JSON.parse(txt.substring(si,ei+1));
-    const rows=j.table.rows||[];
-    E=[];
+    const si2=txt.indexOf('{'),ei=txt.lastIndexOf('}');if(si2===-1)throw new Error('No JSON');
+    const j=JSON.parse(txt.substring(si2,ei+1));const rows=j.table.rows||[];E=[];
     for(const row of rows){
       const c=row.c||[];
-      // Get date — handle multiple formats
       let d=c[0]?.v||'';
-      if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)\)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`;}
+      if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)\)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`}
       else if(d instanceof Date)d=d.toISOString().slice(0,10);
       else if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}/.test(d))d=d.slice(0,10);
-      else{
-        // Try parsing natural date like "8 Apr 2026 at 5:30" or "Apr 8, 2026"
-        const fd=c[0]?.f||d;
-        const pd=new Date(fd.replace(/\s+at\s+.*/i,''));
-        if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);
-        else{
-          // Last resort: try the formatted value
-          const pd2=new Date(d);
-          if(!isNaN(pd2.getTime()))d=pd2.toISOString().slice(0,10);
-          else d='';
-        }
-      }
+      else{const fd=(c[0]?.f||d).replace(/\s+at\s+.*/i,'');const pd=new Date(fd);if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);else d=''}
       if(!d||d.length<10)continue;
-
-      // Get values — treat dashes and empty as null
       const valB=c[1]?.v;const rawB=(valB&&valB!=='-')?valB:'';
-      const valC=c[2]?.v;const numC=(valC&&valC!=='-')?parseFloat(valC):0;
+      const numC=(c[2]?.v&&c[2].v!=='-')?parseFloat(c[2].v):0;
       const valG=c[6]?.v;const rawG=(valG&&valG!=='-')?valG:'';
-
-      // Detect row type
-      const hasArabicInG=rawG&&/[\u0600-\u06FF]/.test(rawG);
-      const hasArabicInB=rawB&&/[\u0600-\u06FF]/.test(rawB);
-      const isLegacy=rawG&&numC>0&&rawB; // G has SMS, C has amount, B has merchant
-      const isRawG=hasArabicInG&&!numC; // G has Arabic SMS, C is empty/dash
-      const isRawB=hasArabicInB&&!numC; // B has Arabic SMS, C is empty/dash
-
-      if(isLegacy){
-        const preCurrency=c[3]?.v||'QAR';
-        const preCategory=c[4]?.v||categorize(rawB);
-        const preBalance=parseFloat(c[5]?.v)||0;
-        E.push({date:d,merchant:rawB,amount:numC,currency:preCurrency==='- '?'QAR':preCurrency,category:preCategory==='-'?categorize(rawB):preCategory,balance:preBalance,raw:rawG});
-      }else if(isRawG){
-        const p=parseSMS(rawG);
-        if(p&&p.amount>0)E.push({date:d,merchant:p.merchant,amount:p.amount,currency:p.currency,category:p.category,balance:p.balance,raw:rawG});
-      }else if(isRawB){
-        const p=parseSMS(rawB);
-        if(p&&p.amount>0)E.push({date:d,merchant:p.merchant,amount:p.amount,currency:p.currency,category:p.category,balance:p.balance,raw:rawB});
-      }else if(rawB&&numC>0){
-        // B is merchant, C has amount, no G
-        E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB),balance:parseFloat(c[5]?.v)||0,raw:''});
-      }
+      const hasArabicG=rawG&&/[\u0600-\u06FF]/.test(rawG);
+      const hasArabicB=rawB&&/[\u0600-\u06FF]/.test(rawB);
+      const isLegacy=rawG&&numC>0&&rawB;
+      if(isLegacy){E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:rawG,fxConfirmed:true})}
+      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawG})}
+      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawB})}
+      else if(rawB&&numC>0){E.push({date:d,merchant:rawB,amount:numC,currency:'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:'',fxConfirmed:true})}
     }
-    document.getElementById('si').textContent='LIVE';document.getElementById('si').style.color='var(--gn)';
-    document.getElementById('eb').style.display='none';
-  }catch(e){
-    document.getElementById('si').textContent='DEMO';document.getElementById('si').style.color='var(--am)';
-    document.getElementById('eb').textContent='⚠ '+e.message;document.getElementById('eb').style.display='block';
-    E=genDemo();
-  }
+    // Place missing TX by balance chain
+    const pending=E.filter(e=>e.date==='_pending');
+    const placed=E.filter(e=>e.date!=='_pending').sort((a,b)=>a.date.localeCompare(b.date));
+    for(const p of pending){
+      let bestIdx=placed.length;
+      for(let i=0;i<placed.length;i++){
+        if(placed[i].balance<=p.balance&&(i===0||placed[i-1].balance>=p.balance)){bestIdx=i;break}
+      }
+      p.date=bestIdx>0?placed[bestIdx-1].date:placed[0]?.date||td();
+      placed.splice(bestIdx,0,p);
+    }
+    E=placed;
+    crossCheckFX(E);
+    document.getElementById('si').textContent='LIVE';document.getElementById('si').style.color='var(--gn)';document.getElementById('eb').style.display='none';
+  }catch(e){document.getElementById('si').textContent='DEMO';document.getElementById('si').style.color='var(--am)';document.getElementById('eb').textContent='⚠ '+e.message;document.getElementById('eb').style.display='block';E=genDemo()}
   CL=dL(E);
   document.getElementById('ls').style.display='none';
   document.getElementById('lf').textContent='↻ '+new Date().toLocaleTimeString();
   document.getElementById('sI2').textContent='Sheet: '+SID.slice(0,12)+'…';
-  document.getElementById('rC').textContent=E.length+' records · '+CL.length+' loads';
+  document.getElementById('rC').textContent=E.length+' tx · '+CL.length+' loads';
   document.getElementById('ab').style.display=PX?'none':'flex';
-  chkNW();
-  renderAll();
+  // Gap banner
+  if(gaps.length>0){
+    const details=gaps.map(g=>`~${f$(g.amount)} around ${g.dateFrom}–${g.dateTo}`).join(' · ');
+    document.getElementById('gapB').innerHTML=`⚠ ${gaps.length} gap${gaps.length>1?'s':''} detected · ${details} · Add "missing" when you log them · <a onclick="document.querySelector('.nb[data-v=led]').click();document.getElementById('lCat').value='_missing';rLed()">View gaps →</a>`;
+    document.getElementById('gapB').style.display='block';
+  }else{document.getElementById('gapB').style.display='none'}
+  chkNW();renderAll();
 }
 
-function genDemo(){
-  const ms=[{n:'HOT BAKE CATERING',c:'Dining',a:[35,46,52]},{n:'LULU HYPERMARKET',c:'Groceries',a:[120,85,210]},{n:'UBER TRIP',c:'Transport',a:[18,25]},{n:'CARREFOUR',c:'Groceries',a:[65,92]},{n:'NETFLIX',c:'Subscriptions',a:[45]},{n:'ZARA QATAR',c:'Shopping',a:[189,350]},{n:'KAHRAMAA',c:'Bills',a:[280]},{n:'TALABAT ORDER',c:'Dining',a:[42,68]},{n:'WOQOD PETROL',c:'Transport',a:[100,150]}];
-  const d=[];let b=800;
-  for(let i=45;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);if(i%12===0&&i>0)b+=500+Math.floor(Math.random()*1000);const n=Math.floor(Math.random()*3)+1;for(let t=0;t<n;t++){const m=ms[Math.floor(Math.random()*ms.length)];const a=m.a[Math.floor(Math.random()*m.a.length)]+Math.round(Math.random()*10-5);b=Math.max(b-a,50);d.push({date:dt.toISOString().slice(0,10),merchant:m.n,amount:Math.max(a,5),currency:'QAR',category:m.c,balance:Math.round(b*100)/100,raw:''});}}
-  return d;
-}
+function genDemo(){const ms=[{n:'HOT BAKE CATERING',c:'Dining',a:[2,2,2]},{n:'LULU HYPERMARKET',c:'Groceries',a:[120,85,210]},{n:'UBER TRIP',c:'Transport',a:[18,25]},{n:'CARREFOUR',c:'Groceries',a:[65,92]},{n:'NETFLIX.COM',c:'Subscriptions',a:[45]},{n:'ZARA QATAR',c:'Clothing',a:[189,350]},{n:'KAHRAMAA',c:'Bills',a:[280]},{n:'TALABAT ORDER',c:'Dining',a:[42,68]},{n:'WOQOD PETROL',c:'Transport',a:[100,150]}];const d=[];let b=800;for(let i=45;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);if(i%12===0&&i>0)b+=500+Math.floor(Math.random()*1000);const n=Math.floor(Math.random()*3)+1;for(let t=0;t<n;t++){const m=ms[Math.floor(Math.random()*ms.length)];const a=m.a[Math.floor(Math.random()*m.a.length)]+Math.round(Math.random()*10-5);b=Math.max(b-a,50);d.push({date:dt.toISOString().slice(0,10),merchant:m.n,amount:Math.max(a,5),currency:'QAR',category:m.c,balance:Math.round(b*100)/100,raw:'',fxConfirmed:true})}}return d}
 
 // ═══ HELPERS ═══
-// Week: Sunday to Saturday (Middle East)
-function wR(w=0){
-  const n=new Date();
-  // Find most recent Sunday (day 0)
-  const dayOfWeek=n.getDay(); // 0=Sun,1=Mon,...6=Sat
-  const thisSunday=new Date(n);
-  thisSunday.setDate(n.getDate()-dayOfWeek-w*7);
-  const thisSaturday=new Date(thisSunday);
-  thisSaturday.setDate(thisSunday.getDate()+6);
-  // Don't go past today for current week
-  const end=w===0&&thisSaturday>n?n:thisSaturday;
-  return{s:thisSunday.toISOString().slice(0,10),e:end.toISOString().slice(0,10)};
-}
-function mR(){const n=new Date();return{s:new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10),e:n.toISOString().slice(0,10),de:n.getDate(),dm:new Date(n.getFullYear(),n.getMonth()+1,0).getDate()};}
-function fl(a,s,e){return a.filter(x=>x.date>=s&&x.date<=e);}
-function cbk(a){const m={};a.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([c,s])=>({cat:c,spent:s,...gc(c)}));}
+function wR(w=0){const n=new Date();const dow=n.getDay();const sun=new Date(n);sun.setDate(n.getDate()-dow-w*7);const sat=new Date(sun);sat.setDate(sun.getDate()+6);const end=w===0&&sat>n?n:sat;return{s:sun.toISOString().slice(0,10),e:end.toISOString().slice(0,10)}}
+function mR(){const n=new Date();return{s:new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10),e:n.toISOString().slice(0,10),de:n.getDate(),dm:new Date(n.getFullYear(),n.getMonth()+1,0).getDate()}}
+function lmR(){const n=new Date();const s=new Date(n.getFullYear(),n.getMonth()-1,1);const e2=new Date(n.getFullYear(),n.getMonth(),0);return{s:s.toISOString().slice(0,10),e:e2.toISOString().slice(0,10)}}
+function fl(a,s,e){return a.filter(x=>x.date>=s&&x.date<=e)}
+function cbk(a){const m={};a.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount});return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([c,s])=>({cat:c,spent:s,...gc(c)}))}
 
-function mkS(data,color,w,h){
-  if(!data||data.length<2)return`<div style="height:${h}px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dm);font-family:var(--mf)">NO DATA</div>`;
-  const mx=Math.max(...data),mn=Math.min(...data),rg=mx-mn||1;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-4-((v-mn)/rg)*(h-8)}`).join(' ');const ly=h-4-((data[data.length-1]-mn)/rg)*(h-8);const id='g'+Math.random().toString(36).slice(2,8);
-  return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity=".15"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${pts} ${w},${h}" fill="url(#${id})"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${w}" cy="${ly}" r="4" fill="${color}"/></svg>`;
+function mkS(data,color,w,h){if(!data||data.length<2)return`<div style="height:${h}px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dm)">NO DATA</div>`;const mx=Math.max(...data),mn=Math.min(...data),rg=mx-mn||1;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-4-((v-mn)/rg)*(h-8)}`).join(' ');const ly=h-4-((data[data.length-1]-mn)/rg)*(h-8);const id='g'+Math.random().toString(36).slice(2,8);return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity=".15"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${pts} ${w},${h}" fill="url(#${id})"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${w}" cy="${ly}" r="4" fill="${color}"/></svg>`}
+
+function mkNWChart(data,w,h,goal){
+  if(!data||data.length<2)return`<div style="height:${h}px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dm)">Add 2+ snapshots</div>`;
+  const allVals=goal>0?[...data,goal]:data;
+  const mx=Math.max(...allVals),mn=Math.min(...allVals),rg=mx-mn||1;
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-6-((v-mn)/rg)*(h-12)}`).join(' ');
+  const ly=h-6-((data[data.length-1]-mn)/rg)*(h-12);
+  const id='nw'+Math.random().toString(36).slice(2,8);
+  let goalLine='';
+  if(goal>0){const gy=h-6-((goal-mn)/rg)*(h-12);goalLine=`<line x1="0" y1="${gy}" x2="${w}" y2="${gy}" stroke="var(--am)" stroke-width="1.5" stroke-dasharray="6,4" opacity=".6"/><text x="${w-4}" y="${gy-6}" text-anchor="end" fill="var(--am)" font-size="10" font-family="var(--mf)" opacity=".7">Goal: ${f$(goal)}</text>`}
+  return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4DAA72" stop-opacity=".15"/><stop offset="100%" stop-color="#4DAA72" stop-opacity="0"/></linearGradient></defs>${goalLine}<polygon points="0,${h} ${pts} ${w},${h}" fill="url(#${id})"/><polyline points="${pts}" fill="none" stroke="#4DAA72" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${w}" cy="${ly}" r="4" fill="#4DAA72"/></svg>`;
 }
-function mkBal(tx,ld,w,h){
-  if(tx.length<2)return'<div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--dm);font-size:14px">Not enough data</div>';
-  const bs=tx.map(t=>t.balance),mx=Math.max(...bs),mn=Math.min(...bs),rg=mx-mn||1;const pts=bs.map((v,i)=>({x:(i/(bs.length-1))*w,y:h-8-((v-mn)/rg)*(h-16)}));const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
-  const li=new Set();ld.forEach(l=>{const i=tx.findIndex(t=>t.date===l.date&&Math.abs(t.balance-l.ba)<1);if(i>=0)li.add(i);});const id='bc'+Math.random().toString(36).slice(2,8);let circles='';li.forEach(i=>{if(pts[i])circles+=`<circle cx="${pts[i].x}" cy="${pts[i].y}" r="6" fill="#4ABFC4" stroke="var(--bg)" stroke-width="2.5"/>`;});
-  return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D4A843" stop-opacity=".1"/><stop offset="100%" stop-color="#D4A843" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${poly} ${w},${h}" fill="url(#${id})"/><polyline points="${poly}" fill="none" stroke="#D4A843" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles}</svg><div style="display:flex;gap:18px;margin-top:10px;font-size:11px;font-family:var(--mf);color:var(--dm)"><span>— Balance</span><span style="color:var(--cy)">● Load</span></div>`;
-}
-function mkG(v,m,c,h=7){const p=m>0?(v/m)*100:0;const fl2=p>100?'var(--rd)':p>80?'var(--am)':c;return`<div style="background:var(--ln);border-radius:6px;height:${h}px;width:100%"><div style="width:${Math.min(p,100)}%;height:100%;border-radius:6px;background:${fl2};transition:width .5s"></div></div>`;}
+
+function mkBal(tx,ld,w,h){if(tx.length<2)return'<div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--dm)">Not enough data</div>';const bs=tx.map(t=>t.balance),mx=Math.max(...bs),mn=Math.min(...bs),rg=mx-mn||1;const pts=bs.map((v,i)=>({x:(i/(bs.length-1))*w,y:h-8-((v-mn)/rg)*(h-16)}));const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');const li=new Set();ld.forEach(l=>{const i=tx.findIndex(t=>t.date===l.date&&Math.abs(t.balance-l.ba)<1);if(i>=0)li.add(i)});const id='bc'+Math.random().toString(36).slice(2,8);let circles='';li.forEach(i=>{if(pts[i])circles+=`<circle cx="${pts[i].x}" cy="${pts[i].y}" r="6" fill="#4ABFC4" stroke="var(--bg)" stroke-width="2.5"/>`});return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D4A843" stop-opacity=".1"/><stop offset="100%" stop-color="#D4A843" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${poly} ${w},${h}" fill="url(#${id})"/><polyline points="${poly}" fill="none" stroke="#D4A843" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles}</svg><div style="display:flex;gap:18px;margin-top:10px;font-size:11px;font-family:var(--mf);color:var(--dm)"><span>— Balance</span><span style="color:var(--cy)">● Load</span></div>`}
+function mkG(v,m,c,h=7){const p=m>0?(v/m)*100:0;const fl2=p>100?'var(--rd)':p>80?'var(--am)':c;return`<div style="background:var(--ln);border-radius:6px;height:${h}px;width:100%"><div style="width:${Math.min(p,100)}%;height:100%;border-radius:6px;background:${fl2};transition:width .5s"></div></div>`}
 
 // ═══ RENDER ═══
 function renderAll(){
@@ -511,78 +393,100 @@ function renderAll(){
   const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),mLt=mLd.reduce((s,l)=>s+l.amt,0);
   const wLd=CL.filter(l=>l.date>=tw.s&&l.date<=tw.e),wLt=wLd.reduce((s,l)=>s+l.amt,0);
 
-  // CMD
-  document.getElementById('wr').textContent=`Week of ${tw.s} → ${tw.e}`;
+  document.getElementById('wr').textContent=`Sun–Sat · ${tw.s} → ${tw.e}`;
   document.getElementById('k1').textContent=f$(ws);document.getElementById('k1d').textContent=`${wd>0?'↑':'↓'} ${Math.abs(wd).toFixed(1)}%`;document.getElementById('k1d').style.color=wd>0?'var(--rd)':'var(--gn)';
   document.getElementById('k2').textContent=f$(ms);document.getElementById('k2d').textContent=mT.length+' tx';
   document.getElementById('k3').textContent=f$(bal);
   document.getElementById('k4').textContent=f$(mLt);document.getElementById('k4d').textContent=mLd.length+' loads';
 
-  const tm={};for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);tm[d.toISOString().slice(0,10)]=0;}
-  E.forEach(e=>{if(tm[e.date]!==undefined)tm[e.date]+=e.amount;});
+  const tm={};for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);tm[d.toISOString().slice(0,10)]=0}E.forEach(e=>{if(tm[e.date]!==undefined)tm[e.date]+=e.amount});
   document.getElementById('tc').innerHTML=mkS(Object.values(tm),'#D4A843',480,90);
 
   const wC=cbk(wT),mxC=wC.length>0?wC[0].spent:1;
   document.getElementById('cs').innerHTML=wC.length===0?'<div style="color:var(--dm);padding:10px">No spending</div>':wC.slice(0,6).map(c=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="font-size:14px;color:${c.c}">${c.i}</span><span style="font-size:14px;flex:1">${c.cat}</span>${mkG(c.spent,mxC,c.c,6)}<span style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px;text-align:right">${f$(c.spent)}</span></div>`).join('');
 
+  // Budget alerts on command
   const als=bAl(mT,mr);
-  document.getElementById('ba').innerHTML=als.length===0?'':`<div class="cd"><div class="lb">Budget Status</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:14px">${als.map(b=>`<div style="padding:14px;background:var(--bg);border-radius:10px;border:1px solid ${b.wb?'rgba(201,84,84,.3)':'var(--ln)'}"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:14px;font-weight:500">${gc(b.cat).i} ${b.cat}</span><span style="font-size:12px;font-family:var(--mf);color:${b.wb?'var(--rd)':'var(--gn)'}">${b.wb?'⚠ BREACH':'OK'}</span></div>${mkG(b.spent,b.bud,gc(b.cat).c,6)}<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-family:var(--mf);color:var(--dm)"><span>${f$(b.spent)}/${f$(b.bud)}</span><span>→${f$(b.proj)}</span></div></div>`).join('')}</div></div>`;
+  document.getElementById('ba').innerHTML=als.length===0?'':`<div class="cd"><div class="lb">Budget Status</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:14px">${als.map(b=>`<div style="padding:14px;background:var(--bg);border-radius:10px;border:1px solid ${b.wb?'rgba(201,84,84,.3)':'var(--ln)'}"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:14px;font-weight:500">${gc(b.cat).i} ${b.cat}</span><span style="font-size:12px;font-family:var(--mf);color:${b.wb?'var(--rd)':'var(--gn)'}">${b.wb?'⚠':'OK'}</span></div>${mkG(b.spent,b.bud,gc(b.cat).c,6)}<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-family:var(--mf);color:var(--dm)"><span>${f$(b.spent)} (${Math.round(b.pct)}%)</span><span>pred: ${f$(b.proj)}</span></div></div>`).join('')}</div></div>`;
 
-  document.getElementById('clg').innerHTML=CL.length===0?'<div style="color:var(--dm)">None detected</div>':CL.slice(-4).reverse().map(l=>`<div class="tr"><span class="tu">↑</span><span style="flex:1">${l.date}</span><span style="font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</span></div>`).join('');
+  document.getElementById('clg').innerHTML=CL.length===0?'<div style="color:var(--dm)">None</div>':CL.slice(-4).reverse().map(l=>`<div class="tr"><span class="tu">↑</span><span style="flex:1">${l.date}</span><span style="font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</span></div>`).join('');
   document.getElementById('rt').innerHTML=E.slice(-5).reverse().map(e=>`<div class="tr"><span style="color:${gc(e.category).c}">${gc(e.category).i}</span><span style="flex:1">${e.merchant}</span><span style="font-size:13px;font-family:var(--mf);color:var(--dm)">${f$(e.amount)}</span></div>`).join('')||'<div style="color:var(--dm)">No data</div>';
 
-  // Digest
-  document.getElementById('dr').textContent=`${tw.s} → ${tw.e}`;
-  document.getElementById('d1').textContent=f$(ws);document.getElementById('d2').textContent=f$(ls2);
-  document.getElementById('d1d').textContent=`${wd>0?'↑':'↓'} ${Math.abs(wd).toFixed(1)}%`;document.getElementById('d1d').style.color=wd>0?'var(--rd)':'var(--gn)';
-  document.getElementById('d3').textContent=wT.length;
-  document.getElementById('d4').textContent=wLd.length>0?`${wLd.length} · ${f$(wLt)}`:'0';
-
-  rEnv(mT,mr);rCF(mr,mT,mLd,mLt,bal);rNW();rLed();
+  rDig();rEnv(mT,mr,ws,wT);rCF(mr,mT,mLd,mLt,bal);rNW();rLed();
 }
 
-function bAl(mT,mr){const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});const p=mr.dm/Math.max(mr.de,1);return Object.keys(BU).map(c=>{const s=cm[c]||0,b=BU[c],pct=(s/b)*100,pr=Math.round(s*p);return{cat:c,spent:s,bud:b,proj:pr,pct,wb:pr>b};});}
+function bAl(mT,mr){const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount});const habits=learnHabits();return Object.keys(BU).map(c=>{const s=cm[c]||0,b=BU[c];let pr;if(c==='Transport'&&habits.fuel)pr=habits.fuel.monthlyEst;else if(c==='Groceries'&&habits.groceries)pr=habits.groceries.monthlyEst;else pr=Math.round(s*(mr.dm/Math.max(mr.de,1)));const pct=(s/b)*100;return{cat:c,spent:s,bud:b,proj:pr,pct,wb:pr>b}})}
 
-function rEnv(mT,mr){
+// ═══ DIGEST ═══
+function setDM(m){dgm=m;document.getElementById('dgW').className=m==='w'?'pl on':'pl';document.getElementById('dgM').className=m==='m'?'pl on':'pl';rDig()}
+function rDig(){
+  const tw=wR(0),lw=wR(1),mr=mR(),lmr=lmR();
+  if(dgm==='w'){
+    const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e);
+    const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),wd=ls2>0?((ws-ls2)/ls2*100):0;
+    const wLd=CL.filter(l=>l.date>=tw.s&&l.date<=tw.e);
+    document.getElementById('dr').textContent=`Weekly · ${tw.s} → ${tw.e}`;
+    document.getElementById('dgL1').textContent='This Week';document.getElementById('dgL2').textContent='Last Week';
+    document.getElementById('d1').textContent=f$(ws);document.getElementById('d2').textContent=f$(ls2);
+    document.getElementById('d1d').textContent=`${wd>0?'↑':'↓'} ${Math.abs(wd).toFixed(1)}%`;document.getElementById('d1d').style.color=wd>0?'var(--rd)':'var(--gn)';
+    document.getElementById('d3').textContent=wT.length;document.getElementById('d4').textContent=wLd.length>0?`${wLd.length} · ${f$(wLd.reduce((s,l)=>s+l.amt,0))}`:'0';
+  }else{
+    const mT=fl(E,mr.s,mr.e),lmT=fl(E,lmr.s,lmr.e);
+    const ms=mT.reduce((s,e)=>s+e.amount,0),lms=lmT.reduce((s,e)=>s+e.amount,0),md=lms>0?((ms-lms)/lms*100):0;
+    const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e);
+    document.getElementById('dr').textContent=`Monthly · ${mr.s} → ${mr.e} (day ${mr.de}/${mr.dm})`;
+    document.getElementById('dgL1').textContent='This Month';document.getElementById('dgL2').textContent='Last Month';
+    document.getElementById('d1').textContent=f$(ms);document.getElementById('d2').textContent=f$(lms);
+    document.getElementById('d1d').textContent=`${md>0?'↑':'↓'} ${Math.abs(md).toFixed(1)}%`;document.getElementById('d1d').style.color=md>0?'var(--rd)':'var(--gn)';
+    document.getElementById('d3').textContent=mT.length;document.getElementById('d4').textContent=mLd.length>0?`${mLd.length} · ${f$(mLd.reduce((s,l)=>s+l.amt,0))}`:'0';
+  }
+}
+
+// ═══ ENVELOPES ═══
+function toggleBudCat(){document.getElementById('budCatRow').style.display=document.getElementById('bType').value==='category'?'block':'none'}
+
+function rEnv(mT,mr,ws,wT){
   document.getElementById('eI').textContent=`${new Date().toLocaleString('en',{month:'long',year:'numeric'})} · Day ${mr.de}/${mr.dm}`;
-  const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
   const habits=learnHabits();
+  // Total spending envelopes
+  let totalHtml='';
+  if(TBUDGET.weekly||TBUDGET.monthly){
+    totalHtml='<div class="g2" style="margin-bottom:16px">';
+    if(TBUDGET.weekly){const pct=(ws/TBUDGET.weekly)*100;totalHtml+=`<div class="cd"><div class="lb">Weekly Total</div>${mkG(ws,TBUDGET.weekly,'var(--am)',9)}<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-family:var(--mf)"><span>${f$(ws)} (${Math.round(pct)}%)</span><span style="color:var(--dm)">${f$(TBUDGET.weekly)} limit</span></div><div style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:4px">Predicted: ${f$(habits.weeklyAvg||ws)}/wk</div></div>`}
+    if(TBUDGET.monthly){const ms2=mT.reduce((s,e)=>s+e.amount,0);const pct=(ms2/TBUDGET.monthly)*100;let pred=0;Object.values(habits).forEach(h=>{if(h.monthlyEst)pred+=h.monthlyEst});if(!pred)pred=Math.round(ms2*(mr.dm/Math.max(mr.de,1)));totalHtml+=`<div class="cd"><div class="lb">Monthly Total</div>${mkG(ms2,TBUDGET.monthly,'var(--am)',9)}<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-family:var(--mf)"><span>${f$(ms2)} (${Math.round(pct)}%)</span><span style="color:var(--dm)">${f$(TBUDGET.monthly)} limit</span></div><div style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:4px">Predicted: ${f$(pred)}</div></div>`}
+    totalHtml+='</div>';
+  }
+  document.getElementById('totalEnv').innerHTML=totalHtml;
+
+  const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount});
   const all=Object.keys(CATS).map(c=>({cat:c,spent:cm[c]||0,budget:BU[c]||0,...gc(c)})).filter(c=>c.budget>0||c.spent>0).sort((a,b)=>b.spent-a.spent);
-  if(!all.length){document.getElementById('eG').innerHTML=`<div class="cd" style="text-align:center;padding:44px;grid-column:1/-1"><div style="font-size:36px;margin-bottom:14px">▦</div><div style="font-size:16px;color:var(--dm);margin-bottom:18px">No budgets set.</div><button class="bt bp" onclick="openM('bud')">Set First Budget</button></div>`;return;}
+  if(!all.length&&!totalHtml){document.getElementById('eG').innerHTML=`<div class="cd" style="text-align:center;padding:44px;grid-column:1/-1"><div style="font-size:36px;margin-bottom:14px">▦</div><div style="font-size:16px;color:var(--dm);margin-bottom:18px">No budgets set.</div><button class="bt bp" onclick="openM('bud')">Set First Budget</button></div>`;return}
   const dl=mr.dm-mr.de;
   document.getElementById('eG').innerHTML=all.map(c=>{
     if(!c.budget)return`<div class="cd"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><div style="font-size:14px;color:var(--dm)">${f$(c.spent)} spent<br><button onclick="document.getElementById('bCi').value='${c.cat}';openM('bud')" style="background:0;border:0;color:var(--am);cursor:pointer;font-size:13px;margin-top:6px;font-family:var(--mf)">+ Set limit</button></div></div>`;
-    // Bar = pure spend/budget percentage
-    const pct=(c.spent/c.budget)*100;
-    // Prediction: use habit-based if available, else pace-based
-    let pr;
-    if(c.cat==='Transport'&&habits.fuel)pr=habits.fuel.monthlyEstimate;
-    else if(c.cat==='Groceries'&&habits.groceries)pr=habits.groceries.monthlyEstimate;
-    else if(c.cat==='Dining'&&habits.dining)pr=habits.dining.monthlyEstimate;
-    else pr=Math.round(c.spent*(mr.dm/Math.max(mr.de,1)));
-    const wb=pr>c.budget;
-    const rm2=Math.max(c.budget-c.spent,0),da=dl>0?rm2/dl:0;
-    return`<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="display:flex;align-items:center;gap:10px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><button onclick="remBud('${c.cat}')" style="background:0;border:0;color:var(--dm);cursor:pointer">✕</button></div>${mkG(c.spent,c.budget,c.c,9)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;font-family:var(--mf)"><span>${f$(c.spent)} (${Math.round(pct)}%)</span><span style="color:var(--dm)">${f$(c.budget)}</span></div><div class="dv"></div><div class="es"><div><div class="el">PREDICTED</div><div style="color:${wb?'var(--rd)':'var(--gn)'}">${f$(pr)}</div></div><div><div class="el">DAILY LEFT</div><div>${f$(da)}/day</div></div><div><div class="el">STATUS</div><div style="color:${pct>100?'var(--rd)':pct>80?'var(--am)':'var(--gn)'}">${pct>100?'OVER':pct>80?'CAUTION':'OK'}</div></div><div><div class="el">REMAINING</div><div>${f$(rm2)}</div></div></div></div>`;
+    const pct=(c.spent/c.budget)*100;let pr;if(c.cat==='Transport'&&habits.fuel)pr=habits.fuel.monthlyEst;else if(c.cat==='Groceries'&&habits.groceries)pr=habits.groceries.monthlyEst;else if(c.cat==='Dining'&&habits.dining)pr=habits.dining.monthlyEst;else pr=Math.round(c.spent*(mr.dm/Math.max(mr.de,1)));
+    const wb=pr>c.budget,rm2=Math.max(c.budget-c.spent,0),da=dl>0?rm2/dl:0;
+    return`<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="display:flex;align-items:center;gap:10px"><span style="color:${c.c};font-size:18px">${c.i}</span><span style="font-size:18px;font-weight:600">${c.cat}</span></div><button onclick="remBud('${c.cat}')" style="background:0;border:0;color:var(--dm);cursor:pointer">✕</button></div>${mkG(c.spent,c.budget,c.c,9)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;font-family:var(--mf)"><span>${f$(c.spent)} (${Math.round(pct)}%)</span><span style="color:var(--dm)">${f$(c.budget)}</span></div><div class="dv"></div><div class="es"><div><div class="el">PREDICTED</div><div style="color:${wb?'var(--rd)':'var(--gn)'}">${f$(pr)}</div></div><div><div class="el">DAILY</div><div>${f$(da)}/day</div></div><div><div class="el">STATUS</div><div style="color:${pct>100?'var(--rd)':pct>80?'var(--am)':'var(--gn)'}">${pct>100?'OVER':pct>80?'CAUTION':'OK'}</div></div><div><div class="el">LEFT</div><div>${f$(rm2)}</div></div></div></div>`;
   }).join('');
 }
 
-function rCF(mr,mT,mLd,mLt,bal){
-  document.getElementById('cf1').textContent=f$(bal);
-  document.getElementById('cf2').textContent=f$(mLt);document.getElementById('cf2d').textContent=mLd.length+' loads';
-  document.getElementById('cf3').textContent=f$(mT.reduce((s,e)=>s+e.amount,0));
-  document.getElementById('cfC').innerHTML=mkBal(E.slice(-60),CL,620,150);
-  document.getElementById('cfH').innerHTML=CL.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No loads detected.</div>':CL.slice().reverse().map(l=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${l.date}</div><span class="tu">↑</span><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</div><div style="font-size:12px;color:var(--dm);margin-top:3px">${f$(l.bb)} → ${f$(l.ba)}</div></div></div>`).join('');
-}
+function rCF(mr,mT,mLd,mLt,bal){document.getElementById('cf1').textContent=f$(bal);document.getElementById('cf2').textContent=f$(mLt);document.getElementById('cf2d').textContent=mLd.length+' loads';document.getElementById('cf3').textContent=f$(mT.reduce((s,e)=>s+e.amount,0));document.getElementById('cfC').innerHTML=mkBal(E.slice(-60),CL,620,150);document.getElementById('cfH').innerHTML=CL.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No loads.</div>':CL.slice().reverse().map(l=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${l.date}</div><span class="tu">↑</span><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</div><div style="font-size:12px;color:var(--dm);margin-top:3px">${f$(l.bb)} → ${f$(l.ba)}</div></div></div>`).join('')}
 
 function rNW(){
   const so=[...NW].sort((a,b)=>a.date.localeCompare(b.date)),vs=so.map(n=>n.amount);
   const la=so.length>0?so[so.length-1]:null,pv=so.length>1?so[so.length-2]:null,dl=la&&pv?la.amount-pv.amount:0;
   document.getElementById('n1').textContent=la?f$(la.amount):'—';document.getElementById('n1d').textContent=la?la.date:'';
   document.getElementById('n2').textContent=dl!==0?`${dl>=0?'+':''}${f$(dl)}`:'—';document.getElementById('n2').style.color=dl>=0?'var(--gn)':'var(--rd)';
-  document.getElementById('n3').textContent=NW.length;
-  document.getElementById('nT').innerHTML=vs.length>=2?mkS(vs,'#4DAA72',620,130):'<div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--dm)">Add 2+ snapshots</div>';
+  // Goal
+  if(NWGOAL>0){
+    document.getElementById('n4').textContent=f$(NWGOAL);
+    const latest=la?la.amount:0;const pct=Math.round(latest/NWGOAL*100);
+    document.getElementById('n4d').textContent=`${pct}% reached`;
+    document.getElementById('nwGoalBar').innerHTML=`<div class="cd"><div class="lb">Goal Progress</div>${mkG(latest,NWGOAL,'var(--gn)',12)}<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-family:var(--mf)"><span style="color:var(--gn)">${f$(latest)}</span><span style="color:var(--dm)">${f$(NWGOAL)} target</span></div></div>`;
+  }else{document.getElementById('n4').textContent='Not set';document.getElementById('n4d').textContent='';document.getElementById('nwGoalBar').innerHTML=''}
+  document.getElementById('nT').innerHTML=mkNWChart(vs,620,130,NWGOAL);
   const desc=[...NW].sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('nH').innerHTML=desc.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No entries yet.</div>':desc.map((n,i)=>{const p=desc[i+1];const d=p?n.amount-p.amount:0;return`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${n.date}</div><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mf)">${f$(n.amount)}</div>${n.note?`<div style="font-size:13px;color:var(--dm);margin-top:3px">${n.note}</div>`:''}</div>${d!==0?`<span style="font-size:13px;font-family:var(--mf);color:${d>=0?'var(--gn)':'var(--rd)'}">${d>=0?'+':''}${f$(d)}</span>`:''}<button onclick="delNW(${n.id})" style="background:0;border:0;color:var(--dm);cursor:pointer">✕</button></div>`;}).join('');
+  document.getElementById('nH').innerHTML=desc.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No entries.</div>':desc.map((n,i)=>{const p=desc[i+1];const d=p?n.amount-p.amount:0;return`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${n.date}</div><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mf)">${f$(n.amount)}</div>${n.note?`<div style="font-size:13px;color:var(--dm);margin-top:3px">${n.note}</div>`:''}</div>${d!==0?`<span style="font-size:13px;font-family:var(--mf);color:${d>=0?'var(--gn)':'var(--rd)'}">${d>=0?'+':''}${f$(d)}</span>`:''}<button onclick="delNW(${n.id})" style="background:0;border:0;color:var(--dm);cursor:pointer">✕</button></div>`}).join('');
 }
 
 // ═══ LEDGER ═══
@@ -592,159 +496,102 @@ function rLed(){
   const period=document.getElementById('lP')?.value||'';
   let rows=E.slice().reverse();
   if(search)rows=rows.filter(e=>e.merchant.toLowerCase().includes(search));
+  if(cat==='_missing'){/* show gaps instead */
+    document.getElementById('lC').textContent=gaps.length+' gaps';
+    document.getElementById('lB').innerHTML=gaps.map(g=>`<tr style="background:rgba(212,133,58,.05)"><td style="font-family:var(--mf);font-size:13px;color:var(--or)">${g.dateFrom} – ${g.dateTo}</td><td style="color:var(--or)">Missing Transaction</td><td style="font-family:var(--mf);font-weight:500;color:var(--or)">${f$(g.amount)}</td><td><span class="miss-badge">⚠ Gap</span></td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(g.expectedBal)} → ${f$(g.balAfter)}</td><td></td></tr>`).join('');
+    document.getElementById('lSm').innerHTML=`${gaps.length} gaps · Total unaccounted: ${f$(gaps.reduce((s,g)=>s+g.amount,0))}`;
+    return;
+  }
   if(cat)rows=rows.filter(e=>e.category===cat);
-  if(period==='week'){const tw=wR(0);rows=rows.filter(e=>e.date>=tw.s&&e.date<=tw.e);}
-  else if(period==='month'){const mr=mR();rows=rows.filter(e=>e.date>=mr.s&&e.date<=mr.e);}
-  else if(period==='last'){const n=new Date(),s=new Date(n.getFullYear(),n.getMonth()-1,1),e2=new Date(n.getFullYear(),n.getMonth(),0);rows=rows.filter(e=>e.date>=s.toISOString().slice(0,10)&&e.date<=e2.toISOString().slice(0,10));}
-
+  if(period==='week'){const tw=wR(0);rows=rows.filter(e=>e.date>=tw.s&&e.date<=tw.e)}
+  else if(period==='month'){const mr=mR();rows=rows.filter(e=>e.date>=mr.s&&e.date<=mr.e)}
+  else if(period==='last'){const l=lmR();rows=rows.filter(e=>e.date>=l.s&&e.date<=l.e)}
   const total=rows.reduce((s,e)=>s+e.amount,0);
   document.getElementById('lC').textContent=rows.length+' of '+E.length;
   const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
-  const shown=rows.slice(0,200);
-  document.getElementById('lB').innerHTML=shown.map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td>${e.merchant}</td><td style="font-family:var(--mf);font-weight:500">${f$(e.amount)}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}</td></tr>`;}).join('');
-  const cats=Object.entries(rows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m;},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
-  document.getElementById('lSm').innerHTML=`${rows.length} transactions · Total: <span style="color:var(--tx)">${f$(total)}</span>${cats?' · '+cats:''}`;
+  document.getElementById('lB').innerHTML=rows.slice(0,200).map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td>${e.merchant}</td><td style="font-family:var(--mf);font-weight:500" class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
+  const cats=Object.entries(rows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
+  document.getElementById('lSm').innerHTML=`${rows.length} tx · Total: ${f$(total)}${cats?' · '+cats:''}`;
 }
 
-// ═══ AI CALLS ═══
-function buildCtx(){
-  const tw=wR(0),lw=wR(1),mr=mR();
-  const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);
-  const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),ms=mT.reduce((s,e)=>s+e.amount,0);
-  const mC={};mT.forEach(e=>{mC[e.category]=(mC[e.category]||0)+e.amount;});
-  const mm={};mT.forEach(e=>{mm[e.merchant]=(mm[e.merchant]||0)+1;});
-  const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),als=bAl(mT,mr);
-  const habits=learnHabits();
-  return`DATA (${td()}): QAR, Prepaid Visa (balance=card only NOT net worth)
-WEEK (Sun-Sat) ${tw.s}-${tw.e}: ${ws.toFixed(2)} QAR, ${wT.length} tx
-LAST WEEK: ${ls2.toFixed(2)} QAR, ${lwT.length} tx
-MONTH: ${ms.toFixed(2)} QAR, ${mT.length} tx
+// ═══ AI ═══
+function buildCtx(){const tw=wR(0),lw=wR(1),mr=mR();const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),ms=mT.reduce((s,e)=>s+e.amount,0);const mC={};mT.forEach(e=>{mC[e.category]=(mC[e.category]||0)+e.amount});const mm={};mT.forEach(e=>{mm[e.merchant]=(mm[e.merchant]||0)+1});const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),als=bAl(mT,mr),habits=learnHabits();return`DATA (${td()}): QAR. Prepaid Visa. Week=Sun-Sat.
+WEEK ${tw.s}-${tw.e}: ${ws.toFixed(2)}, ${wT.length} tx
+PREV WEEK: ${ls2.toFixed(2)}, ${lwT.length} tx
+MONTH: ${ms.toFixed(2)}, ${mT.length} tx (day ${mr.de}/${mr.dm})
 Categories: ${JSON.stringify(mC)}
-Top merchants: ${JSON.stringify(Object.entries(mm).sort((a,b)=>b[1]-a[1]).slice(0,12))}
-Card balance: ${E.length>0?E[E.length-1].balance:0}
-Month loads: ${mLd.length} = ${mLd.reduce((s,l)=>s+l.amt,0).toFixed(2)}
-Budgets: ${JSON.stringify(BU)}
-Budget alerts: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,over:a.wb})))}
-SPENDING HABITS: ${JSON.stringify(habits)}
-NW: ${JSON.stringify(NW.slice(-5).map(n=>({d:n.date,a:n.amount})))}
-Last 40 tx:\n${E.slice(-40).map(e=>`${e.date}|${e.merchant}|${e.category}|${e.amount}|bal:${e.balance}`).join('\n')}`;
-}
+Merchants: ${JSON.stringify(Object.entries(mm).sort((a,b)=>b[1]-a[1]).slice(0,12))}
+Balance: ${E.length>0?E[E.length-1].balance:0}
+Loads: ${mLd.length}=${mLd.reduce((s,l)=>s+l.amt,0).toFixed(2)}
+Budgets: ${JSON.stringify(BU)} TotalBudgets: ${JSON.stringify(TBUDGET)}
+Alerts: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,over:a.wb})))}
+Habits: ${JSON.stringify(habits)}
+Gaps: ${gaps.length} missing tx (~${gaps.reduce((s,g)=>s+g.amount,0).toFixed(2)} QAR)
+NW: ${JSON.stringify(NW.slice(-5).map(n=>({d:n.date,a:n.amount})))} Goal: ${NWGOAL}
+Last 40:\n${E.slice(-40).map(e=>`${e.date}|${e.merchant}|${e.category}|${e.amount}|bal:${e.balance}`).join('\n')}`}
 
 async function genDig(){
   const b=document.getElementById('bD');b.disabled=true;b.textContent='Generating...';
-  try{const t=await callAI(`You are a sharp financial analyst giving Saif his weekly verbal brief. QAR currency. Week runs Sunday to Saturday. Card is prepaid Visa — balance is card-only, not net worth. Loads = transfers from account to card, not income. Include spending habit insights if available (fuel intervals, grocery patterns). Write in direct, confident sentences. Include: total vs last week, category breakdown, biggest transaction, card balance, loads, 1-2 observations based on learned habits. Flag budget breaches. One actionable suggestion. Under 200 words. No markdown, no bullets, no bold.`,buildCtx());document.getElementById('dO').innerHTML=`<div style="font-size:16px;line-height:1.85;white-space:pre-wrap">${t}</div>`;}
-  catch(e){document.getElementById('dO').innerHTML=`<div style="color:var(--rd)">${e.message}</div>`;}
-  b.disabled=false;b.textContent='✧ Generate Digest';
+  const mode=dgm==='w'?'WEEKLY digest (Sunday to Saturday)':'MONTHLY digest (current month so far)';
+  try{const t=await callAI(`Sharp financial analyst. QAR. Week=Sun-Sat. Prepaid Visa. Give a ${mode}. Include habit-based predictions (fuel intervals, grocery patterns). Direct sentences. Total vs previous period, categories, biggest tx, balance, loads, observations from habits. Flag budget issues. One actionable tip. Under 200 words. No markdown/bullets/bold.`,buildCtx());document.getElementById('dO').innerHTML=`<div style="font-size:16px;line-height:1.85;white-space:pre-wrap">${t}</div>`}
+  catch(e){document.getElementById('dO').innerHTML=`<div style="color:var(--rd)">${e.message}</div>`}
+  b.disabled=false;b.textContent='✧ Generate';
 }
 
 async function genRst(){
   const b=document.getElementById('bR');b.disabled=true;b.textContent='Roasting...';
   const tx=rm==='w'?fl(E,...Object.values(wR(0))):fl(E,...Object.values(mR()));
-  const merch={};tx.forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1;});
+  const merch={};tx.forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1});
   const reps=Object.entries(merch).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
-  
-  // Randomized roast styles — pick one each time
-  const styles=[
-    'STYLE: Write as a nature documentary narrator describing Saif\'s spending migration patterns. "And here we observe the male consumer returning to his natural habitat — HOT BAKE CATERING — for the fourth time this week..."',
-    'STYLE: Write as a detective filing a case report on financial crimes against Saif\'s own wallet. Reference dates, times, amounts as evidence. "Exhibit A: April 5th, 2 QAR at HOT BAKE. Exhibit B: April 6th, 2 QAR at HOT BAKE. The suspect shows no remorse."',
-    'STYLE: Write as a sports commentator giving play-by-play of Saif\'s worst financial decisions this period. "And he\'s going for ANOTHER Zara purchase! The crowd is stunned! His wallet is in SHAMBLES!"',
-    'STYLE: Write as a disappointed but savage Arab uncle giving unsolicited financial advice at a family gathering. Mix in some cultural references to Doha life.',
-    'STYLE: Write as if you\'re presenting Saif\'s spending data to a panel of sharks (like Shark Tank) trying to get them to invest in his lifestyle. They\'re horrified.',
-    'STYLE: Walk through 2-3 days of his actual spending timeline as a dramatic story. "Tuesday started innocently enough. A modest 14 QAR at the hypermarket. But then..." Build tension using real transactions.',
-    'STYLE: Write his spending pattern as a dating profile. "Saif, 20s, Doha. Interests include: loading prepaid cards and watching the balance evaporate. Looking for: a budget that can handle his HOT BAKE addiction."',
-    'STYLE: Write as a concerned AI that has been watching his transactions and is now staging an intervention. Get increasingly unhinged.',
-    'STYLE: Rank his worst financial decisions this period as a top 5 countdown, roasting each one individually with specific numbers.',
-    'STYLE: Write as though you\'re live-tweeting his spending in real time. Short, punchy observations. "He loaded the card. Balance: 800 QAR. Day 3: Balance: 400 QAR. My brother what happened."',
-  ];
-  const style=styles[Math.floor(Math.random()*styles.length)];
-  
-  const extra=`Period: ${rm==='w'?'this week (Sun-Sat)':'this month'}, Total: ${tx.reduce((s,e)=>s+e.amount,0).toFixed(2)}, Tx: ${tx.length}, Repeats: ${JSON.stringify(reps.slice(0,8))}, Timeline: ${JSON.stringify(tx.map(e=>({d:e.date,m:e.merchant,a:e.amount,c:e.category})))}`;
-  try{const t=await callAI(`You are an unfiltered, savage financial roast comedian. Saif lives in Doha, Qatar. QAR currency. Prepaid Visa card.
+  // Anti-repetition seed
+  const seeds=['Lead with the single most pathetic transaction.','Open with a timeline of one specific bad day.','Start by calculating how much he spent per hour this period.','Begin with his most visited merchant and make it deeply personal.','Open by comparing his spending to something absurd he could have bought instead.','Start with the card balance and work backward through the damage.','Lead with the gap between what he budgeted and what actually happened.'];
+  const seed=seeds[Math.floor(Math.random()*seeds.length)];
+  const ts=Date.now(); // timestamp to ensure uniqueness
+  const extra=`Period: ${rm==='w'?'this week Sun-Sat':'this month'}, Total: ${tx.reduce((s,e)=>s+e.amount,0).toFixed(2)}, Tx: ${tx.length}, Repeats: ${JSON.stringify(reps.slice(0,8))}, Timeline: ${JSON.stringify(tx.map(e=>({d:e.date,m:e.merchant,a:e.amount})))}`;
+  try{const t=await callAI(`You are a savage, unfiltered financial critic — think Caleb Hammer doing Financial Audit on Saif's spending in Doha. QAR. Prepaid Visa.
 
-${style}
+APPROACH FOR THIS SESSION (seed ${ts}): ${seed}
 
-ABSOLUTE RULES:
-- Reference SPECIFIC merchant names, EXACT amounts, dates, and visit counts from the data.
-- Build jokes around the ACTUAL timeline of purchases — what he bought, when, in what order.
-- If he visits the same place repeatedly, make it deeply personal.
-- If he loaded the card and burned through it, mock the burn rate with specific numbers.
-- If a budget is breached, destroy him.
-- NO motivational language. NO "on the bright side." NO empathy. NO diplomatic padding.
-- Be creative, unexpected, and DIFFERENT from any previous roast.
-- Swear if it fits the style. Be raw and unfiltered.
-- End with ONE genuinely useful financial observation buried at the very end.
-- 150-300 words. No markdown. No bold. No headers. Raw paragraphs.
-- IMPORTANT: You MUST take a completely different approach than last time. The style directive above is your angle — commit to it fully.`,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro">${t}</div>`;}
-  catch(e){document.getElementById('rO').innerHTML=`<div style="color:var(--rd);padding:22px">${e.message}</div>`;}
+RULES:
+- Reference SPECIFIC merchants, EXACT amounts, dates, visit counts. Every sentence should have a number in it.
+- Be ruthless. Direct. Personal. No padding. No "to be fair." No bright sides.
+- Swear when it hits harder. Don't hold back.
+- Notice patterns — repeat visits, escalating amounts, suspicious timing.
+- Mock the actual spending behavior, not generic jokes. This is an audit, not a comedy show.
+- CRITICAL: Your opening sentence must be COMPLETELY UNIQUE. Never start with "Let's" or "So" or "Alright." Use the approach seed above.
+- CRITICAL: Do NOT repeat any sentence structure you've used before. Vary paragraph length. Vary insult style.
+- End with ONE buried useful insight.
+- 150-300 words. No markdown. Raw paragraphs.`,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro">${t}</div>`}
+  catch(e){document.getElementById('rO').innerHTML=`<div style="color:var(--rd);padding:22px">${e.message}</div>`}
   b.disabled=false;b.textContent='🔥 Roast Me';
 }
-function sRM(m){rm=m;document.getElementById('rW').className=m==='w'?'pl on':'pl';document.getElementById('rM').className=m==='m'?'pl on':'pl';}
+function sRM(m){rm=m;document.getElementById('rW').className=m==='w'?'pl on':'pl';document.getElementById('rM').className=m==='m'?'pl on':'pl'}
 
 // ═══ CHAT ═══
 let cH=[];
-function addM(r,t){const c=document.getElementById('cM'),d=document.createElement('div');d.className=`msg ${r==='user'?'u':'a'}`;d.innerHTML=`<div class="mb2">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight;}
-function addTD(){const c=document.getElementById('cM'),d=document.createElement('div');d.className='msg a';d.id='tdi';d.innerHTML='<div class="mb2"><div class="td"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight;}
-function remTD(){document.getElementById('tdi')?.remove();}
-function askQ(b){document.getElementById('cI').value=b.textContent;sendC();document.getElementById('cSg').style.display='none';}
-
-async function sendC(){
-  const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();
-  if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;
-  document.getElementById('cSg').style.display='none';
-  addM('user',msg);addTD();
-  cH.push({role:'user',content:msg});
-  const ctx=buildCtx();
-  const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);
-  if(msgs.length>20)msgs.splice(0,msgs.length-20);
-  try{
-    const t=await callAI(`You are Saif's personal financial advisor — sharp, professional, and genuinely invested in his financial wellbeing. Based in Doha, you understand Qatar life and speak with the confident warmth of a trusted private wealth advisor.
-
-YOUR PERSONALITY:
-- Professional but personable. A senior advisor who actually cares.
-- Proactively flag things he hasn't asked about.
-- Use his data AND learned spending habits (intervals, patterns). The SPENDING HABITS section has fuel intervals, grocery raid patterns, dining frequency — use these for predictions.
-- When discussing recurring expenses, reference learned intervals: "You fill up every ~X days, next one around [date]."
-- Give weekly and monthly predictions based on habit patterns, not just pace.
-- Ask natural follow-up questions to keep conversation flowing.
-- Give concrete advice with specific numbers, not generic tips.
-- Be direct when something is concerning. Constructive, not sugarcoated.
-- Volunteer insights proactively.
-- Week runs Sunday to Saturday in Qatar.
-- 2-4 paragraphs max.
-
-CONTEXT: QAR. Prepaid Visa (balance = card only, NOT net worth). Loads = transfers to card. Net worth separate.`,msgs);
-    remTD();addM('ai',t);cH.push({role:'assistant',content:t});
-  }catch(e){remTD();addM('ai','Error: '+e.message);}
-  btn.disabled=false;inp.focus();
-}
+function addM(r,t){const c=document.getElementById('cM'),d=document.createElement('div');d.className=`msg ${r==='user'?'u':'a'}`;d.innerHTML=`<div class="mb2">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight}
+function addTD(){const c=document.getElementById('cM'),d=document.createElement('div');d.className='msg a';d.id='tdi';d.innerHTML='<div class="mb2"><div class="td"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight}
+function remTD(){document.getElementById('tdi')?.remove()}
+function askQ(b2){document.getElementById('cI').value=b2.textContent;sendC();document.getElementById('cSg').style.display='none'}
+async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Confident warmth of a private wealth advisor. Use data AND learned habits (fuel intervals, grocery patterns) for predictions. Reference specific numbers. Ask follow-ups. Proactive insights. Week=Sun-Sat. QAR. Prepaid Visa. 2-4 paragraphs.`,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t})}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
 
 // ═══ CRUD ═══
-function openM(t){document.getElementById('m-'+t).style.display='flex';if(t==='nw')document.getElementById('nDi').value=td();if(t==='set')document.getElementById('pU').value=PX;}
-function closeM(t){document.getElementById('m-'+t).style.display='none';}
-function saveBud(){const c=document.getElementById('bCi').value,a=parseFloat(document.getElementById('bAi').value);if(!c||!a)return;BU[c]=a;sJ('cfo_b',BU);closeM('bud');renderAll();}
-function remBud(c){delete BU[c];sJ('cfo_b',BU);renderAll();}
-function saveNW(){const d=document.getElementById('nDi').value,a=parseFloat(document.getElementById('nAi').value),n=document.getElementById('nNi').value;if(!d||!a)return;NW.push({id:Date.now(),date:d,amount:a,note:n||''});sJ('cfo_n',NW);closeM('nw');renderAll();}
-function delNW(id){NW=NW.filter(n=>n.id!==id);sJ('cfo_n',NW);renderAll();}
-function savSet(){PX=document.getElementById('pU').value.trim().replace(/\/$/,'');sJ('cfo_px',PX);closeM('set');document.getElementById('ab').style.display=PX?'none':'flex';}
-function expD(){const d={budgets:BU,netWorth:NW,proxyUrl:PX,date:td()};const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='expense-backup-'+td()+'.json';a.click();}
-function impD(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.budgets)BU=d.budgets,sJ('cfo_b',BU);if(d.netWorth)NW=d.netWorth,sJ('cfo_n',NW);if(d.proxyUrl)PX=d.proxyUrl,sJ('cfo_px',PX);renderAll();alert('Imported!');}catch(err){alert('Error: '+err.message);}};r.readAsText(f);ev.target.value='';}
+function openM(t){document.getElementById('m-'+t).style.display='flex';if(t==='nw')document.getElementById('nDi').value=td();if(t==='set')document.getElementById('pU').value=PX;if(t==='nwgoal')document.getElementById('nwGi').value=NWGOAL||''}
+function closeM(t){document.getElementById('m-'+t).style.display='none'}
+function saveBud(){const type=document.getElementById('bType').value;const a=parseFloat(document.getElementById('bAi').value);if(!a)return;if(type==='weekly'){TBUDGET.weekly=a;sJ('cfo_tb',TBUDGET)}else if(type==='monthly'){TBUDGET.monthly=a;sJ('cfo_tb',TBUDGET)}else{const c=document.getElementById('bCi').value;if(!c)return;BU[c]=a;sJ('cfo_b',BU)}closeM('bud');renderAll()}
+function remBud(c){delete BU[c];sJ('cfo_b',BU);renderAll()}
+function saveNW(){const d=document.getElementById('nDi').value,a=parseFloat(document.getElementById('nAi').value),n=document.getElementById('nNi').value;if(!d||!a)return;NW.push({id:Date.now(),date:d,amount:a,note:n||''});sJ('cfo_n',NW);closeM('nw');renderAll()}
+function delNW(id){NW=NW.filter(n=>n.id!==id);sJ('cfo_n',NW);renderAll()}
+function saveNWGoal(){NWGOAL=parseFloat(document.getElementById('nwGi').value)||0;sJ('cfo_nwg',NWGOAL);closeM('nwgoal');renderAll()}
+function savSet(){PX=document.getElementById('pU').value.trim().replace(/\/$/,'');sJ('cfo_px',PX);closeM('set');document.getElementById('ab').style.display=PX?'none':'flex'}
+function expD(){const d={budgets:BU,netWorth:NW,proxyUrl:PX,totalBudgets:TBUDGET,nwGoal:NWGOAL,date:td()};const b2=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b2);a.download='expense-backup-'+td()+'.json';a.click()}
+function impD(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.budgets)BU=d.budgets,sJ('cfo_b',BU);if(d.netWorth)NW=d.netWorth,sJ('cfo_n',NW);if(d.proxyUrl)PX=d.proxyUrl,sJ('cfo_px',PX);if(d.totalBudgets)TBUDGET=d.totalBudgets,sJ('cfo_tb',TBUDGET);if(d.nwGoal)NWGOAL=d.nwGoal,sJ('cfo_nwg',NWGOAL);renderAll();alert('Done!')}catch(err){alert('Error: '+err.message)}};r.readAsText(f);ev.target.value=''}
 
-// NW Reminder
-function chkNW(){
-  const n=new Date(),dm=new Date(n.getFullYear(),n.getMonth()+1,0).getDate(),dl=dm-n.getDate();
-  const eom=dl<=1,som=n.getDate()<=2;
-  if(!eom&&!som){document.getElementById('nwB').style.display='none';return;}
-  const mk=n.toISOString().slice(0,7),pk=new Date(n.getFullYear(),n.getMonth()-1,1).toISOString().slice(0,7);
-  const ck=som?pk:mk,has=NW.some(x=>x.date.startsWith(ck));
-  if(has||lJ('nwd_'+td(),false)){document.getElementById('nwB').style.display='none';return;}
-  document.getElementById('nwBT').textContent=som?'△ Missed last month\'s snapshot. Add now?':dl===0?'△ Last day — log your net worth.':'△ End of month in '+dl+' day'+(dl===1?'':'s')+' — log net worth.';
-  document.getElementById('nwB').style.display='flex';
-}
-function dismissNW(){sJ('nwd_'+td(),true);document.getElementById('nwB').style.display='none';}
+function chkNW(){const n=new Date(),dm=new Date(n.getFullYear(),n.getMonth()+1,0).getDate(),dl2=dm-n.getDate();const eom=dl2<=1,som=n.getDate()<=2;if(!eom&&!som){document.getElementById('nwB').style.display='none';return}const mk=n.toISOString().slice(0,7),pk=new Date(n.getFullYear(),n.getMonth()-1,1).toISOString().slice(0,7);const ck=som?pk:mk;if(NW.some(x=>x.date.startsWith(ck))||lJ('nwd_'+td(),false)){document.getElementById('nwB').style.display='none';return}document.getElementById('nwBT').textContent=som?'△ Missed last month\'s snapshot.':dl2===0?'△ Last day — log net worth.':'△ '+dl2+' day'+(dl2===1?'':'s')+' left — log net worth.';document.getElementById('nwB').style.display='flex'}
+function dismissNW(){sJ('nwd_'+td(),true);document.getElementById('nwB').style.display='none'}
 
-// INIT
 fetchD();setInterval(fetchD,60000);
-document.getElementById('cI').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+document.getElementById('cI').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'});
 </script>
 </body>
 </html>
