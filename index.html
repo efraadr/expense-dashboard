@@ -241,6 +241,7 @@ function parseSMS(raw){
 }
 
 function categorize(m,amount=0){
+  if(catOverrides[m])return catOverrides[m];
   const u=(m||'').toUpperCase();
   const map=[
     [/LULU|CARREFOUR|HYPERMARKET|HYPER MARKET|SUPERMARKET|SUPER MARKET|SPAR|MEGAMART|MEGA MART|FARM|VEGETABLE|FRUIT|GROCERY|SULTAN CENTER|MONOPRIX|GÉANT|GEANT|AL MEERA|FAMILY FOOD|WHOLESALE|WATAN.*MARKET|MARKET\s*WLL/,'Groceries'],
@@ -420,7 +421,7 @@ function mkNWChart(data,w,h,goal){
     const y2=h-pad-((goal-mn)/rg)*(h-pad*2);
     goalLine=`<line x1="0" y1="${y1}" x2="${w}" y2="${y2}" stroke="var(--am)" stroke-width="1.5" stroke-dasharray="6,4" opacity=".5"/>`;
     // Label at the end
-    goalLine+=`<text x="${w-4}" y="${y2-8}" text-anchor="end" fill="var(--am)" font-size="10" font-family="var(--mf)" opacity=".7">${f$(goal)} by Dec</text>`;
+    goalLine+=`<text x="${w-4}" y="${Math.max(y2+18,20)}" text-anchor="end" fill="var(--am)" font-size="13" font-family="var(--mf)" opacity=".8">${f$(goal)} by Dec</text>`;
     // Where should you be right now on the goal line?
     const shouldBeNow=startVal+(goal-startVal)*(todayX/w);
     const shouldBeY=h-pad-((shouldBeNow-mn)/rg)*(h-pad*2);
@@ -583,7 +584,7 @@ function rLed(){
   const total=rows.reduce((s,e)=>s+e.amount,0);
   document.getElementById('lC').textContent=rows.length+' of '+E.length;
   const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
-  document.getElementById('lB').innerHTML=rows.slice(0,200).map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${e.merchant}</td> class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
+  document.getElementById('lB').innerHTML=rows.slice(0,200).map((e,idx)=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';const eidx=E.indexOf(e);return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${e.merchant}</td><td style="font-family:var(--mf);font-weight:500" class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td style="cursor:pointer" onclick="editCat(${eidx})"><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
   const cats=Object.entries(rows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
   document.getElementById('lSm').innerHTML=`${rows.length} tx · Total: ${f$(total)}${cats?' · '+cats:''}`;
 }
@@ -667,6 +668,7 @@ function dismissNW(){sJ('nwd_'+td(),true);document.getElementById('nwB').style.d
 // ═══ KNOWN SUBSCRIPTIONS ═══
 const KNOWN_SUBS=/NETFLIX|SPOTIFY|APPLE\.COM|APPLE COM|GOOGLE|ADOBE|YOUTUBE|DISNEY|AMAZON PRIME|CHATGPT|OPENAI|CANVA|DROPBOX|NOTION|FIGMA|MICROSOFT|XBOX|PLAYSTATION|HULU|HBO|PARAMOUNT|CRUNCHYROLL|DAZN|STARZ|SHAHID|OSN|BEIN/i;
 let subTags=lJ('cfo_sub_tags',{}); // {merchant: 'keep'|'cancel'|'project'}
+let catOverrides=lJ('cfo_cat_ov',{}); // {merchant: 'category'} - user corrections
 
 function detectSubs(){
   const mr=mR();const lm=lmR();
@@ -868,6 +870,26 @@ function getSmartAlert(){
   if(newMerch.length)alerts.push(`First time at ${newMerch[0]} — how was it?`);
   
   return alerts.length?alerts[Math.floor(Math.random()*alerts.length)]:null;
+}
+
+// ═══ CATEGORY EDIT ═══
+function editCat(idx){
+  const e=E[idx];if(!e)return;
+  const cats=Object.keys(CATS);
+  const current=e.category;
+  const sel=prompt(`Change category for ${e.merchant}\nCurrent: ${current}\n\nOptions:\n${cats.map((c,i)=>`${i+1}. ${c}`).join('\n')}\n\nEnter number or category name:`);
+  if(!sel)return;
+  let newCat=sel.trim();
+  const num=parseInt(newCat);
+  if(num>=1&&num<=cats.length)newCat=cats[num-1];
+  // Validate
+  if(!CATS[newCat]){alert('Unknown category: '+newCat);return}
+  // Save override for this merchant
+  catOverrides[e.merchant]=newCat;
+  sJ('cfo_cat_ov',catOverrides);
+  // Update all transactions with this merchant
+  E.forEach(tx=>{if(tx.merchant===e.merchant)tx.category=newCat});
+  renderAll();
 }
 
 fetchD();setInterval(fetchD,60000);
