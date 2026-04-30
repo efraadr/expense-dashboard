@@ -67,6 +67,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <button class="nb" data-v="cfl"><span>↑</span>Card Flow</button>
 <button class="nb" data-v="nw"><span>△</span>Net Worth</button>
 <button class="nb" data-v="rst"><span>🔥</span>The Roast</button>
+<button class="nb" data-v="sub"><span>⟳</span>Subscriptions</button>
 <button class="nb" data-v="ai"><span>✧</span>Ask AI</button>
 <button class="nb" data-v="led"><span>≡</span>Ledger</button>
 </div>
@@ -91,6 +92,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <div class="g2" style="margin-bottom:24px"><div class="cd"><div class="lb">14-Day Trend</div><div style="margin-top:14px" id="tc"></div></div><div class="cd"><div class="lb">Category Split</div><div style="margin-top:10px" id="cs"></div></div></div>
 <div id="ba" style="margin-bottom:24px"></div>
 <div class="g2"><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center"><div class="lb">Card Loads</div><button class="nb" data-v="cfl" style="width:auto;padding:4px 10px;font-size:12px;color:var(--cy);font-family:var(--mf)">Details →</button></div><div id="clg" style="margin-top:10px"></div></div><div class="cd"><div class="lb">Recent</div><div style="margin-top:6px" id="rt"></div></div></div>
+<div class="g2" style="margin-top:24px"><div class="cd"><div class="lb">Spending Streak</div><div id="streak" style="margin-top:6px"></div></div><div class="cd"><div class="lb">Active Subscriptions</div><div id="subGlance" style="margin-top:6px"></div></div></div>
 </div>
 
 <!-- DIGEST -->
@@ -138,11 +140,17 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div style="display:flex;gap:10px"><button class="pl on" id="rW" onclick="sRM('w')">This Week</button><button class="pl" id="rM" onclick="sRM('m')">This Month</button></div><button class="bt bp" id="bR" onclick="genRst()">🔥 Roast Me</button></div><div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dm)">Hit the button.</div></div></div></div>
 </div>
 
+<!-- SUBSCRIPTIONS -->
+<div class="vw" id="v-sub">
+<div class="hr"><div><h1 class="pt">Subscriptions</h1><div class="ps">Auto-detected from transaction history</div></div></div>
+<div id="subList"></div>
+</div>
+
 <!-- ASK AI -->
 <div class="vw" id="v-ai">
 <h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps" style="margin-bottom:22px">Your financial advisor</div>
 <div class="cc">
-<div class="cm" id="cM"><div class="msg a"><div class="mb2">Good to see you, Saif. I've reviewed your latest transactions and have a few things worth flagging — but first, what's on your mind?<br><br>Or try one of the prompts below.</div></div></div>
+<div class="cm" id="cM"></div>
 <div class="csg" id="cSg">
 <button onclick="askQ(this)">Give me a quick financial health check</button>
 <button onclick="askQ(this)">What's my biggest spending weakness?</button>
@@ -179,7 +187,10 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 
 <div class="mo" id="m-nwgoal" style="display:none" onclick="closeM('nwgoal')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Yearly Goal</h3><button class="mx" onclick="closeM('nwgoal')">✕</button></div><div class="fg"><label>Target Net Worth by End of Year (QAR)</label><input type="number" class="fi" id="nwGi" placeholder="100000"></div><button class="bt bp" style="width:100%" onclick="saveNWGoal()">Save</button></div></div>
 
-<div class="mo" id="m-set" style="display:none" onclick="closeM('set')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Settings</h3><button class="mx" onclick="closeM('set')">✕</button></div><div class="fg"><label>AI Proxy URL</label><input type="text" class="fi" id="pU" placeholder="https://your-worker.workers.dev"></div><button class="bt bp" style="width:100%" onclick="savSet()">Save</button><div class="dv"></div><div class="lb">Data Backup</div><div style="display:flex;gap:10px;margin-top:10px"><button class="bt bg2" style="flex:1;font-size:13px" onclick="expD()">Export</button><button class="bt bg2" style="flex:1;font-size:13px" onclick="document.getElementById('impF').click()">Import</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impD(event)"></div></div></div>
+<div class="mo" id="m-set" style="display:none" onclick="closeM('set')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Settings</h3><button class="mx" onclick="closeM('set')">✕</button></div><div class="fg"><label>AI Proxy URL</label><input type="text" class="fi" id="pU" placeholder="https://your-worker.workers.dev"></div><button class="bt bp" style="width:100%" onclick="savSet()">Save</button><div class="dv"></div><div class="lb">Data Backup</div><div style="display:flex;gap:10px;margin-top:10px"><button class="bt bg2" style="flex:1;font-size:13px" onclick="expD()">Export</button><button class="bt bg2" style="flex:1;font-size:13px" onclick="document.getElementById('impF').click()">Import</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impD(event)"></div><div class="dv"></div><div class="lb">Monthly Report</div><div style="margin-top:10px"><button class="bt bg2" style="font-size:13px;width:100%" onclick="genReport()">📄 Download Monthly Summary</button></div></div></div>
+
+<!-- Merchant Intelligence Modal -->
+<div class="mo" id="m-merch" style="display:none" onclick="closeM('merch')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3 id="merchName">Merchant</h3><button class="mx" onclick="closeM('merch')">✕</button></div><div id="merchBody"></div></div></div>
 
 <script>
 const SID='1_LQk-qFx6ZbpkNk7vV0m-GyxNzMqmwcStWfPFixORZo';
@@ -371,14 +382,77 @@ function mkS(data,color,w,h){if(!data||data.length<2)return`<div style="height:$
 
 function mkNWChart(data,w,h,goal){
   if(!data||data.length<2)return`<div style="height:${h}px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dm)">Add 2+ snapshots</div>`;
-  const allVals=goal>0?[...data,goal]:data;
+  // Get dates from NW entries for time-positioning
+  const so=[...NW].sort((a,b)=>a.date.localeCompare(b.date));
+  const dates=so.map(n=>new Date(n.date));
+  const firstDate=dates[0];
+  const yearEnd=new Date(firstDate.getFullYear(),11,31); // Dec 31 of the year of first entry
+  const totalDays=Math.round((yearEnd-firstDate)/864e5)||1;
+  
+  // Calculate start value for goal line (first entry value)
+  const startVal=data[0];
+  
+  // Include goal in scale calculation
+  const allVals=goal>0?[...data,goal,startVal]:data;
   const mx=Math.max(...allVals),mn=Math.min(...allVals),rg=mx-mn||1;
-  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-6-((v-mn)/rg)*(h-12)}`).join(' ');
-  const ly=h-6-((data[data.length-1]-mn)/rg)*(h-12);
+  const pad=12; // vertical padding
+  
+  // Position actual data points by date on time axis
+  const pts=data.map((v,i)=>{
+    const daysSinceStart=Math.round((dates[i]-firstDate)/864e5);
+    const x=(daysSinceStart/totalDays)*w;
+    const y=h-pad-((v-mn)/rg)*(h-pad*2);
+    return{x,y};
+  });
+  const polyline=pts.map(p=>`${p.x},${p.y}`).join(' ');
+  const polygon=`0,${h} ${polyline} ${pts[pts.length-1].x},${h}`;
+  const lastPt=pts[pts.length-1];
+  
+  // "Today" marker on x-axis
+  const today=new Date();
+  const todayX=Math.min((Math.round((today-firstDate)/864e5)/totalDays)*w,w);
+  
   const id='nw'+Math.random().toString(36).slice(2,8);
   let goalLine='';
-  if(goal>0){const gy=h-6-((goal-mn)/rg)*(h-12);goalLine=`<line x1="0" y1="${gy}" x2="${w}" y2="${gy}" stroke="var(--am)" stroke-width="1.5" stroke-dasharray="6,4" opacity=".6"/><text x="${w-4}" y="${gy-6}" text-anchor="end" fill="var(--am)" font-size="10" font-family="var(--mf)" opacity=".7">Goal: ${f$(goal)}</text>`}
-  return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4DAA72" stop-opacity=".15"/><stop offset="100%" stop-color="#4DAA72" stop-opacity="0"/></linearGradient></defs>${goalLine}<polygon points="0,${h} ${pts} ${w},${h}" fill="url(#${id})"/><polyline points="${pts}" fill="none" stroke="#4DAA72" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${w}" cy="${ly}" r="4" fill="#4DAA72"/></svg>`;
+  if(goal>0){
+    // Diagonal: from (0, startVal) to (w, goal)
+    const y1=h-pad-((startVal-mn)/rg)*(h-pad*2);
+    const y2=h-pad-((goal-mn)/rg)*(h-pad*2);
+    goalLine=`<line x1="0" y1="${y1}" x2="${w}" y2="${y2}" stroke="var(--am)" stroke-width="1.5" stroke-dasharray="6,4" opacity=".5"/>`;
+    // Label at the end
+    goalLine+=`<text x="${w-4}" y="${y2-8}" text-anchor="end" fill="var(--am)" font-size="10" font-family="var(--mf)" opacity=".7">${f$(goal)} by Dec</text>`;
+    // Where should you be right now on the goal line?
+    const shouldBeNow=startVal+(goal-startVal)*(todayX/w);
+    const shouldBeY=h-pad-((shouldBeNow-mn)/rg)*(h-pad*2);
+    // Small dot on goal line showing "you should be here"
+    goalLine+=`<circle cx="${todayX}" cy="${shouldBeY}" r="3" fill="var(--am)" opacity=".5"/>`;
+  }
+  // Today vertical line
+  const todayLine=`<line x1="${todayX}" y1="0" x2="${todayX}" y2="${h}" stroke="var(--dm)" stroke-width="1" stroke-dasharray="3,3" opacity=".3"/>`;
+  
+  // Month labels on x-axis
+  let monthLabels='';
+  for(let m=firstDate.getMonth();m<=11;m++){
+    const mDate=new Date(firstDate.getFullYear(),m,1);
+    if(mDate<firstDate)continue;
+    const mx2=Math.round((mDate-firstDate)/864e5)/totalDays*w;
+    if(mx2>=0&&mx2<=w){
+      const label=['J','F','M','A','M','J','J','A','S','O','N','D'][m];
+      monthLabels+=`<text x="${mx2}" y="${h-1}" fill="var(--dm)" font-size="9" font-family="var(--mf)" opacity=".5">${label}</text>`;
+    }
+  }
+  
+  return`<svg width="${w}" height="${h+10}" style="display:block;max-width:100%">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4DAA72" stop-opacity=".15"/><stop offset="100%" stop-color="#4DAA72" stop-opacity="0"/></linearGradient></defs>
+    ${goalLine}${todayLine}${monthLabels}
+    <polygon points="${polygon}" fill="url(#${id})"/>
+    <polyline points="${polyline}" fill="none" stroke="#4DAA72" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${lastPt.x}" cy="${lastPt.y}" r="4" fill="#4DAA72"/>
+  </svg>
+  <div style="display:flex;gap:18px;margin-top:8px;font-size:11px;font-family:var(--mf);color:var(--dm)">
+    <span style="color:var(--gn)">— Actual</span>
+    ${goal>0?'<span style="color:var(--am)">- - Goal pace</span>':''}
+  </div>`;
 }
 
 function mkBal(tx,ld,w,h){if(tx.length<2)return'<div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--dm)">Not enough data</div>';const bs=tx.map(t=>t.balance),mx=Math.max(...bs),mn=Math.min(...bs),rg=mx-mn||1;const pts=bs.map((v,i)=>({x:(i/(bs.length-1))*w,y:h-8-((v-mn)/rg)*(h-16)}));const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');const li=new Set();ld.forEach(l=>{const i=tx.findIndex(t=>t.date===l.date&&Math.abs(t.balance-l.ba)<1);if(i>=0)li.add(i)});const id='bc'+Math.random().toString(36).slice(2,8);let circles='';li.forEach(i=>{if(pts[i])circles+=`<circle cx="${pts[i].x}" cy="${pts[i].y}" r="6" fill="#4ABFC4" stroke="var(--bg)" stroke-width="2.5"/>`});return`<svg width="${w}" height="${h}" style="display:block;max-width:100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D4A843" stop-opacity=".1"/><stop offset="100%" stop-color="#D4A843" stop-opacity="0"/></linearGradient></defs><polygon points="0,${h} ${poly} ${w},${h}" fill="url(#${id})"/><polyline points="${poly}" fill="none" stroke="#D4A843" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles}</svg><div style="display:flex;gap:18px;margin-top:10px;font-size:11px;font-family:var(--mf);color:var(--dm)"><span>— Balance</span><span style="color:var(--cy)">● Load</span></div>`}
@@ -412,7 +486,7 @@ function renderAll(){
   document.getElementById('clg').innerHTML=CL.length===0?'<div style="color:var(--dm)">None</div>':CL.slice(-4).reverse().map(l=>`<div class="tr"><span class="tu">↑</span><span style="flex:1">${l.date}</span><span style="font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</span></div>`).join('');
   document.getElementById('rt').innerHTML=E.slice(-5).reverse().map(e=>`<div class="tr"><span style="color:${gc(e.category).c}">${gc(e.category).i}</span><span style="flex:1">${e.merchant}</span><span style="font-size:13px;font-family:var(--mf);color:var(--dm)">${f$(e.amount)}</span></div>`).join('')||'<div style="color:var(--dm)">No data</div>';
 
-  rDig();rEnv(mT,mr,ws,wT);rCF(mr,mT,mLd,mLt,bal);rNW();rLed();
+  rDig();rEnv(mT,mr,ws,wT);rCF(mr,mT,mLd,mLt,bal);rNW();rLed();rSubs();rSubGlance();rStreak();
 }
 
 function bAl(mT,mr){const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount});const habits=learnHabits();return Object.keys(BU).map(c=>{const s=cm[c]||0,b=BU[c];let pr;if(c==='Transport'&&habits.fuel)pr=habits.fuel.monthlyEst;else if(c==='Groceries'&&habits.groceries)pr=habits.groceries.monthlyEst;else pr=Math.round(s*(mr.dm/Math.max(mr.de,1)));const pct=(s/b)*100;return{cat:c,spent:s,bud:b,proj:pr,pct,wb:pr>b}})}
@@ -509,7 +583,7 @@ function rLed(){
   const total=rows.reduce((s,e)=>s+e.amount,0);
   document.getElementById('lC').textContent=rows.length+' of '+E.length;
   const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
-  document.getElementById('lB').innerHTML=rows.slice(0,200).map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td>${e.merchant}</td><td style="font-family:var(--mf);font-weight:500" class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
+  document.getElementById('lB').innerHTML=rows.slice(0,200).map(e=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${e.merchant}</td> class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
   const cats=Object.entries(rows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
   document.getElementById('lSm').innerHTML=`${rows.length} tx · Total: ${f$(total)}${cats?' · '+cats:''}`;
 }
@@ -590,7 +664,222 @@ function impD(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader
 function chkNW(){const n=new Date(),dm=new Date(n.getFullYear(),n.getMonth()+1,0).getDate(),dl2=dm-n.getDate();const eom=dl2<=1,som=n.getDate()<=2;if(!eom&&!som){document.getElementById('nwB').style.display='none';return}const mk=n.toISOString().slice(0,7),pk=new Date(n.getFullYear(),n.getMonth()-1,1).toISOString().slice(0,7);const ck=som?pk:mk;if(NW.some(x=>x.date.startsWith(ck))||lJ('nwd_'+td(),false)){document.getElementById('nwB').style.display='none';return}document.getElementById('nwBT').textContent=som?'△ Missed last month\'s snapshot.':dl2===0?'△ Last day — log net worth.':'△ '+dl2+' day'+(dl2===1?'':'s')+' left — log net worth.';document.getElementById('nwB').style.display='flex'}
 function dismissNW(){sJ('nwd_'+td(),true);document.getElementById('nwB').style.display='none'}
 
+// ═══ KNOWN SUBSCRIPTIONS ═══
+const KNOWN_SUBS=/NETFLIX|SPOTIFY|APPLE\.COM|APPLE COM|GOOGLE|ADOBE|YOUTUBE|DISNEY|AMAZON PRIME|CHATGPT|OPENAI|CANVA|DROPBOX|NOTION|FIGMA|MICROSOFT|XBOX|PLAYSTATION|HULU|HBO|PARAMOUNT|CRUNCHYROLL|DAZN|STARZ|SHAHID|OSN|BEIN/i;
+let subTags=lJ('cfo_sub_tags',{}); // {merchant: 'keep'|'cancel'|'project'}
+
+function detectSubs(){
+  const mr=mR();const lm=lmR();
+  const lastMonthTx=fl(E,lm.s,lm.e);const thisMonthTx=fl(E,mr.s,mr.e);
+  const subs=[];
+  // Find subscription merchants from last month
+  const lastMonthMerch={};
+  lastMonthTx.forEach(e=>{if(KNOWN_SUBS.test(e.merchant))lastMonthMerch[e.merchant]={amount:e.amount,date:e.date}});
+  // Also check all-time for known subs
+  E.forEach(e=>{if(KNOWN_SUBS.test(e.merchant)&&!lastMonthMerch[e.merchant])lastMonthMerch[e.merchant]={amount:e.amount,date:e.date}});
+  
+  for(const[merch,info]of Object.entries(lastMonthMerch)){
+    const thisMonth=thisMonthTx.find(e=>e.merchant===merch);
+    const allTx=E.filter(e=>e.merchant===merch).sort((a,b)=>a.date.localeCompare(b.date));
+    const lastCharge=allTx[allTx.length-1];
+    const chargeDay=parseInt(lastCharge.date.split('-')[2]);
+    const today=new Date();
+    const expectedRenewal=new Date(today.getFullYear(),today.getMonth(),chargeDay);
+    if(expectedRenewal<today)expectedRenewal.setMonth(expectedRenewal.getMonth()+1);
+    const daysUntil=Math.round((expectedRenewal-today)/864e5);
+    
+    subs.push({
+      merchant:merch,
+      amount:lastCharge.amount,
+      currency:lastCharge.currency||'QAR',
+      lastDate:lastCharge.date,
+      renewalDate:expectedRenewal.toISOString().slice(0,10),
+      daysUntil,
+      renewedThisMonth:!!thisMonth,
+      charges:allTx.length,
+      tag:subTags[merch]||'active',
+      totalSpent:allTx.reduce((s,e)=>s+e.amount,0)
+    });
+  }
+  return subs.sort((a,b)=>a.daysUntil-b.daysUntil);
+}
+
+function rSubs(){
+  const subs=detectSubs();
+  const el=document.getElementById('subList');
+  if(!subs.length){el.innerHTML='<div class="cd" style="text-align:center;padding:44px"><div style="font-size:36px;margin-bottom:14px">⟳</div><div style="font-size:16px;color:var(--dm)">No subscriptions detected yet.</div></div>';return}
+  
+  const active=subs.filter(s=>s.tag!=='cancel');
+  const monthly=active.reduce((s,sub)=>s+sub.amount,0);
+  
+  el.innerHTML=`
+    <div class="g3" style="margin-bottom:24px">
+      <div class="cd"><div class="lb">Active</div><div class="bn">${active.length}</div></div>
+      <div class="cd"><div class="lb">Monthly Cost</div><div class="bn" style="color:var(--am)">${f$(monthly)}</div></div>
+      <div class="cd"><div class="lb">Yearly Cost</div><div class="bn" style="color:var(--rd)">${f$(monthly*12)}</div></div>
+    </div>
+    <div class="ga">${subs.map(s=>{
+      const urgency=s.daysUntil<=7?'var(--rd)':s.daysUntil<=14?'var(--am)':'var(--dm)';
+      const tagColors={active:'var(--gn)',keep:'var(--gn)',cancel:'var(--rd)',project:'var(--cy)'};
+      return`<div class="cd" style="${s.tag==='cancel'?'opacity:.5':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-size:18px;font-weight:600">${s.merchant}</span>
+          ${s.renewedThisMonth?'<span style="font-size:11px;font-family:var(--mf);color:var(--gn)">✓ renewed</span>':`<span style="font-size:11px;font-family:var(--mf);color:${urgency}">${s.daysUntil}d until renewal</span>`}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px">
+          <span style="font-family:var(--mf)">${f$(s.amount)}/mo</span>
+          <span style="font-size:12px;color:var(--dm)">Next: ${s.renewalDate}</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button onclick="tagSub('${s.merchant}','keep')" class="pl ${s.tag==='keep'?'on':''}" style="font-size:11px;padding:4px 12px;${s.tag==='keep'?'background:var(--gn)':''}">Keep</button>
+          <button onclick="tagSub('${s.merchant}','cancel')" class="pl ${s.tag==='cancel'?'on':''}" style="font-size:11px;padding:4px 12px;${s.tag==='cancel'?'background:var(--rd)':''}">Cancel</button>
+          <button onclick="tagSub('${s.merchant}','project')" class="pl ${s.tag==='project'?'on':''}" style="font-size:11px;padding:4px 12px;${s.tag==='project'?'background:var(--cy)':''}">Project</button>
+        </div>
+        <div style="font-size:11px;font-family:var(--mf);color:var(--dm)">${s.charges} charges · Total: ${f$(s.totalSpent)}</div>
+      </div>`}).join('')}</div>`;
+}
+
+function tagSub(m,tag){subTags[m]=tag;sJ('cfo_sub_tags',subTags);rSubs();rSubGlance()}
+
+function rSubGlance(){
+  const subs=detectSubs();
+  const upcoming=subs.filter(s=>s.tag!=='cancel'&&!s.renewedThisMonth&&s.daysUntil<=14);
+  const el=document.getElementById('subGlance');
+  if(!upcoming.length){el.innerHTML=`<div style="font-size:14px;color:var(--dm)">No renewals in the next 14 days</div><button class="nb" data-v="sub" style="width:auto;padding:4px 10px;font-size:12px;color:var(--am);font-family:var(--mf);margin-top:6px">View all →</button>`;return}
+  el.innerHTML=upcoming.map(s=>`<div class="tr"><span style="color:${s.daysUntil<=7?'var(--rd)':'var(--am)'}">⟳</span><span style="flex:1">${s.merchant}</span><span style="font-size:12px;font-family:var(--mf);color:var(--dm)">${s.daysUntil}d · ${f$(s.amount)}</span></div>`).join('')+`<button class="nb" data-v="sub" style="width:auto;padding:4px 10px;font-size:12px;color:var(--am);font-family:var(--mf);margin-top:6px">View all →</button>`;
+}
+
+// ═══ MERCHANT INTELLIGENCE ═══
+function showMerch(merchant){
+  const txs=E.filter(e=>e.merchant===merchant).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!txs.length)return;
+  const total=txs.reduce((s,e)=>s+e.amount,0);
+  const avg=Math.round(total/txs.length*100)/100;
+  const first=txs[0].date,last=txs[txs.length-1].date;
+  const daySpan=Math.max(Math.round((new Date(last)-new Date(first))/864e5),1);
+  const freq=txs.length>=2?Math.round(daySpan/(txs.length-1)):0;
+  const cat=txs[txs.length-1].category;
+  const mr=mR();const thisMonth=txs.filter(e=>e.date>=mr.s).reduce((s,e)=>s+e.amount,0);
+  
+  document.getElementById('merchName').textContent=merchant;
+  document.getElementById('merchBody').innerHTML=`
+    <div class="g2" style="margin-bottom:16px">
+      <div class="cb"><div class="lb">Total Spent</div><div style="font-size:22px;font-weight:700;font-family:var(--df)">${f$(total)}</div></div>
+      <div class="cb"><div class="lb">This Month</div><div style="font-size:22px;font-weight:700;font-family:var(--df)">${f$(thisMonth)}</div></div>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="cb"><div class="lb">Visits</div><div style="font-size:18px;font-weight:600">${txs.length}</div></div>
+      <div class="cb"><div class="lb">Avg/Visit</div><div style="font-size:18px;font-weight:600">${f$(avg)}</div></div>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="cb"><div class="lb">Category</div><div style="font-size:14px"><span style="color:${gc(cat).c}">${gc(cat).i}</span> ${cat}</div></div>
+      <div class="cb"><div class="lb">Frequency</div><div style="font-size:14px">${freq?`Every ~${freq} days`:'One visit'}</div></div>
+    </div>
+    <div class="lb" style="margin-top:16px">Recent Transactions</div>
+    ${txs.slice(-8).reverse().map(e=>`<div class="tr"><span style="font-size:13px;font-family:var(--mf);color:var(--dm)">${e.date}</span><span style="flex:1"></span><span style="font-family:var(--mf)">${f$(e.amount)}</span></div>`).join('')}
+    <div style="margin-top:12px;font-size:12px;color:var(--dm);font-family:var(--mf)">First visit: ${first} · Last: ${last}</div>`;
+  openM('merch');
+}
+
+// ═══ SPENDING STREAK ═══
+function calcStreak(){
+  const today=new Date();
+  const dateSet=new Set(E.map(e=>e.date));
+  // Current streak (consecutive zero-spend days ending yesterday or today)
+  let current=0;
+  for(let i=0;i<365;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const key=d.toISOString().slice(0,10);
+    if(i===0&&dateSet.has(key)){current=0;break} // spent today
+    if(!dateSet.has(key))current++;
+    else break;
+  }
+  // Best streak
+  let best=0,run=0;
+  for(let i=90;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    if(!dateSet.has(d.toISOString().slice(0,10))){run++;best=Math.max(best,run)}
+    else run=0;
+  }
+  return{current,best};
+}
+
+function rStreak(){
+  const s=calcStreak();
+  document.getElementById('streak').innerHTML=`
+    <div style="display:flex;gap:20px;align-items:baseline">
+      <div><span style="font-size:28px;font-weight:700;font-family:var(--df);color:${s.current>0?'var(--gn)':'var(--dm)'}">${s.current}</span><span style="font-size:13px;color:var(--dm);margin-left:6px">day${s.current===1?'':'s'} current</span></div>
+      <div><span style="font-size:18px;font-weight:600;font-family:var(--df);color:var(--am)">${s.best}</span><span style="font-size:12px;color:var(--dm);margin-left:4px">best</span></div>
+    </div>
+    <div style="font-size:12px;color:var(--dm);font-family:var(--mf);margin-top:6px">${s.current>0?`No spending for ${s.current} day${s.current===1?'':'s'} — keep it going`:'You spent today'}</div>`;
+}
+
+// ═══ MONTHLY REPORT EXPORT ═══
+function genReport(){
+  const mr=mR();const mT=fl(E,mr.s,mr.e);
+  const ms=mT.reduce((s,e)=>s+e.amount,0);
+  const cats=cbk(mT);
+  const habits=learnHabits();
+  const subs=detectSubs().filter(s=>s.tag!=='cancel');
+  const topMerch={};mT.forEach(e=>{topMerch[e.merchant]=(topMerch[e.merchant]||0)+e.amount});
+  const topM=Object.entries(topMerch).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e);
+  const bal=E.length>0?E[E.length-1].balance:0;
+  const nwL=NW.length>0?[...NW].sort((a,b)=>b.date.localeCompare(a.date))[0]:null;
+  
+  const month=new Date().toLocaleString('en',{month:'long',year:'numeric'});
+  let report=`EXPENSE INTELLIGENCE — MONTHLY REPORT\n${month} (Day ${mr.de}/${mr.dm})\n${'═'.repeat(45)}\n\n`;
+  report+=`TOTAL SPENT: ${f$(ms)} across ${mT.length} transactions\n`;
+  report+=`CARD BALANCE: ${f$(bal)}\n`;
+  report+=`CARD LOADS: ${mLd.length} loads totalling ${f$(mLd.reduce((s,l)=>s+l.amt,0))}\n\n`;
+  report+=`CATEGORY BREAKDOWN:\n${cats.map(c=>`  ${c.i} ${c.cat}: ${f$(c.spent)}`).join('\n')}\n\n`;
+  report+=`TOP MERCHANTS:\n${topM.map(([m,v],i)=>`  ${i+1}. ${m}: ${f$(v)}`).join('\n')}\n\n`;
+  if(Object.keys(BU).length){report+=`BUDGET STATUS:\n${Object.keys(BU).map(c=>{const s=mT.filter(e=>e.category===c).reduce((s2,e)=>s2+e.amount,0);return`  ${c}: ${f$(s)}/${f$(BU[c])} (${Math.round(s/BU[c]*100)}%)`}).join('\n')}\n\n`}
+  if(subs.length){report+=`ACTIVE SUBSCRIPTIONS (${subs.length}):\n${subs.map(s=>`  ${s.merchant}: ${f$(s.amount)}/mo`).join('\n')}\n  Monthly total: ${f$(subs.reduce((s2,s)=>s2+s.amount,0))}\n\n`}
+  if(habits.fuel){report+=`FUEL: Every ~${habits.fuel.interval} days, avg ${f$(habits.fuel.avgAmount)}, est ${f$(habits.fuel.monthlyEst)}/mo\n`}
+  if(habits.groceries){report+=`GROCERIES: Big raids ~${habits.groceries.bigInterval}d (${f$(habits.groceries.bigAvg)}), small ~${habits.groceries.smallInterval}d (${f$(habits.groceries.smallAvg)})\n`}
+  if(nwL){report+=`\nNET WORTH: ${f$(nwL.amount)} (as of ${nwL.date})${NWGOAL?` · Goal: ${f$(NWGOAL)} (${Math.round(nwL.amount/NWGOAL*100)}%)`:''}\n`}
+  report+=`\n${'═'.repeat(45)}\nGenerated ${new Date().toLocaleString()}`;
+  
+  const blob=new Blob([report],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`expense-report-${mr.s.slice(0,7)}.txt`;a.click();
+}
+
+// ═══ SMART AI ALERTS ═══
+function getSmartAlert(){
+  const habits=learnHabits();const mr=mR();const mT=fl(E,mr.s,mr.e);
+  const alerts=[];
+  // Fuel anomaly
+  if(habits.fuel&&habits.fuel.daysSince<habits.fuel.interval*0.5){
+    const recentFuel=E.filter(e=>e.category==='Transport'&&/WOQOD|PETROL|FUEL/i.test(e.merchant)).slice(-2);
+    if(recentFuel.length>=2){const gap=Math.round((new Date(recentFuel[1].date)-new Date(recentFuel[0].date))/864e5);if(gap<habits.fuel.interval*0.6)alerts.push(`You filled up twice in ${gap} days — your usual interval is ${habits.fuel.interval} days. Something up with the car?`)}
+  }
+  // Category spike
+  const cats=cbk(mT);const pace=mr.dm/Math.max(mr.de,1);
+  for(const c of cats){if(BU[c.cat]){const proj=c.spent*pace;if(proj>BU[c.cat]*1.2)alerts.push(`${c.cat} is tracking ${Math.round((proj/BU[c.cat]-1)*100)}% over budget this month.`)}}
+  // Spending streak
+  const streak=calcStreak();if(streak.current>=3)alerts.push(`${streak.current}-day zero-spend streak — solid discipline.`);
+  // Subscription renewal
+  const subs=detectSubs().filter(s=>s.tag!=='cancel'&&!s.renewedThisMonth&&s.daysUntil<=5);
+  if(subs.length)alerts.push(`${subs.map(s=>s.merchant).join(', ')} renew${subs.length===1?'s':''} in the next 5 days.`);
+  // Unusual merchant visit
+  const recentMerch=E.slice(-3).map(e=>e.merchant);
+  const newMerch=recentMerch.filter(m=>E.filter(e=>e.merchant===m).length===1);
+  if(newMerch.length)alerts.push(`First time at ${newMerch[0]} — how was it?`);
+  
+  return alerts.length?alerts[Math.floor(Math.random()*alerts.length)]:null;
+}
+
 fetchD();setInterval(fetchD,60000);
+// Smart AI welcome after data loads
+setTimeout(()=>{
+  const cm=document.getElementById('cM');
+  if(cm&&!cm.children.length){
+    const alert=getSmartAlert();
+    const welcome=alert?`Good to see you, Saif. Quick heads up — ${alert}<br><br>What else would you like to know?`:'Good to see you, Saif. I\'ve reviewed your latest transactions — what\'s on your mind?<br><br>Try one of the prompts below.';
+    const d=document.createElement('div');d.className='msg a';d.innerHTML=`<div class="mb2">${welcome}</div>`;cm.appendChild(d);
+  }
+},2000);
 document.getElementById('cI').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'});
 </script>
 </body>
