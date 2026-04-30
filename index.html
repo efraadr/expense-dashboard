@@ -559,7 +559,7 @@ function rNW(){
     document.getElementById('n4d').textContent=`${pct}% reached`;
     document.getElementById('nwGoalBar').innerHTML=`<div class="cd"><div class="lb">Goal Progress</div>${mkG(latest,NWGOAL,'var(--gn)',12)}<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-family:var(--mf)"><span style="color:var(--gn)">${f$(latest)}</span><span style="color:var(--dm)">${f$(NWGOAL)} target</span></div></div>`;
   }else{document.getElementById('n4').textContent='Not set';document.getElementById('n4d').textContent='';document.getElementById('nwGoalBar').innerHTML=''}
-  document.getElementById('nT').innerHTML=mkNWChart(vs,620,130,NWGOAL);
+  document.getElementById('nT').innerHTML=mkNWChart(vs,620,380,NWGOAL);
   const desc=[...NW].sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('nH').innerHTML=desc.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No entries.</div>':desc.map((n,i)=>{const p=desc[i+1];const d=p?n.amount-p.amount:0;return`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${n.date}</div><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mf)">${f$(n.amount)}</div>${n.note?`<div style="font-size:13px;color:var(--dm);margin-top:3px">${n.note}</div>`:''}</div>${d!==0?`<span style="font-size:13px;font-family:var(--mf);color:${d>=0?'var(--gn)':'var(--rd)'}">${d>=0?'+':''}${f$(d)}</span>`:''}<button onclick="delNW(${n.id})" style="background:0;border:0;color:var(--dm);cursor:pointer">✕</button></div>`}).join('');
 }
