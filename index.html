@@ -603,7 +603,44 @@ Alerts: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,over:a.
 Habits: ${JSON.stringify(habits)}
 Gaps: ${gaps.length} missing tx (~${gaps.reduce((s,g)=>s+g.amount,0).toFixed(2)} QAR)
 NW: ${JSON.stringify(NW.slice(-5).map(n=>({d:n.date,a:n.amount})))} Goal: ${NWGOAL}
-Last 40:\n${E.slice(-40).map(e=>`${e.date}|${e.merchant}|${e.category}|${e.amount}|bal:${e.balance}`).join('\n')}`}
+All tx (${E.length}):\n${buildSmartTxContext()}`}
+
+function buildSmartTxContext(){
+  const now=new Date();
+  const thisMonth=now.toISOString().slice(0,7);
+  const lastMonth=new Date(now.getFullYear(),now.getMonth()-1,1).toISOString().slice(0,7);
+  
+  const recent=[];const older={};
+  E.forEach(e=>{
+    const m=e.date.slice(0,7);
+    if(m>=lastMonth){
+      recent.push(`${e.date}|${e.merchant}|${e.category}|${e.amount}|bal:${e.balance}`);
+    }else{
+      if(!older[m])older[m]={total:0,count:0,cats:{},merchants:{}};
+      older[m].total+=e.amount;
+      older[m].count++;
+      older[m].cats[e.category]=(older[m].cats[e.category]||0)+e.amount;
+      older[m].merchants[e.merchant]=(older[m].merchants[e.merchant]||0)+1;
+    }
+  });
+  
+  let ctx='';
+  // Older months as summaries
+  const months=Object.keys(older).sort();
+  if(months.length){
+    ctx+='OLDER MONTHS (summarized):\n';
+    for(const m of months){
+      const d=older[m];
+      const topCats=Object.entries(d.cats).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([c,v])=>`${c}:${v.toFixed(0)}`).join(', ');
+      const topMerch=Object.entries(d.merchants).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([m2,c])=>`${m2}(${c}x)`).join(', ');
+      ctx+=`${m}: ${d.count} tx, total ${d.total.toFixed(2)}, cats[${topCats}], top[${topMerch}]\n`;
+    }
+    ctx+='\n';
+  }
+  // Recent months full detail
+  ctx+=`RECENT (full detail, ${recent.length} tx):\n${recent.join('\n')}`;
+  return ctx;
+}
 
 async function genDig(){
   const b=document.getElementById('bD');b.disabled=true;b.textContent='Generating...';
