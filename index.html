@@ -365,7 +365,7 @@ function parseCBQTransfer(raw){
   return results;
 }
 
-function isCBQTransfer(raw){return/debited with.*(?:Tahweel|Fawran|Payment)/i.test(raw)}
+function isCBQTransfer(raw){return/debited with.*QAR/i.test(raw)&&/Tahweel|Fawran/i.test(raw)}
 
 function categorize(m,amount=0){
   if(catOverrides[m])return catOverrides[m];
@@ -454,7 +454,22 @@ async function fetchD(){
       if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)\)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`}
       else if(d instanceof Date)d=d.toISOString().slice(0,10);
       else if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}/.test(d))d=d.slice(0,10);
-      else{const fd=(c[0]?.f||d).replace(/\s+at\s+.*/i,'');const pd=new Date(fd);if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);else d=''}
+      else{
+        // Try multiple date formats
+        let fd=String(c[0]?.f||d).replace(/\s+at\s+.*/i,'').trim();
+        let pd=new Date(fd);
+        // Safari fix: "15 Aug 2026" → rearrange to "Aug 15, 2026"
+        if(isNaN(pd.getTime())){
+          const dmy=fd.match(/^(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{2,4})$/i);
+          if(dmy){let yr=dmy[3];if(yr.length===2)yr='20'+yr;pd=new Date(`${dmy[2]} ${dmy[1]}, ${yr}`);}
+        }
+        // Try "DD-Mon-YY" format
+        if(isNaN(pd.getTime())){
+          const dmy2=fd.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
+          if(dmy2){const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};let yr=dmy2[3];if(yr.length===2)yr='20'+yr;d=`${yr}-${months[dmy2[2].toLowerCase()]}-${dmy2[1].padStart(2,'0')}`;pd=new Date(d);}
+        }
+        if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);else d='';
+      }
       if(!d||d.length<10)continue;
       const valB=c[1]?.v;const rawB=(valB&&valB!=='-')?valB:'';
       const numC=(c[2]?.v&&c[2].v!=='-')?parseFloat(c[2].v):0;
@@ -824,7 +839,7 @@ Budgets: ${JSON.stringify(BU)} TotalBudgets: ${JSON.stringify(TBUDGET)}
 Alerts: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,over:a.wb})))}
 Habits: ${JSON.stringify(habits)}
 Gaps: ${gaps.length} missing tx (~${gaps.reduce((s,g)=>s+g.amount,0).toFixed(2)} QAR)
-CBQ Credit: limit ${CBQ_LIMIT}, outstanding ${CBQ_LIMIT-(cbqTx.length?cbqTx[cbqTx.length-1].balance:CBQ_LIMIT)}, available ${cbqTx.length?cbqTx[cbqTx.length-1].balance:CBQ_LIMIT}, utilization ${Math.round((CBQ_LIMIT-(cbqTx.length?cbqTx[cbqTx.length-1].balance:CBQ_LIMIT))/CBQ_LIMIT*100)}%, stmt day ${CBQ_STMT_DAY}, due day ${CBQ_DUE_DAY}
+CBQ Credit: limit ${CBQ_LIMIT}, outstanding ${CBQ_LIMIT-(E.filter(e=>e.source==='CBQ'&&!e.isTransfer&&!e.isPayment).length?CBQ_LIMIT-E.filter(e=>e.source==='CBQ'&&!e.isTransfer).slice(-1)[0]?.balance||CBQ_LIMIT:0)}, stmt day ${CBQ_STMT_DAY}, due day ${CBQ_DUE_DAY}
 CBQ tx this month: ${fl(E,mr.s,mr.e).filter(e=>e.source==='CBQ'&&e.category!=='_payment').length}, total ${fl(E,mr.s,mr.e).filter(e=>e.source==='CBQ'&&e.category!=='_payment').reduce((s,e)=>s+e.amount,0).toFixed(2)}
 Transfers this month: savings ${fl(E,mr.s,mr.e).filter(e=>e.category==='Savings').reduce((s,e)=>s+e.amount,0).toFixed(2)}, wired out ${fl(E,mr.s,mr.e).filter(e=>e.isTransfer&&e.category!=='Savings'&&e.category!=='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}, fees ${fl(E,mr.s,mr.e).filter(e=>e.category==='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}
 NW: ${JSON.stringify(NW.slice(-5).map(n=>({d:n.date,a:n.amount})))} Goal: ${NWGOAL}
