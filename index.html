@@ -65,6 +65,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <button class="nb" data-v="dig"><span>≋</span>Digest</button>
 <button class="nb" data-v="env"><span>▦</span>Envelopes</button>
 <button class="nb" data-v="cfl"><span>↑</span>Card Flow</button>
+<button class="nb" data-v="xfr"><span>↗</span>Transfers</button>
 <button class="nb" data-v="nw"><span>△</span>Net Worth</button>
 <button class="nb" data-v="rst"><span>🔥</span>The Roast</button>
 <button class="nb" data-v="sub"><span>⟳</span>Subscriptions</button>
@@ -86,8 +87,8 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <div class="g4" style="margin-bottom:24px">
 <div class="cd"><div class="lb">This Week</div><div class="bn" id="k1">—</div><div id="k1d" style="font-size:13px;font-family:var(--mf);margin-top:8px"></div></div>
 <div class="cd"><div class="lb">This Month</div><div class="bn" id="k2">—</div><div id="k2d" style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)"></div></div>
-<div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--am)" id="k3">—</div><div style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)">Prepaid Visa</div></div>
-<div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cy)" id="k4">—</div><div id="k4d" style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)"></div></div>
+<div class="cd"><div class="lb">QNB Prepaid</div><div class="bn" style="color:var(--am)" id="k3">—</div><div style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)">Available</div></div>
+<div class="cd"><div class="lb">CBQ Credit</div><div class="bn" style="color:var(--rd)" id="k5">—</div><div id="k5d" style="font-size:13px;font-family:var(--mf);margin-top:8px;color:var(--dm)"></div></div>
 </div>
 <div class="g2" style="margin-bottom:24px"><div class="cd"><div class="lb">14-Day Trend</div><div style="margin-top:14px" id="tc"></div></div><div class="cd"><div class="lb">Category Split</div><div style="margin-top:10px" id="cs"></div></div></div>
 <div id="ba" style="margin-bottom:24px"></div>
@@ -115,10 +116,30 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 
 <!-- CARD FLOW -->
 <div class="vw" id="v-cfl">
-<div class="hr"><div><h1 class="pt">Card Flow</h1><div class="ps">Prepaid Visa · Balance ≠ account</div></div></div>
+<div class="hr"><div><h1 class="pt">Card Flow</h1><div class="ps">QNB Prepaid + CBQ Credit</div></div></div>
+<div style="display:flex;gap:10px;margin-bottom:22px"><button class="pl on" id="cfQNB" onclick="setCFTab('qnb')">QNB Prepaid</button><button class="pl" id="cfCBQ" onclick="setCFTab('cbq')">CBQ Credit</button></div>
+<div id="cfQNBView">
 <div class="g3" style="margin-bottom:24px"><div class="cd"><div class="lb">Card Balance</div><div class="bn" style="color:var(--am)" id="cf1">—</div></div><div class="cd"><div class="lb">Loaded This Month</div><div class="bn" style="color:var(--cy)" id="cf2">—</div><div id="cf2d" style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px"></div></div><div class="cd"><div class="lb">Spent This Month</div><div class="bn" id="cf3">—</div></div></div>
 <div class="cd" style="margin-bottom:24px"><div class="lb">Balance Over Time</div><div style="margin-top:14px" id="cfC"></div></div>
 <div class="cd"><div class="lb">All Loads</div><div id="cfH" style="margin-top:10px"></div></div>
+</div>
+<div id="cfCBQView" style="display:none">
+<div class="g4" style="margin-bottom:24px">
+<div class="cd"><div class="lb">Outstanding</div><div class="bn" style="color:var(--rd)" id="cbqOwed">—</div><div style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px">Amount owed</div></div>
+<div class="cd"><div class="lb">Available</div><div class="bn" style="color:var(--gn)" id="cbqAvail">—</div><div style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px">Credit remaining</div></div>
+<div class="cd"><div class="lb">Utilization</div><div class="bn" id="cbqUtil">—</div><div id="cbqUtilBar" style="margin-top:8px"></div></div>
+<div class="cd"><div class="lb">This Month</div><div class="bn" id="cbqMonthSpent">—</div><div id="cbqMonthCount" style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px"></div></div>
+</div>
+<div class="cd" style="margin-bottom:24px"><div class="lb">Credit Usage Over Time</div><div style="margin-top:14px" id="cbqChart"></div></div>
+<div class="cd"><div class="lb">CBQ Transactions</div><div id="cbqTxList" style="margin-top:10px"></div></div>
+</div>
+</div>
+
+<!-- TRANSFERS -->
+<div class="vw" id="v-xfr">
+<div class="hr"><div><h1 class="pt">Transfers</h1><div class="ps">Bank transfers · Tahweel · Fawran</div></div></div>
+<div class="g3" style="margin-bottom:24px" id="xfrKPIs"></div>
+<div class="cd" style="margin-bottom:24px"><div class="lb">All Transfers</div><div id="xfrList" style="margin-top:10px"></div></div>
 </div>
 
 <!-- NET WORTH -->
@@ -168,7 +189,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <div class="hr"><h1 class="pt">Ledger</h1><div style="font-size:13px;font-family:var(--mf);color:var(--dm)" id="lC"></div></div>
 <div class="search-bar">
 <input type="text" id="lS" placeholder="Search merchant..." oninput="rLed()">
-<select id="lCat" onchange="rLed()"><option value="">All Categories</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Clothing</option><option>Electronics</option><option>Home</option><option>Personal Care</option><option>General Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Other</option><option value="_missing">⚠ Missing TX</option></select>
+<select id="lCat" onchange="rLed()"><option value="">All Categories</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Clothing</option><option>Electronics</option><option>Home</option><option>Personal Care</option><option>General Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Savings</option><option>Wiring Fees</option><option>Other</option><option value="_transfers">↗ All Transfers</option><option value="_missing">⚠ Missing TX</option></select>
 <select id="lP" onchange="rLed()"><option value="">All Time</option><option value="week">This Week</option><option value="month">This Month</option><option value="last">Last Month</option></select>
 </div>
 <div class="cd"><div style="overflow-x:auto"><table class="lt"><thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Balance</th><th>Flag</th></tr></thead><tbody id="lB"></tbody></table></div></div>
@@ -187,7 +208,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 
 <div class="mo" id="m-nwgoal" style="display:none" onclick="closeM('nwgoal')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Yearly Goal</h3><button class="mx" onclick="closeM('nwgoal')">✕</button></div><div class="fg"><label>Target Net Worth by End of Year (QAR)</label><input type="number" class="fi" id="nwGi" placeholder="100000"></div><button class="bt bp" style="width:100%" onclick="saveNWGoal()">Save</button></div></div>
 
-<div class="mo" id="m-set" style="display:none" onclick="closeM('set')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Settings</h3><button class="mx" onclick="closeM('set')">✕</button></div><div class="fg"><label>AI Proxy URL</label><input type="text" class="fi" id="pU" placeholder="https://your-worker.workers.dev"></div><button class="bt bp" style="width:100%" onclick="savSet()">Save</button><div class="dv"></div><div class="lb">Data Backup</div><div style="display:flex;gap:10px;margin-top:10px"><button class="bt bg2" style="flex:1;font-size:13px" onclick="expD()">Export</button><button class="bt bg2" style="flex:1;font-size:13px" onclick="document.getElementById('impF').click()">Import</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impD(event)"></div><div class="dv"></div><div class="lb">Monthly Report</div><div style="margin-top:10px"><button class="bt bg2" style="font-size:13px;width:100%" onclick="genReport()">📄 Download Monthly Summary</button></div></div></div>
+<div class="mo" id="m-set" style="display:none" onclick="closeM('set')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3>Settings</h3><button class="mx" onclick="closeM('set')">✕</button></div><div class="fg"><label>AI Proxy URL</label><input type="text" class="fi" id="pU" placeholder="https://your-worker.workers.dev"></div><div class="dv"></div><div class="lb">CBQ Credit Card</div><div class="fg" style="margin-top:10px"><label>Credit Limit (QAR)</label><input type="number" class="fi" id="cbqLimI" placeholder="24000"></div><div class="fg"><label>Statement Day (of month)</label><input type="number" class="fi" id="cbqStmtI" placeholder="28"></div><div class="fg"><label>Payment Due Day (of month)</label><input type="number" class="fi" id="cbqDueI" placeholder="20"></div><button class="bt bp" style="width:100%" onclick="savSet()">Save All</button><div class="dv"></div><div class="lb">Data Backup</div><div style="display:flex;gap:10px;margin-top:10px"><button class="bt bg2" style="flex:1;font-size:13px" onclick="expD()">Export</button><button class="bt bg2" style="flex:1;font-size:13px" onclick="document.getElementById('impF').click()">Import</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impD(event)"></div><div class="dv"></div><div class="lb">Monthly Report</div><div style="margin-top:10px"><button class="bt bg2" style="font-size:13px;width:100%" onclick="genReport()">📄 Download Monthly Summary</button></div></div></div>
 
 <!-- Merchant Intelligence Modal -->
 <div class="mo" id="m-merch" style="display:none" onclick="closeM('merch')"><div class="mb2m" onclick="event.stopPropagation()"><div class="mh"><h3 id="merchName">Merchant</h3><button class="mx" onclick="closeM('merch')">✕</button></div><div id="merchBody"></div></div></div>
@@ -196,8 +217,8 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 const SID='1_LQk-qFx6ZbpkNk7vV0m-GyxNzMqmwcStWfPFixORZo';
 const SURL=`https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
 const FX_RATES={USD:3.64,EUR:3.98,GBP:4.62,SAR:0.97,AED:0.99,KWD:11.88,BHD:9.66};
-const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Clothing:{c:'#72A8E8',i:'👔'},Electronics:{c:'#5490C4',i:'⚡'},Home:{c:'#8BC4E8',i:'⌂'},'Personal Care':{c:'#D4A1C4',i:'✿'},'General Shopping':{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Other:{c:'#8899AA',i:'○'}};
-function gc(n){return CATS[n]||CATS.Other}
+const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Clothing:{c:'#72A8E8',i:'👔'},Electronics:{c:'#5490C4',i:'⚡'},Home:{c:'#8BC4E8',i:'⌂'},'Personal Care':{c:'#D4A1C4',i:'✿'},'General Shopping':{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Savings:{c:'#4DAA72',i:'↗'},'Wiring Fees':{c:'#D4853A',i:'⚡'},Other:{c:'#8899AA',i:'○'}};
+function gc(n){if(n&&n.startsWith('Wired to'))return{c:'#9B8EC4',i:'↗'};return CATS[n]||CATS.Other}
 function f$(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function td(){return new Date().toISOString().slice(0,10)}
 
@@ -205,11 +226,12 @@ let E=[],CL=[],gaps=[],rm='w',dgm='w';
 function lJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f}catch{return f}}
 function sJ(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),PX=lJ('cfo_px',''),NWGOAL=lJ('cfo_nwg',0),TBUDGET=lJ('cfo_tb',{});
+let CBQ_LIMIT=lJ('cfo_cbq_limit',24000),CBQ_STMT_DAY=lJ('cfo_cbq_stmt',24),CBQ_DUE_DAY=lJ('cfo_cbq_due',8);
 
 // ═══ SMS PARSER ═══
 function parseSMS(raw){
   if(!raw)return null;
-  const r={merchant:'',amount:0,balance:0,currency:'QAR',category:'Other',fxConfirmed:true,isMissing:false};
+  const r={merchant:'',amount:0,balance:0,currency:'QAR',category:'Other',fxConfirmed:true,isMissing:false,source:'QNB'};
   const t=raw.replace(/\s+/g,' ');
   // Check if manual/missing recovery
   const stdEnd=/في حال كانت العملية/;
@@ -240,6 +262,111 @@ function parseSMS(raw){
   return r;
 }
 
+// ═══ CBQ CREDIT CARD SMS PARSER ═══
+// Format: "Your card ending **3583\nused for QAR 129.25\nat CARREFOUR - WAKRA DO\nat 18:15\n12-Aug-26\nAvailable Limit: QAR 23,870.75"
+function parseCBQ(raw){
+  if(!raw)return null;
+  const r={merchant:'',amount:0,balance:0,currency:'QAR',category:'Other',source:'CBQ',fxConfirmed:true,isMissing:false};
+  const t=raw.replace(/\r\n/g,'\n');
+  // Amount: "used for QAR 129.25"
+  const am=t.match(/used for\s+(?:QAR\s+)?([\d,.]+)/i);
+  if(am)r.amount=parseFloat(am[1].replace(',',''));
+  // Merchant: "at CARREFOUR - WAKRA DO" (first "at" line that isn't a time)
+  const atLines=t.match(/^at\s+(.+)$/gim);
+  if(atLines){
+    for(const line of atLines){
+      const val=line.replace(/^at\s+/i,'').trim();
+      if(!/^\d{1,2}:\d{2}/.test(val)){r.merchant=val;break}
+    }
+  }
+  // Available Limit: "Available Limit: QAR 23,870.75"
+  const lim=t.match(/Available Limit[:\s]+(?:QAR\s+)?([\d,.]+)/i);
+  if(lim)r.balance=parseFloat(lim[1].replace(',','')); // This is available credit, not debt
+  // Date: "12-Aug-26"
+  const dt=t.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
+  if(dt){
+    const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+    let yr=dt[3];if(yr.length===2)yr='20'+yr;
+    r.smsDate=`${yr}-${months[dt[2].toLowerCase()]}-${dt[1].padStart(2,'0')}`;
+  }
+  // Missing check
+  if(/missing|missed|forgot|manual|old|backfill/i.test(raw))r.isMissing=true;
+  r.category=categorize(r.merchant,r.amount);
+  return r;
+}
+
+function isCBQSMS(raw){return/card ending|Available Limit|a\/c debit|Card Payment|debited with/i.test(raw)}
+
+// Parse CBQ account debit/payment SMS
+function parseCBQDebit(raw){
+  if(!raw)return null;
+  const r={merchant:'Card Payment',amount:0,balance:0,currency:'QAR',category:'_payment',source:'CBQ',fxConfirmed:true,isMissing:false,isPayment:true,accountBalance:0};
+  const t=raw.replace(/\r\n/g,'\n');
+  const am=t.match(/QAR\s+([\d,.]+)\s*\n/);
+  if(am)r.amount=parseFloat(am[1].replace(',',''));
+  const forWhat=t.match(/for\s+(.+)/i);
+  if(forWhat)r.merchant=forWhat[1].trim();
+  const acBal=t.match(/CUR\d?\s*Balance[:\s]+QAR\s+([\d,.]+)/i);
+  if(acBal)r.accountBalance=parseFloat(acBal[1].replace(',',''));
+  const cardAvail=t.match(/Card Available Balance[:\s]+QAR\s+([\d,.]+)/i);
+  if(cardAvail)r.balance=parseFloat(cardAvail[1].replace(',',''));
+  const dt=t.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
+  if(dt){const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};let yr=dt[3];if(yr.length===2)yr='20'+yr;r.smsDate=`${yr}-${months[dt[2].toLowerCase()]}-${dt[1].padStart(2,'0')}`;}
+  return r;
+}
+
+// Parse CBQ bank transfer SMS (Tahweel / Fawran)
+// "Current Acc xxx00032001 debited with QAR 10,000.00\nfor Outgoing Tahweel Payment\nref SAIFELISLAM...,QAR 4.00 for Transfer Charge at 07:48, 15-Aug-26\nCurrent Acc Bal: QAR 21,631.61"
+// "Current Acc xxx00032001 debited with QAR 1,800.00\nfor Fawran instant payment\nref NITHIN GEORGE at 19:45, 05-Aug-26\nCurrent Acc Bal: QAR 32,748.36"
+function parseCBQTransfer(raw){
+  if(!raw)return null;
+  const results=[];
+  const t=raw.replace(/\r\n/g,'\n');
+  // Main amount
+  const am=t.match(/debited with\s+QAR\s+([\d,.]+)/i);
+  if(!am)return null;
+  const amount=parseFloat(am[1].replace(',',''));
+  // Recipient name from ref line
+  const ref=t.match(/ref\s+([A-Z][A-Z\s]+?)(?:,|\s+at\s+\d)/i);
+  const recipient=ref?ref[1].trim():'Unknown';
+  // Transfer type
+  const isTahweel=/Tahweel/i.test(raw);
+  const isFawran=/Fawran/i.test(raw);
+  const type=isTahweel?'Tahweel':isFawran?'Fawran':'Transfer';
+  // Date
+  let smsDate='';
+  const dt=t.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
+  if(dt){const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};let yr=dt[3];if(yr.length===2)yr='20'+yr;smsDate=`${yr}-${months[dt[2].toLowerCase()]}-${dt[1].padStart(2,'0')}`;}
+  // Account balance
+  const bal=t.match(/Current Acc Bal[:\s]+QAR\s+([\d,.]+)/i);
+  const accBal=bal?parseFloat(bal[1].replace(',','')):0;
+  // Determine category
+  let category='Wired to '+recipient;
+  const isSelf=/SAIF|ELRABEE|IELBASHER/i.test(recipient);
+  if(isSelf)category='Savings';
+  // Auto-detect rent: 1800 to NITHIN
+  if(/NITHIN/i.test(recipient)&&amount===1800)category='Bills';
+  // Main transfer
+  results.push({
+    merchant:category==='Savings'?'Transfer to Savings':category==='Bills'?'Rent - '+recipient:'Transfer - '+recipient,
+    amount,balance:accBal,currency:'QAR',category,source:'CBQ',
+    fxConfirmed:true,isMissing:false,isTransfer:true,transferType:type,
+    recipient,smsDate
+  });
+  // Transfer fee (Tahweel has fee embedded)
+  const fee=t.match(/QAR\s+([\d,.]+)\s+for\s+Transfer Charge/i);
+  if(fee){
+    const feeAmt=parseFloat(fee[1].replace(',',''));
+    results.push({
+      merchant:'Transfer Fee ('+type+')',amount:feeAmt,balance:accBal,currency:'QAR',
+      category:'Wiring Fees',source:'CBQ',fxConfirmed:true,isMissing:false,isTransfer:true,smsDate
+    });
+  }
+  return results;
+}
+
+function isCBQTransfer(raw){return/debited with.*(?:Tahweel|Fawran|Payment)/i.test(raw)}
+
 function categorize(m,amount=0){
   if(catOverrides[m])return catOverrides[m];
   const u=(m||'').toUpperCase();
@@ -266,15 +393,15 @@ function tSB(){document.getElementById('sb').classList.toggle('open');document.g
 function cSB(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('open')}
 document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');cSB()})});
 
-// ═══ LOAD + GAP DETECTION ═══
+// ═══ LOAD + GAP DETECTION (QNB prepaid only) ═══
 function dL(tx){
+  const qnb=tx.filter(e=>e.source!=='CBQ');
   const ld=[]; gaps=[];
-  for(let i=1;i<tx.length;i++){
-    const p=tx[i-1],c=tx[i],ex=p.balance-c.amount;
+  for(let i=1;i<qnb.length;i++){
+    const p=qnb[i-1],c=qnb[i],ex=p.balance-c.amount;
     if(c.balance>ex+.5){
       ld.push({date:c.date,amt:Math.round((c.balance-ex)*100)/100,bb:p.balance,ba:c.balance,m:c.merchant});
     }else if(c.balance<ex-.5){
-      // Balance dropped more than expected = missing transaction
       const missing=Math.round((ex-c.balance)*100)/100;
       gaps.push({dateFrom:p.date,dateTo:c.date,amount:missing,balBefore:p.balance,balAfter:c.balance,expectedBal:Math.round(ex*100)/100});
     }
@@ -335,10 +462,20 @@ async function fetchD(){
       const hasArabicG=rawG&&/[\u0600-\u06FF]/.test(rawG);
       const hasArabicB=rawB&&/[\u0600-\u06FF]/.test(rawB);
       const isLegacy=rawG&&numC>0&&rawB;
-      if(isLegacy){E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:rawG,fxConfirmed:true})}
-      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawG})}
-      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawB})}
-      else if(rawB&&numC>0){E.push({date:d,merchant:rawB,amount:numC,currency:'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:'',fxConfirmed:true})}
+      if(isLegacy){E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:rawG,fxConfirmed:true,source:'QNB'})}
+      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawG,source:'QNB'})}
+      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawB,source:'QNB'})}
+      else if(isCBQTransfer(rawG)){const rs=parseCBQTransfer(rawG);if(rs)rs.forEach(p=>{const useDate=p.smsDate||d;E.push({date:useDate,...p,raw:rawG})})}
+      else if(isCBQTransfer(rawB)){const rs=parseCBQTransfer(rawB);if(rs)rs.forEach(p=>{const useDate=p.smsDate||d;E.push({date:useDate,...p,raw:rawB})})}
+      else if(isCBQSMS(rawG)){
+        if(/a\/c debit|Card Payment/i.test(rawG)){const p=parseCBQDebit(rawG);if(p){const useDate=p.smsDate||d;E.push({date:useDate,...p,raw:rawG})}}
+        else{const p=parseCBQ(rawG);if(p&&p.amount>0){const useDate=p.smsDate||d;E.push({date:p.isMissing?'_pending':useDate,...p,raw:rawG})}}
+      }
+      else if(isCBQSMS(rawB)){
+        if(/a\/c debit|Card Payment/i.test(rawB)){const p=parseCBQDebit(rawB);if(p){const useDate=p.smsDate||d;E.push({date:useDate,...p,raw:rawB})}}
+        else{const p=parseCBQ(rawB);if(p&&p.amount>0){const useDate=p.smsDate||d;E.push({date:p.isMissing?'_pending':useDate,...p,raw:rawB})}}
+      }
+      else if(rawB&&numC>0){E.push({date:d,merchant:rawB,amount:numC,currency:'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:'',fxConfirmed:true,source:'QNB'})}
     }
     // Place missing TX by balance chain
     const pending=E.filter(e=>e.date==='_pending');
@@ -462,7 +599,7 @@ function mkG(v,m,c,h=7){const p=m>0?(v/m)*100:0;const fl2=p>100?'var(--rd)':p>80
 // ═══ RENDER ═══
 function renderAll(){
   const tw=wR(0),lw=wR(1),mr=mR();
-  const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);
+  const wT=fl(E,tw.s,tw.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings'),lwT=fl(E,lw.s,lw.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings'),mT=fl(E,mr.s,mr.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings');
   const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),ms=mT.reduce((s,e)=>s+e.amount,0);
   const wd=ls2>0?((ws-ls2)/ls2*100):0,bal=E.length>0?E[E.length-1].balance:0;
   const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),mLt=mLd.reduce((s,l)=>s+l.amt,0);
@@ -471,8 +608,19 @@ function renderAll(){
   document.getElementById('wr').textContent=`Sun–Sat · ${tw.s} → ${tw.e}`;
   document.getElementById('k1').textContent=f$(ws);document.getElementById('k1d').textContent=`${wd>0?'↑':'↓'} ${Math.abs(wd).toFixed(1)}%`;document.getElementById('k1d').style.color=wd>0?'var(--rd)':'var(--gn)';
   document.getElementById('k2').textContent=f$(ms);document.getElementById('k2d').textContent=mT.length+' tx';
-  document.getElementById('k3').textContent=f$(bal);
-  document.getElementById('k4').textContent=f$(mLt);document.getElementById('k4d').textContent=mLd.length+' loads';
+  // QNB prepaid balance
+  const qnbTx=E.filter(e=>e.source!=='CBQ');
+  const qnbBal=qnbTx.length>0?qnbTx[qnbTx.length-1].balance:0;
+  document.getElementById('k3').textContent=f$(qnbBal);
+  // CBQ credit
+  const cbqTx=E.filter(e=>e.source==='CBQ');
+  const cbqLatest=cbqTx.length>0?cbqTx[cbqTx.length-1]:null;
+  const cbqAvailable=cbqLatest?cbqLatest.balance:CBQ_LIMIT;
+  const cbqOwed=CBQ_LIMIT-cbqAvailable;
+  const cbqUtilPct=Math.round(cbqOwed/CBQ_LIMIT*100);
+  document.getElementById('k5').textContent=f$(cbqOwed);
+  document.getElementById('k5d').textContent=cbqOwed>0?`${cbqUtilPct}% used · ${f$(cbqAvailable)} free`:'No balance';
+  document.getElementById('k5').style.color=cbqUtilPct>50?'var(--rd)':cbqUtilPct>30?'var(--am)':'var(--gn)';
 
   const tm={};for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);tm[d.toISOString().slice(0,10)]=0}E.forEach(e=>{if(tm[e.date]!==undefined)tm[e.date]+=e.amount});
   document.getElementById('tc').innerHTML=mkS(Object.values(tm),'#D4A843',480,90);
@@ -487,7 +635,36 @@ function renderAll(){
   document.getElementById('clg').innerHTML=CL.length===0?'<div style="color:var(--dm)">None</div>':CL.slice(-4).reverse().map(l=>`<div class="tr"><span class="tu">↑</span><span style="flex:1">${l.date}</span><span style="font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</span></div>`).join('');
   document.getElementById('rt').innerHTML=E.slice(-5).reverse().map(e=>`<div class="tr"><span style="color:${gc(e.category).c}">${gc(e.category).i}</span><span style="flex:1">${e.merchant}</span><span style="font-size:13px;font-family:var(--mf);color:var(--dm)">${f$(e.amount)}</span></div>`).join('')||'<div style="color:var(--dm)">No data</div>';
 
-  rDig();rEnv(mT,mr,ws,wT);rCF(mr,mT,mLd,mLt,bal);rNW();rLed();rSubs();rSubGlance();rStreak();
+  rDig();rEnv(mT,mr,ws,wT);rCF(mr,mT,mLd,mLt,bal);rXfr();rNW();rLed();rSubs();rSubGlance();rStreak();
+}
+
+// ═══ TRANSFERS ═══
+function rXfr(){
+  const transfers=E.filter(e=>e.isTransfer);
+  const mr=mR();
+  const mXfr=transfers.filter(e=>e.date>=mr.s&&e.date<=mr.e);
+  const savings=mXfr.filter(e=>e.category==='Savings').reduce((s,e)=>s+e.amount,0);
+  const wired=mXfr.filter(e=>e.category!=='Savings'&&e.category!=='Wiring Fees').reduce((s,e)=>s+e.amount,0);
+  const fees=mXfr.filter(e=>e.category==='Wiring Fees').reduce((s,e)=>s+e.amount,0);
+
+  document.getElementById('xfrKPIs').innerHTML=`
+    <div class="cd"><div class="lb">Saved This Month</div><div class="bn" style="color:var(--gn)">${f$(savings)}</div><div style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px">${mXfr.filter(e=>e.category==='Savings').length} transfers</div></div>
+    <div class="cd"><div class="lb">Sent Out</div><div class="bn">${f$(wired)}</div><div style="font-size:12px;font-family:var(--mf);color:var(--dm);margin-top:5px">${mXfr.filter(e=>e.category!=='Savings'&&e.category!=='Wiring Fees').length} transfers</div></div>
+    <div class="cd"><div class="lb">Fees</div><div class="bn" style="color:var(--or)">${f$(fees)}</div></div>`;
+
+  document.getElementById('xfrList').innerHTML=transfers.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No transfers yet.</div>':transfers.slice().reverse().map(e=>{
+    const c=gc(e.category);
+    const typeLabel=e.transferType?`<span style="font-size:11px;font-family:var(--mf);color:var(--dm)">${e.transferType}</span>`:'';
+    const catColor=e.category==='Savings'?'var(--gn)':e.category==='Wiring Fees'?'var(--or)':e.category==='Bills'?'var(--am)':'var(--tx)';
+    return`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)">
+      <div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${e.date}</div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:500">${e.merchant}</div>
+        <div style="display:flex;gap:8px;margin-top:3px">${typeLabel}<span style="font-size:11px;color:${catColor}">${e.category}</span></div>
+      </div>
+      <div style="font-size:15px;font-family:var(--mf);font-weight:600;color:${catColor}">${f$(e.amount)}</div>
+    </div>`;
+  }).join('');
 }
 
 function bAl(mT,mr){const cm={};mT.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount});const habits=learnHabits();return Object.keys(BU).map(c=>{const s=cm[c]||0,b=BU[c];let pr;if(c==='Transport'&&habits.fuel)pr=habits.fuel.monthlyEst;else if(c==='Groceries'&&habits.groceries)pr=habits.groceries.monthlyEst;else pr=Math.round(s*(mr.dm/Math.max(mr.de,1)));const pct=(s/b)*100;return{cat:c,spent:s,bud:b,proj:pr,pct,wb:pr>b}})}
@@ -545,7 +722,51 @@ function rEnv(mT,mr,ws,wT){
   }).join('');
 }
 
-function rCF(mr,mT,mLd,mLt,bal){document.getElementById('cf1').textContent=f$(bal);document.getElementById('cf2').textContent=f$(mLt);document.getElementById('cf2d').textContent=mLd.length+' loads';document.getElementById('cf3').textContent=f$(mT.reduce((s,e)=>s+e.amount,0));document.getElementById('cfC').innerHTML=mkBal(E.slice(-60),CL,620,150);document.getElementById('cfH').innerHTML=CL.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No loads.</div>':CL.slice().reverse().map(l=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${l.date}</div><span class="tu">↑</span><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</div><div style="font-size:12px;color:var(--dm);margin-top:3px">${f$(l.bb)} → ${f$(l.ba)}</div></div></div>`).join('')}
+function setCFTab(t){
+  document.getElementById('cfQNBView').style.display=t==='qnb'?'block':'none';
+  document.getElementById('cfCBQView').style.display=t==='cbq'?'block':'none';
+  document.getElementById('cfQNB').className=t==='qnb'?'pl on':'pl';
+  document.getElementById('cfCBQ').className=t==='cbq'?'pl on':'pl';
+}
+
+function rCF(mr,mT,mLd,mLt,bal){
+  // QNB tab
+  const qnbTx=E.filter(e=>e.source!=='CBQ');
+  const qnbBal=qnbTx.length>0?qnbTx[qnbTx.length-1].balance:0;
+  document.getElementById('cf1').textContent=f$(qnbBal);
+  document.getElementById('cf2').textContent=f$(mLt);document.getElementById('cf2d').textContent=mLd.length+' loads';
+  const qnbMonth=mT.filter(e=>e.source!=='CBQ');
+  document.getElementById('cf3').textContent=f$(qnbMonth.reduce((s,e)=>s+e.amount,0));
+  document.getElementById('cfC').innerHTML=mkBal(qnbTx.slice(-60),CL,620,150);
+  document.getElementById('cfH').innerHTML=CL.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No loads.</div>':CL.slice().reverse().map(l=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${l.date}</div><span class="tu">↑</span><div style="flex:1"><div style="font-size:16px;font-weight:600;font-family:var(--mf);color:var(--cy)">+${f$(l.amt)}</div><div style="font-size:12px;color:var(--dm);margin-top:3px">${f$(l.bb)} → ${f$(l.ba)}</div></div></div>`).join('');
+  
+  // CBQ tab
+  const cbqTx=E.filter(e=>e.source==='CBQ');
+  const cbqMonth=cbqTx.filter(e=>e.date>=mr.s&&e.date<=mr.e);
+  const cbqLatest=cbqTx.length>0?cbqTx[cbqTx.length-1]:null;
+  const cbqAvail=cbqLatest?cbqLatest.balance:CBQ_LIMIT;
+  const cbqOwed=CBQ_LIMIT-cbqAvail;
+  const utilPct=Math.round(cbqOwed/CBQ_LIMIT*100);
+  
+  document.getElementById('cbqOwed').textContent=f$(cbqOwed);
+  document.getElementById('cbqAvail').textContent=f$(cbqAvail);
+  document.getElementById('cbqUtil').textContent=utilPct+'%';
+  document.getElementById('cbqUtil').style.color=utilPct>50?'var(--rd)':utilPct>30?'var(--am)':'var(--gn)';
+  document.getElementById('cbqUtilBar').innerHTML=mkG(cbqOwed,CBQ_LIMIT,utilPct>50?'var(--rd)':utilPct>30?'var(--am)':'var(--gn)',8);
+  document.getElementById('cbqMonthSpent').textContent=f$(cbqMonth.reduce((s,e)=>s+e.amount,0));
+  document.getElementById('cbqMonthCount').textContent=cbqMonth.length+' tx';
+  
+  // CBQ usage chart (available limit over time — goes down as you spend)
+  if(cbqTx.length>=2){
+    const vals=cbqTx.map(e=>CBQ_LIMIT-e.balance); // outstanding over time
+    document.getElementById('cbqChart').innerHTML=mkS(vals,'#C95454',620,150);
+  }else{
+    document.getElementById('cbqChart').innerHTML='<div style="height:150px;display:flex;align-items:center;justify-content:center;color:var(--dm)">Need 2+ CBQ transactions</div>';
+  }
+  
+  // CBQ transaction list
+  document.getElementById('cbqTxList').innerHTML=cbqTx.length===0?'<div style="padding:22px;text-align:center;color:var(--dm)">No CBQ transactions yet.</div>':cbqTx.slice().reverse().map(e=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--ln)"><div style="font-size:13px;font-family:var(--mf);color:var(--dm);min-width:90px">${e.date}</div><div style="flex:1"><div style="font-size:14px">${e.merchant}</div><div style="font-size:12px;color:var(--dm);margin-top:2px">${gc(e.category).i} ${e.category}</div></div><div style="font-size:14px;font-family:var(--mf);font-weight:500">${f$(e.amount)}</div></div>`).join('');
+}
 
 function rNW(){
   const so=[...NW].sort((a,b)=>a.date.localeCompare(b.date)),vs=so.map(n=>n.amount);
@@ -577,14 +798,15 @@ function rLed(){
     document.getElementById('lSm').innerHTML=`${gaps.length} gaps · Total unaccounted: ${f$(gaps.reduce((s,g)=>s+g.amount,0))}`;
     return;
   }
-  if(cat)rows=rows.filter(e=>e.category===cat);
+  if(cat==='_transfers'){rows=rows.filter(e=>e.isTransfer)}
+  else if(cat)rows=rows.filter(e=>e.category===cat||e.category?.startsWith(cat));
   if(period==='week'){const tw=wR(0);rows=rows.filter(e=>e.date>=tw.s&&e.date<=tw.e)}
   else if(period==='month'){const mr=mR();rows=rows.filter(e=>e.date>=mr.s&&e.date<=mr.e)}
   else if(period==='last'){const l=lmR();rows=rows.filter(e=>e.date>=l.s&&e.date<=l.e)}
   const total=rows.reduce((s,e)=>s+e.amount,0);
   document.getElementById('lC').textContent=rows.length+' of '+E.length;
   const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
-  document.getElementById('lB').innerHTML=rows.slice(0,200).map((e,idx)=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';const eidx=E.indexOf(e);return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${e.merchant}</td><td style="font-family:var(--mf);font-weight:500" class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td style="cursor:pointer" onclick="editCat(${eidx})"><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
+  document.getElementById('lB').innerHTML=rows.slice(0,200).map((e,idx)=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';const eidx=E.indexOf(e);const srcBadge=e.source==='CBQ'?'<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(201,84,84,.12);color:var(--rd);font-family:var(--mf)">CBQ</span> ':'';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${srcBadge}${e.merchant}</td><td style="font-family:var(--mf);font-weight:500" class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td style="cursor:pointer" onclick="editCat(${eidx})"><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
   const cats=Object.entries(rows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
   document.getElementById('lSm').innerHTML=`${rows.length} tx · Total: ${f$(total)}${cats?' · '+cats:''}`;
 }
@@ -602,6 +824,9 @@ Budgets: ${JSON.stringify(BU)} TotalBudgets: ${JSON.stringify(TBUDGET)}
 Alerts: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,over:a.wb})))}
 Habits: ${JSON.stringify(habits)}
 Gaps: ${gaps.length} missing tx (~${gaps.reduce((s,g)=>s+g.amount,0).toFixed(2)} QAR)
+CBQ Credit: limit ${CBQ_LIMIT}, outstanding ${CBQ_LIMIT-(cbqTx.length?cbqTx[cbqTx.length-1].balance:CBQ_LIMIT)}, available ${cbqTx.length?cbqTx[cbqTx.length-1].balance:CBQ_LIMIT}, utilization ${Math.round((CBQ_LIMIT-(cbqTx.length?cbqTx[cbqTx.length-1].balance:CBQ_LIMIT))/CBQ_LIMIT*100)}%, stmt day ${CBQ_STMT_DAY}, due day ${CBQ_DUE_DAY}
+CBQ tx this month: ${fl(E,mr.s,mr.e).filter(e=>e.source==='CBQ'&&e.category!=='_payment').length}, total ${fl(E,mr.s,mr.e).filter(e=>e.source==='CBQ'&&e.category!=='_payment').reduce((s,e)=>s+e.amount,0).toFixed(2)}
+Transfers this month: savings ${fl(E,mr.s,mr.e).filter(e=>e.category==='Savings').reduce((s,e)=>s+e.amount,0).toFixed(2)}, wired out ${fl(E,mr.s,mr.e).filter(e=>e.isTransfer&&e.category!=='Savings'&&e.category!=='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}, fees ${fl(E,mr.s,mr.e).filter(e=>e.category==='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}
 NW: ${JSON.stringify(NW.slice(-5).map(n=>({d:n.date,a:n.amount})))} Goal: ${NWGOAL}
 All tx (${E.length}):\n${buildSmartTxContext()}`}
 
@@ -685,17 +910,17 @@ function addM(r,t){const c=document.getElementById('cM'),d=document.createElemen
 function addTD(){const c=document.getElementById('cM'),d=document.createElement('div');d.className='msg a';d.id='tdi';d.innerHTML='<div class="mb2"><div class="td"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight}
 function remTD(){document.getElementById('tdi')?.remove()}
 function askQ(b2){document.getElementById('cI').value=b2.textContent;sendC();document.getElementById('cSg').style.display='none'}
-async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Confident warmth of a private wealth advisor. Use data AND learned habits (fuel intervals, grocery patterns) for predictions. Reference specific numbers. Ask follow-ups. Proactive insights. Week=Sun-Sat. QAR. Prepaid Visa. 2-4 paragraphs.`,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t})}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
+async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Week=Sun-Sat. QAR. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes). CRITICAL CREDIT CARD RULES: Always remind him to pay the full outstanding by the due date. Flag high utilization (over 30%). If he's putting daily expenses on credit, question whether that's intentional. Track which card each purchase goes on. Use learned habits for predictions. Reference specific numbers. Ask follow-ups. 2-4 paragraphs.`,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t})}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
 
 // ═══ CRUD ═══
-function openM(t){document.getElementById('m-'+t).style.display='flex';if(t==='nw')document.getElementById('nDi').value=td();if(t==='set')document.getElementById('pU').value=PX;if(t==='nwgoal')document.getElementById('nwGi').value=NWGOAL||''}
+function openM(t){document.getElementById('m-'+t).style.display='flex';if(t==='nw')document.getElementById('nDi').value=td();if(t==='set'){document.getElementById('pU').value=PX;document.getElementById('cbqLimI').value=CBQ_LIMIT;document.getElementById('cbqStmtI').value=CBQ_STMT_DAY;document.getElementById('cbqDueI').value=CBQ_DUE_DAY}if(t==='nwgoal')document.getElementById('nwGi').value=NWGOAL||''}
 function closeM(t){document.getElementById('m-'+t).style.display='none'}
 function saveBud(){const type=document.getElementById('bType').value;const a=parseFloat(document.getElementById('bAi').value);if(!a)return;if(type==='weekly'){TBUDGET.weekly=a;sJ('cfo_tb',TBUDGET)}else if(type==='monthly'){TBUDGET.monthly=a;sJ('cfo_tb',TBUDGET)}else{const c=document.getElementById('bCi').value;if(!c)return;BU[c]=a;sJ('cfo_b',BU)}closeM('bud');renderAll()}
 function remBud(c){delete BU[c];sJ('cfo_b',BU);renderAll()}
 function saveNW(){const d=document.getElementById('nDi').value,a=parseFloat(document.getElementById('nAi').value),n=document.getElementById('nNi').value;if(!d||!a)return;NW.push({id:Date.now(),date:d,amount:a,note:n||''});sJ('cfo_n',NW);closeM('nw');renderAll()}
 function delNW(id){NW=NW.filter(n=>n.id!==id);sJ('cfo_n',NW);renderAll()}
 function saveNWGoal(){NWGOAL=parseFloat(document.getElementById('nwGi').value)||0;sJ('cfo_nwg',NWGOAL);closeM('nwgoal');renderAll()}
-function savSet(){PX=document.getElementById('pU').value.trim().replace(/\/$/,'');sJ('cfo_px',PX);closeM('set');document.getElementById('ab').style.display=PX?'none':'flex'}
+function savSet(){PX=document.getElementById('pU').value.trim().replace(/\/$/,'');sJ('cfo_px',PX);CBQ_LIMIT=parseFloat(document.getElementById('cbqLimI').value)||24000;sJ('cfo_cbq_limit',CBQ_LIMIT);CBQ_STMT_DAY=parseInt(document.getElementById('cbqStmtI').value)||28;sJ('cfo_cbq_stmt',CBQ_STMT_DAY);CBQ_DUE_DAY=parseInt(document.getElementById('cbqDueI').value)||20;sJ('cfo_cbq_due',CBQ_DUE_DAY);closeM('set');document.getElementById('ab').style.display=PX?'none':'flex';renderAll()}
 function expD(){const d={budgets:BU,netWorth:NW,proxyUrl:PX,totalBudgets:TBUDGET,nwGoal:NWGOAL,date:td()};const b2=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b2);a.download='expense-backup-'+td()+'.json';a.click()}
 function impD(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.budgets)BU=d.budgets,sJ('cfo_b',BU);if(d.netWorth)NW=d.netWorth,sJ('cfo_n',NW);if(d.proxyUrl)PX=d.proxyUrl,sJ('cfo_px',PX);if(d.totalBudgets)TBUDGET=d.totalBudgets,sJ('cfo_tb',TBUDGET);if(d.nwGoal)NWGOAL=d.nwGoal,sJ('cfo_nwg',NWGOAL);renderAll();alert('Done!')}catch(err){alert('Error: '+err.message)}};r.readAsText(f);ev.target.value=''}
 
