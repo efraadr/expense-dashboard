@@ -70,6 +70,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <button class="nb" data-v="rst"><span>🔥</span>The Roast</button>
 <button class="nb" data-v="sub"><span>⟳</span>Subscriptions</button>
 <button class="nb" data-v="ai"><span>✧</span>Ask AI</button>
+<button class="nb" data-v="aud"><span>⚖</span>The Audit</button>
 <button class="nb" data-v="led"><span>≡</span>Ledger</button>
 </div>
 <div class="sf"><div id="sI2"></div><div id="rC"></div><div style="margin-top:8px"><button onclick="openM('set')" style="background:0;border:0;color:var(--am);cursor:pointer;font-size:11px;font-family:var(--mf)">⚙ Settings</button></div></div>
@@ -181,6 +182,16 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <button onclick="askQ(this)">What should I cut first?</button>
 </div>
 <div class="cir"><textarea class="ci" id="cI" rows="1" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendC();}"></textarea><button class="cs2" id="cS" onclick="sendC()">Send</button></div>
+</div>
+</div>
+
+<!-- THE AUDIT -->
+<div class="vw" id="v-aud">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px"><div><h1 class="pt" style="margin-bottom:6px">The Financial Audit</h1><div class="ps" id="audSub">Not started</div></div><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button></div>
+<div class="cc">
+<div class="cm" id="audM"></div>
+<div class="cir"><textarea class="ci" id="audI" rows="1" placeholder="Talk to me..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAudit();}"></textarea><button class="cs2" id="audS" onclick="sendAudit()">Send</button></div>
+<div style="display:flex;justify-content:center;margin-top:14px"><button class="pl" id="audWrap" onclick="wrapUpAudit()" style="color:var(--rd);border-color:var(--rd)">End Session</button></div>
 </div>
 </div>
 
@@ -421,7 +432,7 @@ function categorize(m,amount=0){
 // ═══ NAV ═══
 function tSB(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('open')}
 function cSB(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('open')}
-document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');cSB()})});
+document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');if(v==='aud'&&!aH.length)openAudit();cSB()})});
 
 // ═══ LOAD + GAP DETECTION (QNB prepaid only) ═══
 function dL(tx){
@@ -959,6 +970,109 @@ function addTD(){const c=document.getElementById('cM'),d=document.createElement(
 function remTD(){document.getElementById('tdi')?.remove()}
 function askQ(b2){document.getElementById('cI').value=b2.textContent;sendC();document.getElementById('cSg').style.display='none'}
 async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Week=Sun-Sat. QAR. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes). CRITICAL CREDIT CARD RULES: Always remind him to pay the full outstanding by the due date. Flag high utilization (over 30%). If he's putting daily expenses on credit, question whether that's intentional. Track which card each purchase goes on. Use learned habits for predictions. Reference specific numbers. Ask follow-ups. 2-4 paragraphs.`,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t});speak(t)}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
+
+// ═══ THE AUDIT ═══
+let aH=[],auditHist=null,auditEnded=false;
+function addAudM(r,t){const c=document.getElementById('audM'),d=document.createElement('div');d.className=`msg ${r==='user'?'u':'a'}`;d.innerHTML=`<div class="mb2">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight}
+function addAudTD(){const c=document.getElementById('audM'),d=document.createElement('div');d.className='msg a';d.id='audtdi';d.innerHTML='<div class="mb2"><div class="td"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight}
+function remAudTD(){document.getElementById('audtdi')?.remove()}
+
+async function loadAuditMemory(){
+  if(!PX)return[];
+  try{const r=await fetch(PX+'/audit-memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'load'})});if(!r.ok)return[];const d=await r.json();return Array.isArray(d.history)?d.history:[]}
+  catch(e){return[]}
+}
+async function saveAuditRecord(rec){
+  if(!PX)return;
+  try{await fetch(PX+'/audit-memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',record:rec})})}
+  catch(e){}
+}
+
+const AUDIT_CATS=`1. INCOME — salary + photography/videography side income. Weak auto-data (only card loads as a rough proxy); rely on him telling you the real numbers.
+2. FIXED & RECURRING COSTS — subscriptions and bills, from detected recurring merchants.
+3. DISCRETIONARY SPENDING — dining, entertainment, shopping, personal care, clothing; use repeat-merchant and interval patterns for specific callouts.
+4. DEBT & CREDIT BEHAVIOR — CBQ credit card: utilization %, outstanding vs 24K limit, on-time payment, whether daily expenses are quietly landing on credit instead of prepaid.
+5. SAVINGS & NET WORTH TRAJECTORY — net worth vs goal, weekly/monthly budget adherence.`;
+
+function buildAuditSys(){
+  const isFollowUp=auditHist&&auditHist.length>0;
+  let priorCtx;
+  if(isFollowUp){
+    const last=auditHist[auditHist.length-1];
+    priorCtx=`\n\nPRIOR SESSION (${last.date}): Issues flagged: ${last.issues||'n/a'}. Actions agreed: ${last.actions||'n/a'}. Notes: ${last.notes||'n/a'}. This is session ${auditHist.length+1} — open by checking whether he actually did what he said he'd do, using today's real numbers to catch him out either way.`;
+  }else{
+    priorCtx=`\n\nThis is his first-ever audit — walk him through all 5 categories below over the course of the conversation.`;
+  }
+  return `You are running a live financial audit on Saif — think Caleb Hammer's Financial Audit, in Doha, QAR. He's a Civil Quality Engineer with photography/videography side income. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes, pay full outstanding by due date, flag utilization over 30%).
+
+PERSONA: Sarcastic, blunt, ruthless — reference specific merchants, exact amounts, dates, visit counts. This is an audit, not a comedy bit — mock the actual behavior, not generic jokes.
+
+FREEDOM: This isn't a rigid script. He can go off on tangents — job stress, a big purchase coming up, why he's spending the way he is — follow the thread, probe, then work back toward whatever's uncovered. Don't force a checklist tone.
+
+CATEGORIES TO COVER OVER THE CONVERSATION (not necessarily in order, not necessarily one per message):
+${AUDIT_CATS}
+${priorCtx}
+
+ENDING THE SESSION: If he clearly indicates he wants to end (says so directly, or you judge the conversation has reached a natural close), STOP being sarcastic for this one final reply. Give genuine, specific, non-sarcastic advice: 2-4 concrete action items, one honest encouraging note, and what you'll check next time. End that final message with the exact line <<AUDIT_END>> on its own line and nothing after it. Only use that marker when actually closing — never mid-conversation.`;
+}
+
+async function openAudit(){
+  document.getElementById('audSub').textContent='Loading history...';
+  auditHist=await loadAuditMemory();
+  document.getElementById('audSub').textContent=auditHist.length?`Session ${auditHist.length+1} · Follow-up`:'Session 1 · Full audit';
+  addAudTD();
+  const kickoff='[Begin the session. Open in character — reference his real numbers immediately. Do not wait for him to speak first.]';
+  aH.push({role:'user',content:kickoff});
+  try{
+    const t=await callAI(buildAuditSys(),[{role:'user',content:`[DATA]\n${buildCtx()}\n\n${kickoff}`}]);
+    remAudTD();
+    const clean=t.replace('<<AUDIT_END>>','').trim();
+    addAudM('ai',clean);
+    aH.push({role:'assistant',content:clean});
+    speak(clean);
+  }catch(e){remAudTD();addAudM('ai','Error: '+e.message);aH=[]}
+}
+
+async function sendAudit(forceEnd){
+  if(auditEnded)return;
+  const inp=document.getElementById('audI'),btn=document.getElementById('audS');
+  const msg=forceEnd?'(I want to end the session now.)':inp.value.trim();
+  if(!msg)return;
+  if(!forceEnd){inp.value='';inp.style.height='auto';addAudM('user',msg)}
+  btn.disabled=true;
+  addAudTD();
+  aH.push({role:'user',content:msg});
+  const ctx=buildCtx();
+  const sys=buildAuditSys();
+  const msgs=aH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);
+  if(msgs.length>24)msgs.splice(0,msgs.length-24);
+  try{
+    const t=await callAI(sys,msgs);
+    remAudTD();
+    const ended=t.includes('<<AUDIT_END>>');
+    const clean=t.replace('<<AUDIT_END>>','').trim();
+    addAudM('ai',clean);
+    aH.push({role:'assistant',content:clean});
+    speak(clean);
+    if(ended)await closeAuditSession();
+  }catch(e){remAudTD();addAudM('ai','Error: '+e.message)}
+  btn.disabled=false;inp.focus();
+}
+function wrapUpAudit(){sendAudit(true)}
+
+async function closeAuditSession(){
+  auditEnded=true;
+  document.getElementById('audI').disabled=true;
+  document.getElementById('audS').disabled=true;
+  const wb=document.getElementById('audWrap');wb.disabled=true;wb.textContent='Session Closed';
+  try{
+    const transcript=aH.map(m=>`${m.role.toUpperCase()}: ${m.content}`).join('\n');
+    const sumSys=`Summarize this financial audit session into strict JSON only, no markdown, no prose outside the JSON: {"date":"...","issues":"...","actions":"...","notes":"..."}. "issues" = key problems found this session in one sentence. "actions" = concrete steps he agreed to in one sentence. "notes" = any personal/life context worth remembering for next time, one sentence, or empty string if none.`;
+    const t=await callAI(sumSys,`Today's date: ${new Date().toISOString().slice(0,10)}\n\nSESSION TRANSCRIPT:\n${transcript}`);
+    const rec=JSON.parse(t.replace(/```json|```/g,'').trim());
+    await saveAuditRecord(rec);
+  }catch(e){console.error('Audit summary error',e)}
+}
 
 // ═══ CRUD ═══
 function openM(t){document.getElementById('m-'+t).style.display='flex';if(t==='nw')document.getElementById('nDi').value=td();if(t==='set'){document.getElementById('pU').value=PX;document.getElementById('cbqLimI').value=CBQ_LIMIT;document.getElementById('cbqStmtI').value=CBQ_STMT_DAY;document.getElementById('cbqDueI').value=CBQ_DUE_DAY}if(t==='nwgoal')document.getElementById('nwGi').value=NWGOAL||''}
