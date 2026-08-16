@@ -158,7 +158,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <!-- ROAST -->
 <div class="vw" id="v-rst">
 <h1 class="pt" style="margin-bottom:8px">The Roast</h1><div class="ps" style="margin-bottom:26px">No filter. No mercy.</div>
-<div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div style="display:flex;gap:10px"><button class="pl on" id="rW" onclick="sRM('w')">This Week</button><button class="pl" id="rM" onclick="sRM('m')">This Month</button></div><button class="bt bp" id="bR" onclick="genRst()">🔥 Roast Me</button></div><div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dm)">Hit the button.</div></div></div></div>
+<div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div style="display:flex;gap:10px"><button class="pl on" id="rW" onclick="sRM('w')">This Week</button><button class="pl" id="rM" onclick="sRM('m')">This Month</button></div><div style="display:flex;gap:10px"><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button><button class="bt bp" id="bR" onclick="genRst()">🔥 Roast Me</button></div></div><div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dm)">Hit the button.</div></div></div></div>
 </div>
 
 <!-- SUBSCRIPTIONS -->
@@ -169,7 +169,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 
 <!-- ASK AI -->
 <div class="vw" id="v-ai">
-<h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps" style="margin-bottom:22px">Your financial advisor</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px"><div><h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps">Your financial advisor</div></div><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button></div>
 <div class="cc">
 <div class="cm" id="cM"></div>
 <div class="csg" id="cSg">
@@ -225,7 +225,37 @@ function td(){return new Date().toISOString().slice(0,10)}
 let E=[],CL=[],gaps=[],rm='w',dgm='w';
 function lJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f}catch{return f}}
 function sJ(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
-let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),PX=lJ('cfo_px',''),NWGOAL=lJ('cfo_nwg',0),TBUDGET=lJ('cfo_tb',{});
+let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),PX=lJ('cfo_px',''),NWGOAL=lJ('cfo_nwg',0),TBUDGET=lJ('cfo_tb',{}),VOX=lJ('cfo_vox',false);
+
+// ═══ VOICE (TTS via ElevenLabs, proxied through the Worker) ═══
+let voxAudio=null,voxSeq=0;
+async function speak(t){
+  if(!VOX||!PX)return;
+  const seq=++voxSeq; // guards against an older, slower request finishing after a newer one starts
+  try{
+    if(voxAudio){voxAudio.pause();voxAudio=null}
+    const clean=t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+    if(!clean)return;
+    const r=await fetch(PX+'/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})});
+    if(seq!==voxSeq)return; // a newer speak() call superseded this one while we were waiting
+    if(!r.ok){console.error('TTS error',r.status,await r.text().catch(()=>''));return}
+    const blob=await r.blob();
+    if(seq!==voxSeq)return;
+    const audioUrl=URL.createObjectURL(blob);
+    voxAudio=new Audio(audioUrl);
+    voxAudio.onended=()=>URL.revokeObjectURL(audioUrl);
+    voxAudio.play().catch(e=>console.error('Playback error',e));
+  }catch(e){console.error('TTS error',e)}
+}
+function toggleVox(){
+  VOX=!VOX;sJ('cfo_vox',VOX);
+  if(!VOX&&voxAudio)try{voxAudio.pause();voxAudio=null}catch(e){}
+  syncVoxUI();
+}
+function syncVoxUI(){
+  document.querySelectorAll('.voxBtn').forEach(b=>{b.classList.toggle('on',VOX);b.textContent=VOX?'🔊 Voice On':'🔈 Voice Off'});
+}
+syncVoxUI();
 let CBQ_LIMIT=lJ('cfo_cbq_limit',24000),CBQ_STMT_DAY=lJ('cfo_cbq_stmt',24),CBQ_DUE_DAY=lJ('cfo_cbq_due',8);
 
 // ═══ SMS PARSER ═══
@@ -916,7 +946,7 @@ RULES:
 - CRITICAL: Your opening sentence must be COMPLETELY UNIQUE. Never start with "Let's" or "So" or "Alright." Use the approach seed above.
 - CRITICAL: Do NOT repeat any sentence structure you've used before. Vary paragraph length. Vary insult style.
 - End with ONE buried useful insight.
-- 150-300 words. No markdown. Raw paragraphs.`,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro">${t}</div>`}
+- 150-300 words. No markdown. Raw paragraphs.`,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro">${t}</div>`;speak(t)}
   catch(e){document.getElementById('rO').innerHTML=`<div style="color:var(--rd);padding:22px">${e.message}</div>`}
   b.disabled=false;b.textContent='🔥 Roast Me';
 }
@@ -928,7 +958,7 @@ function addM(r,t){const c=document.getElementById('cM'),d=document.createElemen
 function addTD(){const c=document.getElementById('cM'),d=document.createElement('div');d.className='msg a';d.id='tdi';d.innerHTML='<div class="mb2"><div class="td"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight}
 function remTD(){document.getElementById('tdi')?.remove()}
 function askQ(b2){document.getElementById('cI').value=b2.textContent;sendC();document.getElementById('cSg').style.display='none'}
-async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Week=Sun-Sat. QAR. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes). CRITICAL CREDIT CARD RULES: Always remind him to pay the full outstanding by the due date. Flag high utilization (over 30%). If he's putting daily expenses on credit, question whether that's intentional. Track which card each purchase goes on. Use learned habits for predictions. Reference specific numbers. Ask follow-ups. 2-4 paragraphs.`,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t})}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
+async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Week=Sun-Sat. QAR. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes). CRITICAL CREDIT CARD RULES: Always remind him to pay the full outstanding by the due date. Flag high utilization (over 30%). If he's putting daily expenses on credit, question whether that's intentional. Track which card each purchase goes on. Use learned habits for predictions. Reference specific numbers. Ask follow-ups. 2-4 paragraphs.`,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t});speak(t)}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
 
 // ═══ CRUD ═══
 function openM(t){document.getElementById('m-'+t).style.display='flex';if(t==='nw')document.getElementById('nDi').value=td();if(t==='set'){document.getElementById('pU').value=PX;document.getElementById('cbqLimI').value=CBQ_LIMIT;document.getElementById('cbqStmtI').value=CBQ_STMT_DAY;document.getElementById('cbqDueI').value=CBQ_DUE_DAY}if(t==='nwgoal')document.getElementById('nwGi').value=NWGOAL||''}
