@@ -159,7 +159,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <!-- ROAST -->
 <div class="vw" id="v-rst">
 <h1 class="pt" style="margin-bottom:8px">The Roast</h1><div class="ps" style="margin-bottom:26px">No filter. No mercy.</div>
-<div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div style="display:flex;gap:10px"><button class="pl on" id="rW" onclick="sRM('w')">This Week</button><button class="pl" id="rM" onclick="sRM('m')">This Month</button></div><div style="display:flex;gap:10px"><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button><button class="bt bp" id="bR" onclick="genRst()">🔥 Roast Me</button></div></div><div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dm)">Hit the button.</div></div></div></div>
+<div class="cd" style="margin-bottom:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div style="display:flex;gap:10px"><button class="pl on" id="rW" onclick="sRM('w')">This Week</button><button class="pl" id="rM" onclick="sRM('m')">This Month</button></div><div style="display:flex;gap:10px;align-items:flex-start"><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button><span class="voxErr" style="display:none;font-size:11px;color:var(--rd);max-width:150px;text-align:right;line-height:1.3"></span></div><button class="bt bp" id="bR" onclick="genRst()">🔥 Roast Me</button></div></div><div id="rO"><div style="padding:36px;text-align:center"><div style="font-size:44px;margin-bottom:14px">🔥</div><div style="font-size:16px;color:var(--dm)">Hit the button.</div></div></div></div>
 </div>
 
 <!-- SUBSCRIPTIONS -->
@@ -170,7 +170,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 
 <!-- ASK AI -->
 <div class="vw" id="v-ai">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px"><div><h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps">Your financial advisor</div></div><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px"><div><h1 class="pt" style="margin-bottom:6px">Ask AI</h1><div class="ps">Your financial advisor</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button><span class="voxErr" style="display:none;font-size:11px;color:var(--rd);max-width:150px;text-align:right;line-height:1.3"></span></div></div>
 <div class="cc">
 <div class="cm" id="cM"></div>
 <div class="csg" id="cSg">
@@ -187,7 +187,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 
 <!-- THE AUDIT -->
 <div class="vw" id="v-aud">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px"><div><h1 class="pt" style="margin-bottom:6px">The Financial Audit</h1><div class="ps" id="audSub">Not started</div></div><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px"><div><h1 class="pt" style="margin-bottom:6px">The Financial Audit</h1><div class="ps" id="audSub">Not started</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><button class="pl voxBtn" onclick="toggleVox()" title="Read replies aloud">🔈 Voice Off</button><span class="voxErr" style="display:none;font-size:11px;color:var(--rd);max-width:150px;text-align:right;line-height:1.3"></span></div></div>
 <div class="cc">
 <div class="cm" id="audM"></div>
 <div class="cir"><textarea class="ci" id="audI" rows="1" placeholder="Talk to me..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAudit();}"></textarea><button class="cs2" id="audS" onclick="sendAudit()">Send</button></div>
@@ -239,28 +239,58 @@ function sJ(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 let BU=lJ('cfo_b',{}),NW=lJ('cfo_n',[]),PX=lJ('cfo_px',''),NWGOAL=lJ('cfo_nwg',0),TBUDGET=lJ('cfo_tb',{}),VOX=lJ('cfo_vox',false);
 
 // ═══ VOICE (TTS via ElevenLabs, proxied through the Worker) ═══
+// Mobile Safari (iOS) blocks audio.play() unless it's called synchronously inside
+// a real tap handler. Our speak() calls happen after two awaited fetches, which by
+// then are too far removed from the original tap for iOS to count as "user-initiated" —
+// so playback was failing silently. Fix: reuse ONE persistent <audio> element, and
+// "prime" it with a play() call directly inside toggleVox()'s click handler (a real
+// tap), which grants this specific element permission to play programmatically for
+// the rest of the session. Also surfaces errors on-screen instead of console-only,
+// since console.error is invisible on a phone.
 let voxAudio=null,voxSeq=0;
+function ensureVoxAudio(){
+  if(!voxAudio){voxAudio=document.createElement('audio');voxAudio.style.display='none';document.body.appendChild(voxAudio)}
+  return voxAudio;
+}
+function setVoxErr(msg){
+  document.querySelectorAll('.voxErr').forEach(e=>{e.textContent=msg||'';e.style.display=msg?'block':'none'});
+}
 async function speak(t){
   if(!VOX||!PX)return;
   const seq=++voxSeq; // guards against an older, slower request finishing after a newer one starts
+  const a=ensureVoxAudio();
   try{
-    if(voxAudio){voxAudio.pause();voxAudio=null}
     const clean=t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
     if(!clean)return;
     const r=await fetch(PX+'/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})});
     if(seq!==voxSeq)return; // a newer speak() call superseded this one while we were waiting
-    if(!r.ok){console.error('TTS error',r.status,await r.text().catch(()=>''));return}
+    if(!r.ok){const errText=await r.text().catch(()=>'');console.error('TTS error',r.status,errText);setVoxErr(`Voice failed (${r.status})`);return}
     const blob=await r.blob();
     if(seq!==voxSeq)return;
+    if(a.dataset.url)URL.revokeObjectURL(a.dataset.url);
     const audioUrl=URL.createObjectURL(blob);
-    voxAudio=new Audio(audioUrl);
-    voxAudio.onended=()=>URL.revokeObjectURL(audioUrl);
-    voxAudio.play().catch(e=>console.error('Playback error',e));
-  }catch(e){console.error('TTS error',e)}
+    a.dataset.url=audioUrl;
+    a.src=audioUrl;
+    await a.play();
+    setVoxErr('');
+  }catch(e){
+    console.error('TTS error',e);
+    setVoxErr('Voice blocked — tap Voice Off then Voice On to re-enable');
+  }
 }
 function toggleVox(){
   VOX=!VOX;sJ('cfo_vox',VOX);
-  if(!VOX&&voxAudio)try{voxAudio.pause();voxAudio=null}catch(e){}
+  const a=ensureVoxAudio();
+  if(VOX){
+    // Priming: calling play() here, synchronously inside this real tap, is what
+    // unlocks this <audio> element for programmatic playback later — even with
+    // nothing loaded yet, the act of calling it inside a genuine gesture is what
+    // mobile browsers check for, not whether this particular call succeeds.
+    a.muted=true;
+    a.play().then(()=>{a.pause();a.muted=false;setVoxErr('')}).catch(()=>{a.muted=false});
+  }else{
+    a.pause();
+  }
   syncVoxUI();
 }
 function syncVoxUI(){
@@ -994,16 +1024,28 @@ const AUDIT_CATS=`1. INCOME — salary + photography/videography side income. We
 4. DEBT & CREDIT BEHAVIOR — CBQ credit card: utilization %, outstanding vs 24K limit, on-time payment, whether daily expenses are quietly landing on credit instead of prepaid.
 5. SAVINGS & NET WORTH TRAJECTORY — net worth vs goal, weekly/monthly budget adherence.`;
 
+function timeSince(iso){
+  const ms=Date.now()-new Date(iso).getTime();
+  const min=Math.round(ms/60000);
+  if(min<1)return'less than a minute ago';
+  if(min<60)return`${min} minute${min===1?'':'s'} ago`;
+  const hr=Math.round(min/60);
+  if(hr<24)return`${hr} hour${hr===1?'':'s'} ago`;
+  const day=Math.round(hr/24);
+  return`${day} day${day===1?'':'s'} ago`;
+}
 function buildAuditSys(){
   const isFollowUp=auditHist&&auditHist.length>0;
+  const today=new Date().toISOString().slice(0,10);
   let priorCtx;
   if(isFollowUp){
     const last=auditHist[auditHist.length-1];
-    priorCtx=`\n\nPRIOR SESSION (${last.date}): Issues flagged: ${last.issues||'n/a'}. Actions agreed: ${last.actions||'n/a'}. Notes: ${last.notes||'n/a'}. This is session ${auditHist.length+1} — open by checking whether he actually did what he said he'd do, using today's real numbers to catch him out either way.`;
+    const elapsed=last.timestamp?timeSince(last.timestamp):`on ${last.date}`;
+    priorCtx=`\n\nPRIOR SESSION: ${elapsed}. Issues flagged: ${last.issues||'n/a'}. Actions agreed: ${last.actions||'n/a'}. Notes: ${last.notes||'n/a'}. This is session ${auditHist.length+1}. Calibrate to how much time has actually passed: if it's only been minutes or hours, he has NOT had a real chance to act yet — don't accuse him of failing to follow through; you can sarcastically clock the fact that he's back suspiciously fast instead. If it's been a day or more, check his real numbers against what he agreed to and call out whether he actually did it.`;
   }else{
     priorCtx=`\n\nThis is his first-ever audit — walk him through all 5 categories below over the course of the conversation.`;
   }
-  return `You are running a live financial audit on Saif — think Caleb Hammer's Financial Audit, in Doha, QAR. He's a Civil Quality Engineer with photography/videography side income. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes, pay full outstanding by due date, flag utilization over 30%).
+  return `Today's date is ${today}. You are running a live financial audit on Saif — think Caleb Hammer's Financial Audit, in Doha, QAR. He's a Civil Quality Engineer with photography/videography side income. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes, pay full outstanding by due date, flag utilization over 30%).
 
 PERSONA: Sarcastic, blunt, ruthless — reference specific merchants, exact amounts, dates, visit counts. This is an audit, not a comedy bit — mock the actual behavior, not generic jokes.
 
@@ -1070,6 +1112,7 @@ async function closeAuditSession(){
     const sumSys=`Summarize this financial audit session into strict JSON only, no markdown, no prose outside the JSON: {"date":"...","issues":"...","actions":"...","notes":"..."}. "issues" = key problems found this session in one sentence. "actions" = concrete steps he agreed to in one sentence. "notes" = any personal/life context worth remembering for next time, one sentence, or empty string if none.`;
     const t=await callAI(sumSys,`Today's date: ${new Date().toISOString().slice(0,10)}\n\nSESSION TRANSCRIPT:\n${transcript}`);
     const rec=JSON.parse(t.replace(/```json|```/g,'').trim());
+    rec.timestamp=new Date().toISOString(); // exact instant, computed here rather than trusted from the model — this is what buildAuditSys() diffs against next session
     await saveAuditRecord(rec);
   }catch(e){console.error('Audit summary error',e)}
 }
