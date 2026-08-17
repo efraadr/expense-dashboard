@@ -255,12 +255,25 @@ function ensureVoxAudio(){
 function setVoxErr(msg){
   document.querySelectorAll('.voxErr').forEach(e=>{e.textContent=msg||'';e.style.display=msg?'block':'none'});
 }
-async function speak(t){
+// All AI responses come back in Egyptian/Sudanese colloquial Arabic — displayed and
+// spoken. Single-language output costs roughly half of the earlier English+Arabic
+// dual response, and an Arabic voice model pronounces merchants and currency correctly.
+const ARABIC_MODE=`
+
+LANGUAGE — this overrides any implied language elsewhere in these instructions:
+Reply entirely in Egyptian/Sudanese colloquial Arabic (عامية مصرية/سودانية). Not Modern Standard Arabic, not English. Use عايز not أريد، ده/دي not هذا/هذه، إزاي not كيف، فلوس not أموال، دلوقتي not الآن.
+- Keep the tone. Blunt stays blunt, sarcastic stays sarcastic — make it land naturally in the dialect rather than softening into formal Arabic.
+- Numbers: Arabic words as spoken, not digits.
+- Currency: ريال قطري or ريال.
+- Merchant, brand and place names in Arabic script so they read correctly aloud (Watan Hypermarket → وطن هايبرماركت، Apple → آبل، Talabat → طلبات، Fuddruckers → فدركرز).
+- The response is read aloud, so write it as speech. No markdown, no bullet characters, no asterisks.`;
+
+async function speak(spokenText){
   if(!VOX||!PX)return;
   const seq=++voxSeq; // guards against an older, slower request finishing after a newer one starts
   const a=ensureVoxAudio();
   try{
-    const clean=t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+    const clean=(spokenText||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
     if(!clean)return;
     const r=await fetch(PX+'/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean})});
     if(seq!==voxSeq)return; // a newer speak() call superseded this one while we were waiting
@@ -505,7 +518,7 @@ function crossCheckFX(txs){
 }
 
 // ═══ AI ═══
-async function callAI(sys,msg){if(!PX)throw new Error('No proxy URL. Go to Settings.');const r=await fetch(PX,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:1000,system:sys,messages:Array.isArray(msg)?msg:[{role:'user',content:msg}]})});const raw=await r.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`API ${r.status}: ${raw.slice(0,200)}`)}if(!r.ok||d.error)throw new Error(d.error?.message||`API ${r.status}: ${raw.slice(0,200)}`);return d.content?.map(b=>b.text||'').join('')||'No response.'}
+async function callAI(sys,msg){if(!PX)throw new Error('No proxy URL. Go to Settings.');const r=await fetch(PX,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:1400,system:sys,messages:Array.isArray(msg)?msg:[{role:'user',content:msg}]})});const raw=await r.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`API ${r.status}: ${raw.slice(0,200)}`)}if(!r.ok||d.error)throw new Error(d.error?.message||`API ${r.status}: ${raw.slice(0,200)}`);return d.content?.map(b=>b.text||'').join('')||'No response.'}
 
 // ═══ HABIT ENGINE ═══
 function learnHabits(){
@@ -908,21 +921,42 @@ function rLed(){
 }
 
 // ═══ AI ═══
-function buildCtx(){const tw=wR(0),lw=wR(1),mr=mR();const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),ms=mT.reduce((s,e)=>s+e.amount,0);const mC={};mT.forEach(e=>{mC[e.category]=(mC[e.category]||0)+e.amount});const mm={};mT.forEach(e=>{mm[e.merchant]=(mm[e.merchant]||0)+1});const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),als=bAl(mT,mr),habits=learnHabits();return`DATA (${td()}): QAR. Prepaid Visa. Week=Sun-Sat.
-WEEK ${tw.s}-${tw.e}: ${ws.toFixed(2)}, ${wT.length} tx
-PREV WEEK: ${ls2.toFixed(2)}, ${lwT.length} tx
-MONTH: ${ms.toFixed(2)}, ${mT.length} tx (day ${mr.de}/${mr.dm})
-Categories: ${JSON.stringify(mC)}
-Merchants: ${JSON.stringify(Object.entries(mm).sort((a,b)=>b[1]-a[1]).slice(0,12))}
-Balance: ${E.length>0?E[E.length-1].balance:0}
-Loads: ${mLd.length}=${mLd.reduce((s,l)=>s+l.amt,0).toFixed(2)}
+// Transfers, savings moves, wiring fees, and credit-card payments are NOT spending.
+// Lumping them into weekly/monthly totals made a 10,000 savings transfer read as
+// money "torched", so spend and money-movement are reported separately below.
+function isMoneyMove(e){return !!(e.isTransfer||e.isPayment||e.category==='Savings'||e.category==='Wiring Fees'||e.category==='_payment')}
+function isSpend(e){return !isMoneyMove(e)}
+function buildCtx(){const tw=wR(0),lw=wR(1),mr=mR();const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);
+const wS=wT.filter(isSpend),lwS=lwT.filter(isSpend),mS=mT.filter(isSpend);
+const ws=wS.reduce((s,e)=>s+e.amount,0),ls2=lwS.reduce((s,e)=>s+e.amount,0),ms=mS.reduce((s,e)=>s+e.amount,0);
+const wMove=wT.filter(isMoneyMove).reduce((s,e)=>s+e.amount,0),mMove=mT.filter(isMoneyMove).reduce((s,e)=>s+e.amount,0);
+const mC={};mS.forEach(e=>{mC[e.category]=(mC[e.category]||0)+e.amount});const mm={};mS.forEach(e=>{mm[e.merchant]=(mm[e.merchant]||0)+1});const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),als=bAl(mT,mr),habits=learnHabits();
+// Prepaid balance must come from a QNB row — the last row overall is often a CBQ
+// row, whose `balance` is AVAILABLE CREDIT, not cash on hand.
+const qnbRows=E.filter(e=>e.source==='QNB'&&typeof e.balance==='number');
+const prepaidBal=qnbRows.length?qnbRows[qnbRows.length-1].balance:0;
+// CBQ rows carry `balance` = available credit remaining. Outstanding (what he owes)
+// is limit minus that. The previous version subtracted twice and inverted the figure.
+const cbqRows=E.filter(e=>e.source==='CBQ'&&typeof e.balance==='number'&&e.balance>0);
+const cbqAvail=cbqRows.length?cbqRows[cbqRows.length-1].balance:null;
+const cbqOwed=cbqAvail!==null?(CBQ_LIMIT-cbqAvail):null;
+const cbqUtil=cbqAvail!==null?((cbqOwed/CBQ_LIMIT)*100).toFixed(1):'unknown';
+return`DATA (${td()}): QAR. Week=Sun-Sat.
+IMPORTANT — do not confuse these: "spending" below EXCLUDES transfers to savings, wiring fees, and credit-card payments. Moving money to savings is not spending it.
+WEEK ${tw.s}-${tw.e} SPENDING: ${ws.toFixed(2)}, ${wS.length} tx (plus ${wMove.toFixed(2)} in transfers/payments, which is NOT spending)
+PREV WEEK SPENDING: ${ls2.toFixed(2)}, ${lwS.length} tx
+MONTH SPENDING: ${ms.toFixed(2)}, ${mS.length} tx (day ${mr.de}/${mr.dm}) (plus ${mMove.toFixed(2)} in transfers/payments)
+Categories (spending only): ${JSON.stringify(mC)}
+Merchants (spending only): ${JSON.stringify(Object.entries(mm).sort((a,b)=>b[1]-a[1]).slice(0,12))}
+Prepaid (QNB) available balance: ${prepaidBal}
+Loads (transfers INTO prepaid): ${mLd.length}=${mLd.reduce((s,l)=>s+l.amt,0).toFixed(2)}
 Budgets: ${JSON.stringify(BU)} TotalBudgets: ${JSON.stringify(TBUDGET)}
 Alerts: ${JSON.stringify(als.map(a=>({c:a.cat,s:a.spent,b:a.bud,p:a.proj,over:a.wb})))}
 Habits: ${JSON.stringify(habits)}
 Gaps: ${gaps.length} missing tx (~${gaps.reduce((s,g)=>s+g.amount,0).toFixed(2)} QAR)
-CBQ Credit: limit ${CBQ_LIMIT}, outstanding ${CBQ_LIMIT-(E.filter(e=>e.source==='CBQ'&&!e.isTransfer&&!e.isPayment).length?CBQ_LIMIT-E.filter(e=>e.source==='CBQ'&&!e.isTransfer).slice(-1)[0]?.balance||CBQ_LIMIT:0)}, stmt day ${CBQ_STMT_DAY}, due day ${CBQ_DUE_DAY}
-CBQ tx this month: ${fl(E,mr.s,mr.e).filter(e=>e.source==='CBQ'&&e.category!=='_payment').length}, total ${fl(E,mr.s,mr.e).filter(e=>e.source==='CBQ'&&e.category!=='_payment').reduce((s,e)=>s+e.amount,0).toFixed(2)}
-Transfers this month: savings ${fl(E,mr.s,mr.e).filter(e=>e.category==='Savings').reduce((s,e)=>s+e.amount,0).toFixed(2)}, wired out ${fl(E,mr.s,mr.e).filter(e=>e.isTransfer&&e.category!=='Savings'&&e.category!=='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}, fees ${fl(E,mr.s,mr.e).filter(e=>e.category==='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}
+CBQ Credit Card: limit ${CBQ_LIMIT}. OUTSTANDING (what he currently OWES) = ${cbqOwed!==null?cbqOwed.toFixed(2):'unknown'}. AVAILABLE CREDIT (unused, NOT debt) = ${cbqAvail!==null?cbqAvail.toFixed(2):'unknown'}. Utilization = ${cbqUtil}%. Stmt day ${CBQ_STMT_DAY}, due day ${CBQ_DUE_DAY}. A HIGH available-credit number is GOOD — it means he has barely used the card.
+CBQ spending this month: ${mT.filter(e=>e.source==='CBQ'&&isSpend(e)).length} tx, total ${mT.filter(e=>e.source==='CBQ'&&isSpend(e)).reduce((s,e)=>s+e.amount,0).toFixed(2)}
+Transfers this month (NOT spending): savings ${fl(E,mr.s,mr.e).filter(e=>e.category==='Savings').reduce((s,e)=>s+e.amount,0).toFixed(2)}, wired out ${fl(E,mr.s,mr.e).filter(e=>e.isTransfer&&e.category!=='Savings'&&e.category!=='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}, fees ${fl(E,mr.s,mr.e).filter(e=>e.category==='Wiring Fees').reduce((s,e)=>s+e.amount,0).toFixed(2)}
 NW: ${JSON.stringify(NW.slice(-5).map(n=>({d:n.date,a:n.amount})))} Goal: ${NWGOAL}
 All tx (${E.length}):\n${buildSmartTxContext()}`}
 
@@ -966,7 +1000,7 @@ function buildSmartTxContext(){
 async function genDig(){
   const b=document.getElementById('bD');b.disabled=true;b.textContent='Generating...';
   const mode=dgm==='w'?'WEEKLY digest (Sunday to Saturday)':'MONTHLY digest (current month so far)';
-  try{const t=await callAI(`Sharp financial analyst. QAR. Week=Sun-Sat. Prepaid Visa. Give a ${mode}. Include habit-based predictions (fuel intervals, grocery patterns). Direct sentences. Total vs previous period, categories, biggest tx, balance, loads, observations from habits. Flag budget issues. One actionable tip. Under 200 words. No markdown/bullets/bold.`,buildCtx());document.getElementById('dO').innerHTML=`<div style="font-size:16px;line-height:1.85;white-space:pre-wrap">${t}</div>`}
+  try{const t=await callAI(`Sharp financial analyst. QAR. Week=Sun-Sat. Give a ${mode}. NUMBER RULES: transfers to savings, wiring fees, and card payments are NOT spending — report them separately, never as money spent. On the CBQ card, OUTSTANDING is what he owes and AVAILABLE CREDIT is what he hasn't used; they are opposites. Include habit-based predictions (fuel intervals, grocery patterns). Direct sentences. Spending total vs previous period, categories, biggest tx, balances, loads, observations from habits. Flag budget issues. One actionable tip. Under 200 words. No markdown/bullets/bold.`+ARABIC_MODE,buildCtx());document.getElementById('dO').innerHTML=`<div dir="auto" style="font-size:16px;line-height:1.85;white-space:pre-wrap">${t}</div>`}
   catch(e){document.getElementById('dO').innerHTML=`<div style="color:var(--rd)">${e.message}</div>`}
   b.disabled=false;b.textContent='✧ Generate';
 }
@@ -974,14 +1008,20 @@ async function genDig(){
 async function genRst(){
   const b=document.getElementById('bR');b.disabled=true;b.textContent='Roasting...';
   const tx=rm==='w'?fl(E,...Object.values(wR(0))):fl(E,...Object.values(mR()));
-  const merch={};tx.forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1});
+  const merch={};tx.filter(isSpend).forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1});
   const reps=Object.entries(merch).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
   // Anti-repetition seed
-  const seeds=['Lead with the single most pathetic transaction.','Open with a timeline of one specific bad day.','Start by calculating how much he spent per hour this period.','Begin with his most visited merchant and make it deeply personal.','Open by comparing his spending to something absurd he could have bought instead.','Start with the card balance and work backward through the damage.','Lead with the gap between what he budgeted and what actually happened.'];
+  const seeds=['Lead with the single most pathetic transaction.','Open with a timeline of one specific bad day.','Start by calculating how much he spent per hour this period.','Begin with his most visited merchant and make it deeply personal.','Open by comparing his spending to something absurd he could have bought instead.','Start with his largest single purchase and work backward through the damage.','Lead with the gap between what he budgeted and what actually happened.'];
   const seed=seeds[Math.floor(Math.random()*seeds.length)];
   const ts=Date.now(); // timestamp to ensure uniqueness
-  const extra=`Period: ${rm==='w'?'this week Sun-Sat':'this month'}, Total: ${tx.reduce((s,e)=>s+e.amount,0).toFixed(2)}, Tx: ${tx.length}, Repeats: ${JSON.stringify(reps.slice(0,8))}, Timeline: ${JSON.stringify(tx.map(e=>({d:e.date,m:e.merchant,a:e.amount})))}`;
-  try{const t=await callAI(`You are a savage, unfiltered financial critic — think Caleb Hammer doing Financial Audit on Saif's spending in Doha. QAR. Prepaid Visa.
+  const spendTx=tx.filter(isSpend),moveTotal=tx.filter(isMoneyMove).reduce((s,e)=>s+e.amount,0);
+  const extra=`Period: ${rm==='w'?'this week Sun-Sat':'this month'}, SPENDING total: ${spendTx.reduce((s,e)=>s+e.amount,0).toFixed(2)} across ${spendTx.length} tx (separately, ${moveTotal.toFixed(2)} was moved to savings / paid to the credit card — that is NOT spending), Repeats: ${JSON.stringify(reps.slice(0,8))}, Timeline: ${JSON.stringify(spendTx.map(e=>({d:e.date,m:e.merchant,a:e.amount})))}`;
+  try{const t=await callAI(`You are a savage, unfiltered financial critic — think Caleb Hammer doing Financial Audit on Saif's spending in Doha. QAR.
+
+READING THE NUMBERS — get this wrong and the roast is just wrong:
+- CBQ Credit Card (limit 24,000): OUTSTANDING is what he OWES. AVAILABLE CREDIT is what he has NOT used. They are opposites. High available credit = low debt = GOOD. Only call him near maxed-out if OUTSTANDING is near the limit.
+- Transfers to savings, wiring fees, and credit-card payments are NOT spending. Never call money moved into savings "burned", "blown", or "torched" — that's saving, and if anything it's the responsible move.
+- Use the figures exactly as labelled. Don't derive your own totals or invert a number to make a better line. A roast built on a wrong number is just embarrassing.
 
 APPROACH FOR THIS SESSION (seed ${ts}): ${seed}
 
@@ -994,7 +1034,7 @@ RULES:
 - CRITICAL: Your opening sentence must be COMPLETELY UNIQUE. Never start with "Let's" or "So" or "Alright." Use the approach seed above.
 - CRITICAL: Do NOT repeat any sentence structure you've used before. Vary paragraph length. Vary insult style.
 - End with ONE buried useful insight.
-- 150-300 words. No markdown. Raw paragraphs.`,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro">${t}</div>`;speak(t)}
+- 150-300 words. No markdown. Raw paragraphs.`+ARABIC_MODE,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro" dir="auto">${t}</div>`;speak(t)}
   catch(e){document.getElementById('rO').innerHTML=`<div style="color:var(--rd);padding:22px">${e.message}</div>`}
   b.disabled=false;b.textContent='🔥 Roast Me';
 }
@@ -1002,15 +1042,23 @@ function sRM(m){rm=m;document.getElementById('rW').className=m==='w'?'pl on':'pl
 
 // ═══ CHAT ═══
 let cH=[];
-function addM(r,t){const c=document.getElementById('cM'),d=document.createElement('div');d.className=`msg ${r==='user'?'u':'a'}`;d.innerHTML=`<div class="mb2">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight}
+function addM(r,t){const c=document.getElementById('cM'),d=document.createElement('div');d.className=`msg ${r==='user'?'u':'a'}`;d.innerHTML=`<div class="mb2" dir="auto">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight}
 function addTD(){const c=document.getElementById('cM'),d=document.createElement('div');d.className='msg a';d.id='tdi';d.innerHTML='<div class="mb2"><div class="td"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight}
 function remTD(){document.getElementById('tdi')?.remove()}
 function askQ(b2){document.getElementById('cI').value=b2.textContent;sendC();document.getElementById('cSg').style.display='none'}
-async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Week=Sun-Sat. QAR. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes). CRITICAL CREDIT CARD RULES: Always remind him to pay the full outstanding by the due date. Flag high utilization (over 30%). If he's putting daily expenses on credit, question whether that's intentional. Track which card each purchase goes on. Use learned habits for predictions. Reference specific numbers. Ask follow-ups. 2-4 paragraphs.`,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t});speak(t)}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
+async function sendC(){const inp=document.getElementById('cI'),btn=document.getElementById('cS'),msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';btn.disabled=true;document.getElementById('cSg').style.display='none';addM('user',msg);addTD();cH.push({role:'user',content:msg});const ctx=buildCtx();const msgs=cH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);if(msgs.length>20)msgs.splice(0,msgs.length-20);try{const t=await callAI(`Saif's financial advisor. Sharp, professional, genuinely invested. Based in Doha. Week=Sun-Sat. QAR.
+
+READING THE NUMBERS — do not get these backwards:
+- QNB Prepaid Visa: available balance is spendable cash. Loads are transfers INTO it, not income.
+- CBQ Credit Card (limit 24,000): OUTSTANDING is what he OWES; AVAILABLE CREDIT is what he has NOT used. They are opposites — high available credit means low debt. Only describe him as near maxed-out if OUTSTANDING is close to the limit. Use the utilization figure as given.
+- Transfers to savings, wiring fees, and card payments are NOT spending. Money moved to savings has been saved, not spent.
+- If a number isn't in the data, say so rather than estimating.
+
+Always remind him to pay the full outstanding by the due date. Flag utilization over 30%. If he's putting daily expenses on credit, question whether that's intentional. Track which card each purchase goes on. Use learned habits for predictions. Reference specific numbers. Ask follow-ups. 2-4 paragraphs.`+ARABIC_MODE,msgs);remTD();addM('ai',t);cH.push({role:'assistant',content:t});speak(t)}catch(e){remTD();addM('ai','Error: '+e.message)}btn.disabled=false;inp.focus()}
 
 // ═══ THE AUDIT ═══
 let aH=[],auditHist=null,auditEnded=false;
-function addAudM(r,t){const c=document.getElementById('audM'),d=document.createElement('div');d.className=`msg ${r==='user'?'u':'a'}`;d.innerHTML=`<div class="mb2">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight}
+function addAudM(r,t){const c=document.getElementById('audM'),d=document.createElement('div');d.className=`msg ${r==='user'?'u':'a'}`;d.innerHTML=`<div class="mb2" dir="auto">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight}
 function addAudTD(){const c=document.getElementById('audM'),d=document.createElement('div');d.className='msg a';d.id='audtdi';d.innerHTML='<div class="mb2"><div class="td"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight}
 function remAudTD(){document.getElementById('audtdi')?.remove()}
 
@@ -1052,7 +1100,13 @@ function buildAuditSys(){
   }else{
     priorCtx=`\n\nThis is his first-ever audit — walk him through all 5 categories below over the course of the conversation.`;
   }
-  return `Today's date is ${today}. You are running a live financial audit on Saif — think Caleb Hammer's Financial Audit, in Doha, QAR. He's a Civil Quality Engineer with photography/videography side income. TWO CARDS: QNB Prepaid Visa (balance=available funds, loads=transfers from account) and CBQ Credit Card (limit 24K, balance=available credit remaining, outstanding=what he owes, pay full outstanding by due date, flag utilization over 30%).
+  return `Today's date is ${today}. You are running a live financial audit on Saif — think Caleb Hammer's Financial Audit, in Doha, QAR. He's a Civil Quality Engineer with photography/videography side income.
+
+READING THE NUMBERS — get this wrong and the whole audit is worthless:
+- QNB Prepaid Visa: "available balance" is cash he can spend. "Loads" are transfers INTO it, not income.
+- CBQ Credit Card (limit 24,000): OUTSTANDING is what he OWES. AVAILABLE CREDIT is what he has NOT used. These are opposites — a large available-credit figure means low debt and is GOOD. Only ever describe him as near maxed-out if OUTSTANDING is close to the limit. Utilization is given directly; use it rather than deriving your own.
+- Transfers to savings, wiring fees, and credit-card payments are NOT spending. Money moved into savings has not been spent — never describe it as burned, blown, or torched. The data separates spending from money movement; respect that split.
+- If a figure isn't in the data, say so rather than inferring it.
 
 PERSONA: Sarcastic, blunt, ruthless — reference specific merchants, exact amounts, dates, visit counts. This is an audit, not a comedy bit — mock the actual behavior, not generic jokes.
 
@@ -1073,7 +1127,7 @@ async function openAudit(){
   const kickoff='[Begin the session. Open in character — reference his real numbers immediately. Do not wait for him to speak first.]';
   aH.push({role:'user',content:kickoff});
   try{
-    const t=await callAI(buildAuditSys(),[{role:'user',content:`[DATA]\n${buildCtx()}\n\n${kickoff}`}]);
+    const t=await callAI(buildAuditSys()+ARABIC_MODE,[{role:'user',content:`[DATA]\n${buildCtx()}\n\n${kickoff}`}]);
     remAudTD();
     const clean=t.replace('<<AUDIT_END>>','').trim();
     addAudM('ai',clean);
@@ -1096,7 +1150,7 @@ async function sendAudit(forceEnd){
   const msgs=aH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);
   if(msgs.length>24)msgs.splice(0,msgs.length-24);
   try{
-    const t=await callAI(sys,msgs);
+    const t=await callAI(sys+ARABIC_MODE,msgs);
     remAudTD();
     const ended=t.includes('<<AUDIT_END>>');
     const clean=t.replace('<<AUDIT_END>>','').trim();
