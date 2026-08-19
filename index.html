@@ -228,7 +228,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <script>
 const SID='1_LQk-qFx6ZbpkNk7vV0m-GyxNzMqmwcStWfPFixORZo';
 const SURL=`https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
-const FX_RATES={USD:3.64,EUR:3.98,GBP:4.62,SAR:0.97,AED:0.99,KWD:11.88,BHD:9.66};
+const FX_RATES={USD:3.717,EUR:3.98,GBP:4.62,SAR:0.97,AED:0.99,KWD:11.88,BHD:9.66};
 const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Clothing:{c:'#72A8E8',i:'👔'},Electronics:{c:'#5490C4',i:'⚡'},Home:{c:'#8BC4E8',i:'⌂'},'Personal Care':{c:'#D4A1C4',i:'✿'},'General Shopping':{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Savings:{c:'#4DAA72',i:'↗'},'Wiring Fees':{c:'#D4853A',i:'⚡'},Other:{c:'#8899AA',i:'○'}};
 function gc(n){if(n&&n.startsWith('Wired to'))return{c:'#9B8EC4',i:'↗'};return CATS[n]||CATS.Other}
 function f$(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -506,10 +506,20 @@ function crossCheckFX(txs){
   for(let i=1;i<txs.length;i++){
     const e=txs[i];
     if(e.fxConfirmed===false){
-      const prev=txs[i-1];
+      // Find the most recent prior transaction from the SAME card source.
+      // Comparing QNB prepaid balance against CBQ available limit is meaningless —
+      // they measure completely different things. That cross-card comparison is what
+      // was producing wildly wrong amounts like 23,425.76 for a $50 charge.
+      let prev=null;
+      for(let j=i-1;j>=0;j--){if(txs[j].source===e.source){prev=txs[j];break;}}
+      if(!prev){e.fxConfirmed='no-ref';continue;}
       const actualDrop=Math.round((prev.balance-e.balance)*100)/100;
       if(Math.abs(actualDrop-e.amount)<=0.02){
         e.fxConfirmed=true; // converted amount matches balance drop
+      }else if(actualDrop<=0||actualDrop/e.amount>10||e.amount/actualDrop>10){
+        // Negative drop (balance increased — a load happened between transactions)
+        // or extreme ratio — trust the parsed/converted amount.
+        e.fxConfirmed='gap';
       }else{
         e.amount=actualDrop; // use balance-derived amount
         e.fxConfirmed='estimated';
