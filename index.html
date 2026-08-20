@@ -407,10 +407,11 @@ function parseCBQDebit(raw){
   return r;
 }
 
-// Parse CBQ bank transfer SMS (Tahweel / Fawran / plain Transfer)
+// Parse CBQ bank transfer SMS (Tahweel / Fawran / same-bank Transfer)
 // "Current Acc xxx00032001 debited with QAR 10,000.00\nfor Outgoing Tahweel Payment\nref SAIFELISLAM...,QAR 4.00 for Transfer Charge at 07:48, 15-Aug-26\nCurrent Acc Bal: QAR 21,631.61"
 // "Current Acc xxx00032001 debited with QAR 1,800.00\nfor Fawran instant payment\nref NITHIN GEORGE at 19:45, 05-Aug-26\nCurrent Acc Bal: QAR 32,748.36"
-// "Current Acc xxx00032001 debited with QAR 500.00\nfor Transfer ref HATEM HUSSIEN NAGUIB MOHAMED at 07:36, 19-Aug-26\nCurrent Acc Bal: QAR 21,131.61"
+// "Current Acc xxx00032001 debited with QAR 500.00\nfor Transfer\nref HATEM HUSSIEN NAGUIB MOHAMED at 07:36, 19-Aug-26\nCurrent Acc Bal: QAR 21,131.61"
+// NOTE: same-bank transfers say "for Transfer" on one line then "ref ..." on the next.
 function parseCBQTransfer(raw){
   if(!raw)return null;
   const results=[];
@@ -425,7 +426,7 @@ function parseCBQTransfer(raw){
   // Transfer type
   const isTahweel=/Tahweel/i.test(raw);
   const isFawran=/Fawran/i.test(raw);
-  const isPlain=/for Transfer ref/i.test(raw);
+  const isPlain=/for Transfer\s+ref/i.test(raw);
   const type=isTahweel?'Tahweel':isFawran?'Fawran':isPlain?'Transfer':'Transfer';
   // Date
   let smsDate='';
@@ -459,7 +460,7 @@ function parseCBQTransfer(raw){
   return results;
 }
 
-function isCBQTransfer(raw){return/debited with.*QAR/i.test(raw)&&(/Tahweel|Fawran/i.test(raw)||/for Transfer ref/i.test(raw))}
+function isCBQTransfer(raw){return/debited with.*QAR/i.test(raw)&&(/Tahweel|Fawran/i.test(raw)||/for Transfer\s+ref/i.test(raw))}
 
 function categorize(m,amount=0){
   if(catOverrides[m])return catOverrides[m];
