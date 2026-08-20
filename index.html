@@ -740,7 +740,11 @@ function renderAll(){
   document.getElementById('k3').textContent=f$(qnbBal);
   // CBQ credit
   const cbqTx=E.filter(e=>e.source==='CBQ');
-  const cbqLatest=cbqTx.length>0?cbqTx[cbqTx.length-1]:null;
+  // Only card-purchase rows carry a real "Available Limit" reading. Transfer rows
+  // are CBQ-sourced too but have balance:0 (their SMS reports the current-account
+  // balance, not card credit) — including them would zero out available credit.
+  const cbqBalRows=cbqTx.filter(e=>!e.isTransfer&&typeof e.balance==='number'&&e.balance>0);
+  const cbqLatest=cbqBalRows.length>0?cbqBalRows[cbqBalRows.length-1]:null;
   const cbqAvailable=cbqLatest?cbqLatest.balance:CBQ_LIMIT;
   const cbqOwed=CBQ_LIMIT-cbqAvailable;
   const cbqUtilPct=Math.round(cbqOwed/CBQ_LIMIT*100);
@@ -869,7 +873,10 @@ function rCF(mr,mT,mLd,mLt,bal){
   // CBQ tab
   const cbqTx=E.filter(e=>e.source==='CBQ');
   const cbqMonth=cbqTx.filter(e=>e.date>=mr.s&&e.date<=mr.e);
-  const cbqLatest=cbqTx.length>0?cbqTx[cbqTx.length-1]:null;
+  // Transfer rows are CBQ-sourced but carry no card-credit reading (balance:0),
+  // so they must be excluded when determining available credit.
+  const cbqBalRows=cbqTx.filter(e=>!e.isTransfer&&typeof e.balance==='number'&&e.balance>0);
+  const cbqLatest=cbqBalRows.length>0?cbqBalRows[cbqBalRows.length-1]:null;
   const cbqAvail=cbqLatest?cbqLatest.balance:CBQ_LIMIT;
   const cbqOwed=CBQ_LIMIT-cbqAvail;
   const utilPct=Math.round(cbqOwed/CBQ_LIMIT*100);
@@ -883,8 +890,10 @@ function rCF(mr,mT,mLd,mLt,bal){
   document.getElementById('cbqMonthCount').textContent=cbqMonth.length+' tx';
   
   // CBQ usage chart (available limit over time — goes down as you spend)
-  if(cbqTx.length>=2){
-    const vals=cbqTx.map(e=>CBQ_LIMIT-e.balance); // outstanding over time
+  // Uses cbqBalRows, not cbqTx: transfer rows have balance:0 and would each plot
+  // as a false spike to the full 24,000 limit.
+  if(cbqBalRows.length>=2){
+    const vals=cbqBalRows.map(e=>CBQ_LIMIT-e.balance); // outstanding over time
     document.getElementById('cbqChart').innerHTML=mkS(vals,'#C95454',620,150);
   }else{
     document.getElementById('cbqChart').innerHTML='<div style="height:150px;display:flex;align-items:center;justify-content:center;color:var(--dm)">Need 2+ CBQ transactions</div>';
@@ -954,7 +963,7 @@ const qnbRows=E.filter(e=>e.source==='QNB'&&typeof e.balance==='number');
 const prepaidBal=qnbRows.length?qnbRows[qnbRows.length-1].balance:0;
 // CBQ rows carry `balance` = available credit remaining. Outstanding (what he owes)
 // is limit minus that. The previous version subtracted twice and inverted the figure.
-const cbqRows=E.filter(e=>e.source==='CBQ'&&typeof e.balance==='number'&&e.balance>0);
+const cbqRows=E.filter(e=>e.source==='CBQ'&&!e.isTransfer&&typeof e.balance==='number'&&e.balance>0);
 const cbqAvail=cbqRows.length?cbqRows[cbqRows.length-1].balance:null;
 const cbqOwed=cbqAvail!==null?(CBQ_LIMIT-cbqAvail):null;
 const cbqUtil=cbqAvail!==null?((cbqOwed/CBQ_LIMIT)*100).toFixed(1):'unknown';
