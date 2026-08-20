@@ -432,7 +432,10 @@ function parseCBQTransfer(raw){
   let smsDate='';
   const dt=t.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
   if(dt){const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};let yr=dt[3];if(yr.length===2)yr='20'+yr;smsDate=`${yr}-${months[dt[2].toLowerCase()]}-${dt[1].padStart(2,'0')}`;}
-  // Account balance
+  // Account balance from transfer SMS — stored separately.
+  // DO NOT use as `balance` on CBQ-sourced rows: the card tracking logic reads
+  // `balance` on CBQ rows to derive available credit, and mixing in the current
+  // account balance (a completely different number) corrupts those figures.
   const bal=t.match(/Current Acc Bal[:\s]+QAR\s+([\d,.]+)/i);
   const accBal=bal?parseFloat(bal[1].replace(',','')):0;
   // Determine category
@@ -444,7 +447,7 @@ function parseCBQTransfer(raw){
   // Main transfer
   results.push({
     merchant:category==='Savings'?'Transfer to Savings':category==='Bills'?'Rent - '+recipient:'Transfer - '+recipient,
-    amount,balance:accBal,currency:'QAR',category,source:'CBQ',
+    amount,balance:0,accountBalance:accBal,currency:'QAR',category,source:'CBQ',
     fxConfirmed:true,isMissing:false,isTransfer:true,transferType:type,
     recipient,smsDate
   });
@@ -453,7 +456,7 @@ function parseCBQTransfer(raw){
   if(fee){
     const feeAmt=parseFloat(fee[1].replace(',',''));
     results.push({
-      merchant:'Transfer Fee ('+type+')',amount:feeAmt,balance:accBal,currency:'QAR',
+      merchant:'Transfer Fee ('+type+')',amount:feeAmt,balance:0,currency:'QAR',
       category:'Wiring Fees',source:'CBQ',fxConfirmed:true,isMissing:false,isTransfer:true,smsDate
     });
   }
