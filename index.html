@@ -73,7 +73,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <button class="nb" data-v="aud"><span>⚖</span>The Audit</button>
 <button class="nb" data-v="led"><span>≡</span>Ledger</button>
 </div>
-<div class="sf"><div id="sI2"></div><div id="rC"></div><div style="margin-top:8px"><button onclick="openM('set')" style="background:0;border:0;color:var(--am);cursor:pointer;font-size:11px;font-family:var(--mf)">⚙ Settings</button></div></div>
+<div class="sf"><div id="sI2"></div><div id="rC"></div><div id="syncBadge" style="font-size:10px;font-family:var(--mf);margin-top:4px"></div><div style="margin-top:8px"><button onclick="openM('set')" style="background:0;border:0;color:var(--am);cursor:pointer;font-size:11px;font-family:var(--mf)">⚙ Settings</button></div></div>
 </nav>
 <main class="mn">
 <div id="ls" style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:14px"><div class="lp" style="font-size:28px;color:var(--am)">◫</div><div style="font-size:14px;color:var(--dm);font-family:var(--mf)">Fetching...</div></div>
@@ -1219,12 +1219,12 @@ async function closeAuditSession(){
 // ═══ CRUD ═══
 function openM(t){document.getElementById('m-'+t).style.display='flex';if(t==='nw')document.getElementById('nDi').value=td();if(t==='set'){document.getElementById('pU').value=PX;document.getElementById('cbqLimI').value=CBQ_LIMIT;document.getElementById('cbqStmtI').value=CBQ_STMT_DAY;document.getElementById('cbqDueI').value=CBQ_DUE_DAY}if(t==='nwgoal')document.getElementById('nwGi').value=NWGOAL||''}
 function closeM(t){document.getElementById('m-'+t).style.display='none'}
-function saveBud(){const type=document.getElementById('bType').value;const a=parseFloat(document.getElementById('bAi').value);if(!a)return;if(type==='weekly'){TBUDGET.weekly=a;sJ('cfo_tb',TBUDGET)}else if(type==='monthly'){TBUDGET.monthly=a;sJ('cfo_tb',TBUDGET)}else{const c=document.getElementById('bCi').value;if(!c)return;BU[c]=a;sJ('cfo_b',BU)}closeM('bud');renderAll()}
-function remBud(c){delete BU[c];sJ('cfo_b',BU);renderAll()}
-function saveNW(){const d=document.getElementById('nDi').value,a=parseFloat(document.getElementById('nAi').value),n=document.getElementById('nNi').value;if(!d||!a)return;NW.push({id:Date.now(),date:d,amount:a,note:n||''});sJ('cfo_n',NW);closeM('nw');renderAll()}
-function delNW(id){NW=NW.filter(n=>n.id!==id);sJ('cfo_n',NW);renderAll()}
-function saveNWGoal(){NWGOAL=parseFloat(document.getElementById('nwGi').value)||0;sJ('cfo_nwg',NWGOAL);closeM('nwgoal');renderAll()}
-function savSet(){PX=document.getElementById('pU').value.trim().replace(/\/$/,'');sJ('cfo_px',PX);CBQ_LIMIT=parseFloat(document.getElementById('cbqLimI').value)||24000;sJ('cfo_cbq_limit',CBQ_LIMIT);CBQ_STMT_DAY=parseInt(document.getElementById('cbqStmtI').value)||28;sJ('cfo_cbq_stmt',CBQ_STMT_DAY);CBQ_DUE_DAY=parseInt(document.getElementById('cbqDueI').value)||20;sJ('cfo_cbq_due',CBQ_DUE_DAY);closeM('set');document.getElementById('ab').style.display=PX?'none':'flex';renderAll()}
+function saveBud(){const type=document.getElementById('bType').value;const a=parseFloat(document.getElementById('bAi').value);if(!a)return;if(type==='weekly'){TBUDGET.weekly=a;sJ('cfo_tb',TBUDGET)}else if(type==='monthly'){TBUDGET.monthly=a;sJ('cfo_tb',TBUDGET)}else{const c=document.getElementById('bCi').value;if(!c)return;BU[c]=a;sJ('cfo_b',BU)}closeM('bud');saveCloudSettings();renderAll()}
+function remBud(c){delete BU[c];sJ('cfo_b',BU);saveCloudSettings();renderAll()}
+function saveNW(){const d=document.getElementById('nDi').value,a=parseFloat(document.getElementById('nAi').value),n=document.getElementById('nNi').value;if(!d||!a)return;NW.push({id:Date.now(),date:d,amount:a,note:n||''});sJ('cfo_n',NW);saveCloudSettings();closeM('nw');renderAll()}
+function delNW(id){NW=NW.filter(n=>n.id!==id);sJ('cfo_n',NW);saveCloudSettings();renderAll()}
+function saveNWGoal(){NWGOAL=parseFloat(document.getElementById('nwGi').value)||0;sJ('cfo_nwg',NWGOAL);saveCloudSettings();closeM('nwgoal');renderAll()}
+function savSet(){PX=document.getElementById('pU').value.trim().replace(/\/$/,'');sJ('cfo_px',PX);CBQ_LIMIT=parseFloat(document.getElementById('cbqLimI').value)||24000;sJ('cfo_cbq_limit',CBQ_LIMIT);CBQ_STMT_DAY=parseInt(document.getElementById('cbqStmtI').value)||28;sJ('cfo_cbq_stmt',CBQ_STMT_DAY);CBQ_DUE_DAY=parseInt(document.getElementById('cbqDueI').value)||20;sJ('cfo_cbq_due',CBQ_DUE_DAY);saveCloudSettings();closeM('set');document.getElementById('ab').style.display=PX?'none':'flex';renderAll()}
 function expD(){const d={budgets:BU,netWorth:NW,proxyUrl:PX,totalBudgets:TBUDGET,nwGoal:NWGOAL,date:td()};const b2=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b2);a.download='expense-backup-'+td()+'.json';a.click()}
 function impD(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.budgets)BU=d.budgets,sJ('cfo_b',BU);if(d.netWorth)NW=d.netWorth,sJ('cfo_n',NW);if(d.proxyUrl)PX=d.proxyUrl,sJ('cfo_px',PX);if(d.totalBudgets)TBUDGET=d.totalBudgets,sJ('cfo_tb',TBUDGET);if(d.nwGoal)NWGOAL=d.nwGoal,sJ('cfo_nwg',NWGOAL);renderAll();alert('Done!')}catch(err){alert('Error: '+err.message)}};r.readAsText(f);ev.target.value=''}
 
@@ -1233,6 +1233,76 @@ function dismissNW(){sJ('nwd_'+td(),true);document.getElementById('nwB').style.d
 
 // ═══ KNOWN SUBSCRIPTIONS ═══
 const KNOWN_SUBS=/NETFLIX|SPOTIFY|APPLE\.COM|APPLE COM|GOOGLE|ADOBE|YOUTUBE|DISNEY|AMAZON PRIME|CHATGPT|OPENAI|CANVA|DROPBOX|NOTION|FIGMA|MICROSOFT|XBOX|PLAYSTATION|HULU|HBO|PARAMOUNT|CRUNCHYROLL|DAZN|STARZ|SHAHID|OSN|BEIN/i;
+// ═══ CLOUD SETTINGS SYNC ═══
+// These settings live in Cloudflare KV so they follow you across devices.
+// localStorage is kept as an offline cache / fallback when the Worker is
+// unreachable, so the app still works without a connection.
+// NOTE: cfo_vox (voice toggle) is deliberately NOT synced — it's per-device.
+let cloudSyncState='idle'; // idle | syncing | synced | offline
+let cloudSaveTimer=null;
+
+function collectSettings(){
+  return{budgets:BU,totalBudgets:TBUDGET,netWorth:NW,nwGoal:NWGOAL,
+    cbqLimit:CBQ_LIMIT,cbqStmtDay:CBQ_STMT_DAY,cbqDueDay:CBQ_DUE_DAY,
+    subTags:typeof subTags!=='undefined'?subTags:{},
+    catOverrides:typeof catOverrides!=='undefined'?catOverrides:{}};
+}
+
+function applySettings(s){
+  if(!s)return false;
+  if(s.budgets){BU=s.budgets;sJ('cfo_b',BU)}
+  if(s.totalBudgets){TBUDGET=s.totalBudgets;sJ('cfo_tb',TBUDGET)}
+  if(s.netWorth){NW=s.netWorth;sJ('cfo_n',NW)}
+  if(typeof s.nwGoal==='number'){NWGOAL=s.nwGoal;sJ('cfo_nwg',NWGOAL)}
+  if(typeof s.cbqLimit==='number'){CBQ_LIMIT=s.cbqLimit;sJ('cfo_cbq_limit',CBQ_LIMIT)}
+  if(typeof s.cbqStmtDay==='number'){CBQ_STMT_DAY=s.cbqStmtDay;sJ('cfo_cbq_stmt',CBQ_STMT_DAY)}
+  if(typeof s.cbqDueDay==='number'){CBQ_DUE_DAY=s.cbqDueDay;sJ('cfo_cbq_due',CBQ_DUE_DAY)}
+  if(s.subTags&&typeof subTags!=='undefined'){subTags=s.subTags;sJ('cfo_sub_tags',subTags)}
+  if(s.catOverrides&&typeof catOverrides!=='undefined'){catOverrides=s.catOverrides;sJ('cfo_cat_ov',catOverrides)}
+  return true;
+}
+
+async function loadCloudSettings(){
+  if(!PX)return false;
+  cloudSyncState='syncing';updateSyncBadge();
+  try{
+    const r=await fetch(PX+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'load'})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    if(d.settings){applySettings(d.settings);cloudSyncState='synced';updateSyncBadge();return true}
+    // Nothing in the cloud yet — push what's on this device up as the initial state.
+    cloudSyncState='synced';updateSyncBadge();
+    saveCloudSettings();
+    return false;
+  }catch(e){
+    console.warn('Cloud settings unavailable, using local:',e.message);
+    cloudSyncState='offline';updateSyncBadge();
+    return false;
+  }
+}
+
+function saveCloudSettings(){
+  if(!PX)return;
+  // Debounced — rapid successive edits collapse into one write.
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=setTimeout(async()=>{
+    cloudSyncState='syncing';updateSyncBadge();
+    try{
+      const r=await fetch(PX+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',settings:collectSettings()})});
+      cloudSyncState=r.ok?'synced':'offline';
+    }catch(e){cloudSyncState='offline'}
+    updateSyncBadge();
+  },800);
+}
+
+function updateSyncBadge(){
+  const el=document.getElementById('syncBadge');
+  if(!el)return;
+  const map={idle:['',''],syncing:['⟳ syncing','var(--dm)'],synced:['✓ synced','var(--gn)'],offline:['⚠ local only','var(--am)']};
+  const[txt,col]=map[cloudSyncState]||['',''];
+  el.textContent=txt;el.style.color=col;
+}
+
 let subTags=lJ('cfo_sub_tags',{}); // {merchant: 'keep'|'cancel'|'project'}
 let catOverrides=lJ('cfo_cat_ov',{}); // {merchant: 'category'} - user corrections
 
@@ -1307,7 +1377,7 @@ function rSubs(){
       </div>`}).join('')}</div>`;
 }
 
-function tagSub(m,tag){subTags[m]=tag;sJ('cfo_sub_tags',subTags);rSubs();rSubGlance()}
+function tagSub(m,tag){subTags[m]=tag;sJ('cfo_sub_tags',subTags);saveCloudSettings();rSubs();rSubGlance()}
 
 function rSubGlance(){
   const subs=detectSubs();
@@ -1452,12 +1522,15 @@ function editCat(idx){
   if(!CATS[newCat]){alert('Unknown category: '+newCat);return}
   // Save override for this merchant
   catOverrides[e.merchant]=newCat;
-  sJ('cfo_cat_ov',catOverrides);
+  sJ('cfo_cat_ov',catOverrides);saveCloudSettings();
   // Update all transactions with this merchant
   E.forEach(tx=>{if(tx.merchant===e.merchant)tx.category=newCat});
   renderAll();
 }
 
+// Pull settings from KV first so budgets/net worth/overrides are the cloud version,
+// then fetch transaction data and render with the correct settings applied.
+loadCloudSettings().then(()=>renderAll());
 fetchD();setInterval(fetchD,60000);
 // Smart AI welcome after data loads
 setTimeout(()=>{
