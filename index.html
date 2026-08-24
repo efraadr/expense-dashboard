@@ -45,6 +45,8 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 .nw-b{padding:16px 20px;background:rgba(77,170,114,.08);border:1px solid rgba(77,170,114,.25);border-radius:10px;margin-bottom:22px;font-size:14px;color:var(--gn);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .nw-b button{padding:6px 14px;border-radius:6px;background:var(--gn);color:#0D0E12;border:0;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .gap-b{padding:16px 20px;background:rgba(212,133,58,.08);border:1px solid rgba(212,133,58,.25);border-radius:10px;margin-bottom:22px;font-size:14px;color:var(--or)}
+.lb-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--cy);background:rgba(74,191,196,.1);color:var(--cy);font-family:var(--mf);font-size:12px;cursor:pointer}
+.lb-btn:hover{background:rgba(74,191,196,.2)}
 .gap-b a{color:var(--or);text-decoration:underline;cursor:pointer}
 .search-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
 .search-bar input,.search-bar select{padding:8px 14px;border-radius:8px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);font-size:14px;font-family:var(--bf);outline:0}
@@ -81,6 +83,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <div id="ab" class="api-b" style="display:none"><span>⚙ AI features need a proxy URL.</span><button onclick="openM('set')">Configure</button></div>
 <div id="nwB" class="nw-b" style="display:none"><span id="nwBT"></span><button onclick="openM('nw')">+ Snapshot</button><button onclick="dismissNW()" style="background:0;border:0;color:var(--gn);cursor:pointer;font-size:16px;opacity:.6">✕</button></div>
 <div id="gapB" class="gap-b" style="display:none"></div>
+<div id="loadB" class="gap-b" style="display:none;border-color:var(--cy);color:var(--cy)"></div>
 
 <!-- CMD -->
 <div class="vw on" id="v-cmd">
@@ -492,13 +495,38 @@ function cSB(){document.getElementById('sb').classList.remove('open');document.g
 document.querySelectorAll('.nb').forEach(b=>{b.addEventListener('click',()=>{const v=b.dataset.v;if(!v)return;document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));document.querySelector(`.sb .nb[data-v="${v}"]`)?.classList.add('on');document.querySelectorAll('.vw').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v)?.classList.add('on');if(v==='aud'&&!aH.length)openAudit();cSB()})});
 
 // ═══ LOAD + GAP DETECTION (QNB prepaid only) ═══
+// loadResolutions (synced via KV) records the user's decision for each detected load
+// gap, keyed by a stable signature of the transaction AFTER the gap so it survives
+// reloads and row shifts. Shape: { sig: {confirmed:bool, amount:number, note?:string, residual?:number} }
+let loadResolutions=lJ('cfo_loadres',{});
+let pendingLoads=[]; // detected loads awaiting user confirmation this session
+
+function loadSig(c){
+  // Stable signature of the transaction after the gap.
+  return `${c.date}|${c.merchant}|${c.amount}|${c.balance}`;
+}
+
 function dL(tx){
   const qnb=tx.filter(e=>e.source!=='CBQ');
-  const ld=[]; gaps=[];
+  const ld=[]; gaps=[]; pendingLoads=[];
   for(let i=1;i<qnb.length;i++){
     const p=qnb[i-1],c=qnb[i],ex=p.balance-c.amount;
     if(c.balance>ex+.5){
-      ld.push({date:c.date,amt:Math.round((c.balance-ex)*100)/100,bb:p.balance,ba:c.balance,m:c.merchant});
+      const detectedAmt=Math.round((c.balance-ex)*100)/100;
+      const sig=loadSig(c);
+      const res=loadResolutions[sig];
+      if(res){
+        // Already resolved by the user.
+        if(res.confirmed){
+          ld.push({date:c.date,amt:res.amount,bb:p.balance,ba:c.balance,m:c.merchant,sig,confirmed:true});
+        }
+        // res.confirmed===false means "not a load" — do nothing, and don't re-ask.
+      }else{
+        // Unresolved — still show as a detected load AND queue a confirmation prompt.
+        ld.push({date:c.date,amt:detectedAmt,bb:p.balance,ba:c.balance,m:c.merchant,sig,confirmed:false});
+        pendingLoads.push({sig,detectedAmt,dateFrom:p.date,dateTo:c.date,
+          timeFrom:p.smsDate||p.date,timeTo:c.smsDate||c.date,beforeBal:p.balance,afterBal:c.balance});
+      }
     }else if(c.balance<ex-.5){
       const missing=Math.round((ex-c.balance)*100)/100;
       gaps.push({dateFrom:p.date,dateTo:c.date,amount:missing,balBefore:p.balance,balAfter:c.balance,expectedBal:Math.round(ex*100)/100});
@@ -582,15 +610,20 @@ async function fetchD(){
       const numC=(c[2]?.v&&c[2].v!=='-')?parseFloat(c[2].v):0;
       const valG=c[6]?.v;const rawG=(valG&&valG!=='-')?valG:'';
       const rawAny=rawG||rawB;
-      // For CBQ SMS the date lives inside the message — don't require a parseable sheet date
+      // For CBQ SMS the date lives inside the message — don't require a parseable sheet date.
       const isCBQRow=rawAny&&isCBQSMS(rawAny);
-      if(!isCBQRow&&(!d||d.length<10))continue;
+      // QNB purchase SMS (Arabic "تمت عملية شراء") sometimes arrive with NO date in
+      // column A — the row is pure SMS text. Those must NOT be skipped for lack of a
+      // date; they get placed later by the balance chain. Only skip a row that has a
+      // parseable payload but no date AND isn't a recognized SMS of either bank.
+      const isQNBArabic=rawAny&&/تمت عملية/.test(rawAny);
+      if(!isCBQRow&&!isQNBArabic&&(!d||d.length<10))continue;
       const hasArabicG=rawG&&/[\u0600-\u06FF]/.test(rawG);
       const hasArabicB=rawB&&/[\u0600-\u06FF]/.test(rawB);
       const isLegacy=rawG&&numC>0&&rawB;
       if(isLegacy){E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:rawG,fxConfirmed:true,source:'QNB'})}
-      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawG,source:'QNB'})}
-      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':d,...p,raw:rawB,source:'QNB'})}
+      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:(p.isMissing||!d||d.length<10)?'_pending':d,...p,raw:rawG,source:'QNB'})}
+      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:(p.isMissing||!d||d.length<10)?'_pending':d,...p,raw:rawB,source:'QNB'})}
       else if(isCBQTransfer(rawG)){const rs=parseCBQTransfer(rawG);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawG})})}
       else if(isCBQTransfer(rawB)){const rs=parseCBQTransfer(rawB);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawB})})}
       else if(isCBQSMS(rawG)){
@@ -630,7 +663,62 @@ async function fetchD(){
     document.getElementById('gapB').innerHTML=`⚠ ${gaps.length} gap${gaps.length>1?'s':''} detected · ${details} · Add "missing" when you log them · <a onclick="document.querySelector('.nb[data-v=led]').click();document.getElementById('lCat').value='_missing';rLed()">View gaps →</a>`;
     document.getElementById('gapB').style.display='block';
   }else{document.getElementById('gapB').style.display='none'}
+  renderLoadBanner();
   chkNW();renderAll();
+}
+
+// ═══ LOAD CONFIRMATION ═══
+function renderLoadBanner(){
+  const el=document.getElementById('loadB');
+  if(!el)return;
+  if(!pendingLoads.length){el.style.display='none';return;}
+  const L=pendingLoads[0]; // one at a time — least overwhelming
+  const more=pendingLoads.length>1?` (+${pendingLoads.length-1} more)`:'';
+  const tf=fmtT(L.timeFrom),tt=fmtT(L.timeTo);
+  el.innerHTML=`💳 Looks like you loaded <b>${f$(L.detectedAmt)}</b> between ${tf} and ${tt}${more}.
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="lb-btn" onclick="confirmLoad('${L.sig}',${L.detectedAmt})">✓ Yes, ${f$(L.detectedAmt)}</button>
+      <button class="lb-btn" onclick="overrideLoadPrompt('${L.sig}',${L.detectedAmt})">✎ Different amount</button>
+      <button class="lb-btn" onclick="rejectLoad('${L.sig}')">✕ Not a load</button>
+    </div>`;
+  el.style.display='block';
+}
+function fmtT(v){
+  // v may be an ISO date, a "DD Mon YYYY at H:MM PM" string, or a plain date.
+  if(!v)return'?';
+  const d=new Date(v);
+  if(!isNaN(d.getTime()))return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  return String(v);
+}
+function persistLoadRes(){sJ('cfo_loadres',loadResolutions);saveLoadResCloud();}
+function confirmLoad(sig,amt){
+  loadResolutions[sig]={confirmed:true,amount:amt,at:new Date().toISOString()};
+  persistLoadRes();fetchD();
+}
+function rejectLoad(sig){
+  loadResolutions[sig]={confirmed:false,at:new Date().toISOString()};
+  persistLoadRes();fetchD();
+}
+function overrideLoadPrompt(sig,detected){
+  const v=prompt(`How much did you actually load?  (detected ${f$(detected)})`,detected);
+  if(v===null)return;
+  const amt=parseFloat(v);
+  if(isNaN(amt)||amt<=0){alert('Enter a valid amount.');return;}
+  const residual=Math.round((detected-amt)*100)/100;
+  const rec={confirmed:true,amount:amt,at:new Date().toISOString()};
+  if(Math.abs(residual)>0.5){
+    // The load doesn't fully explain the balance jump — flag the leftover rather than
+    // inventing a phantom transaction. A positive residual means there's an unexplained
+    // balance rise beyond the load (e.g. a refund); negative shouldn't normally happen.
+    rec.residual=residual;
+    rec.note=residual>0
+      ? `${f$(residual)} of the balance rise isn't explained by this load — possible refund or a second load.`
+      : `Load exceeds the detected rise by ${f$(-residual)} — check for a missing purchase.`;
+  }
+  loadResolutions[sig]=rec;
+  persistLoadRes();
+  if(rec.note)alert(rec.note);
+  fetchD();
 }
 
 function genDemo(){const ms=[{n:'HOT BAKE CATERING',c:'Dining',a:[2,2,2]},{n:'LULU HYPERMARKET',c:'Groceries',a:[120,85,210]},{n:'UBER TRIP',c:'Transport',a:[18,25]},{n:'CARREFOUR',c:'Groceries',a:[65,92]},{n:'NETFLIX.COM',c:'Subscriptions',a:[45]},{n:'ZARA QATAR',c:'Clothing',a:[189,350]},{n:'KAHRAMAA',c:'Bills',a:[280]},{n:'TALABAT ORDER',c:'Dining',a:[42,68]},{n:'WOQOD PETROL',c:'Transport',a:[100,150]}];const d=[];let b=800;for(let i=45;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);if(i%12===0&&i>0)b+=500+Math.floor(Math.random()*1000);const n=Math.floor(Math.random()*3)+1;for(let t=0;t<n;t++){const m=ms[Math.floor(Math.random()*ms.length)];const a=m.a[Math.floor(Math.random()*m.a.length)]+Math.round(Math.random()*10-5);b=Math.max(b-a,50);d.push({date:dt.toISOString().slice(0,10),merchant:m.n,amount:Math.max(a,5),currency:'QAR',category:m.c,balance:Math.round(b*100)/100,raw:'',fxConfirmed:true})}}return d}
@@ -1245,8 +1333,11 @@ function collectSettings(){
   return{budgets:BU,totalBudgets:TBUDGET,netWorth:NW,nwGoal:NWGOAL,
     cbqLimit:CBQ_LIMIT,cbqStmtDay:CBQ_STMT_DAY,cbqDueDay:CBQ_DUE_DAY,
     subTags:typeof subTags!=='undefined'?subTags:{},
-    catOverrides:typeof catOverrides!=='undefined'?catOverrides:{}};
+    catOverrides:typeof catOverrides!=='undefined'?catOverrides:{},
+    loadResolutions:typeof loadResolutions!=='undefined'?loadResolutions:{}};
 }
+// Saving a load resolution reuses the same debounced settings write.
+function saveLoadResCloud(){saveCloudSettings();}
 
 function applySettings(s){
   if(!s)return false;
@@ -1259,6 +1350,7 @@ function applySettings(s){
   if(typeof s.cbqDueDay==='number'){CBQ_DUE_DAY=s.cbqDueDay;sJ('cfo_cbq_due',CBQ_DUE_DAY)}
   if(s.subTags&&typeof subTags!=='undefined'){subTags=s.subTags;sJ('cfo_sub_tags',subTags)}
   if(s.catOverrides&&typeof catOverrides!=='undefined'){catOverrides=s.catOverrides;sJ('cfo_cat_ov',catOverrides)}
+  if(s.loadResolutions&&typeof loadResolutions!=='undefined'){loadResolutions=s.loadResolutions;sJ('cfo_loadres',loadResolutions)}
   return true;
 }
 
