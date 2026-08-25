@@ -617,6 +617,11 @@ async function fetchD(){
       // date; they get placed later by the balance chain. Only skip a row that has a
       // parseable payload but no date AND isn't a recognized SMS of either bank.
       const isQNBArabic=rawAny&&/تمت عملية/.test(rawAny);
+      // TEMP DIAGNOSTIC — logs how each QNB Arabic row is routed. Remove once confirmed.
+      if(isQNBArabic&&/PENDING|UBER|TaxiF|UBR/i.test(rawAny)){
+        window._qnbDiag=window._qnbDiag||[];
+        window._qnbDiag.push({date:d,dateLen:(d||'').length,inG:!!rawG,inB:!!rawB,isCBQRow,skipped:(!isCBQRow&&!isQNBArabic&&(!d||d.length<10))});
+      }
       if(!isCBQRow&&!isQNBArabic&&(!d||d.length<10))continue;
       const hasArabicG=rawG&&/[\u0600-\u06FF]/.test(rawG);
       const hasArabicB=rawB&&/[\u0600-\u06FF]/.test(rawB);
@@ -636,22 +641,38 @@ async function fetchD(){
       }
       else if(rawB&&numC>0){E.push({date:d,merchant:rawB,amount:numC,currency:'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:'',fxConfirmed:true,source:'QNB'})}
     }
-    // Place missing TX by balance chain
-    const pending=E.filter(e=>e.date==='_pending');
-    const placed=E.filter(e=>e.date!=='_pending').sort((a,b)=>a.date.localeCompare(b.date));
-    for(const p of pending){
-      let bestIdx=placed.length;
-      for(let i=0;i<placed.length;i++){
-        if(placed[i].balance<=p.balance&&(i===0||placed[i-1].balance>=p.balance)){bestIdx=i;break}
+    // Place missing/dateless TX by balance chain — PER CARD SOURCE.
+    // QNB prepaid balances (~tens of QAR) and CBQ available-limit values (~tens of
+    // thousands) are unrelated scales; chaining them together mis-slots QNB rows and
+    // corrupts ordering. So resolve each source's pending rows against only that
+    // source's already-dated rows.
+    const dated=E.filter(e=>e.date!=='_pending');
+    const pendingAll=E.filter(e=>e.date==='_pending');
+    for(const src of ['QNB','CBQ']){
+      const pend=pendingAll.filter(e=>e.source===src);
+      const placedSrc=dated.filter(e=>e.source===src).sort((a,b)=>a.date.localeCompare(b.date));
+      for(const p of pend){
+        let bestIdx=placedSrc.length;
+        for(let i=0;i<placedSrc.length;i++){
+          if(placedSrc[i].balance<=p.balance&&(i===0||placedSrc[i-1].balance>=p.balance)){bestIdx=i;break}
+        }
+        // Fall back to the newest dated row of this source, or today, if no fit.
+        p.date=bestIdx>0?placedSrc[bestIdx-1].date:(placedSrc[0]?.date||td());
+        placedSrc.splice(bestIdx,0,p);
       }
-      p.date=bestIdx>0?placed[bestIdx-1].date:placed[0]?.date||td();
-      placed.splice(bestIdx,0,p);
     }
-    E=placed;
+    // Reassemble in ascending chronological order — crossCheckFX and dL both walk the
+    // array oldest→newest comparing consecutive balances, so E must stay ascending.
+    // The Ledger view reverses it for newest-first display.
+    E=E.map(e=>e.date==='_pending'?{...e,date:td()}:e).sort((a,b)=>a.date.localeCompare(b.date));
     crossCheckFX(E);
     document.getElementById('si').textContent='LIVE';document.getElementById('si').style.color='var(--gn)';document.getElementById('eb').style.display='none';
   }catch(e){document.getElementById('si').textContent='DEMO';document.getElementById('si').style.color='var(--am)';document.getElementById('eb').textContent='⚠ '+e.message;document.getElementById('eb').style.display='block';E=genDemo()}
   CL=dL(E);
+  // TEMP DIAGNOSTIC — remove once QNB rows confirmed showing.
+  console.log('[QNB DIAG] rows routed:',window._qnbDiag);
+  console.log('[QNB DIAG] QNB in E:',E.filter(e=>e.source==='QNB').length,'CBQ in E:',E.filter(e=>e.source==='CBQ').length);
+  console.log('[QNB DIAG] sample QNB:',E.filter(e=>e.source==='QNB').slice(-5).map(e=>({m:e.merchant,a:e.amount,d:e.date})));
   document.getElementById('ls').style.display='none';
   document.getElementById('lf').textContent='↻ '+new Date().toLocaleTimeString();
   document.getElementById('sI2').textContent='Sheet: '+SID.slice(0,12)+'…';
