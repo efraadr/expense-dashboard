@@ -591,6 +591,12 @@ async function fetchD(){
       if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`}
       else if(d instanceof Date)d=d.toISOString().slice(0,10);
       else if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}/.test(d))d=d.slice(0,10);
+      else if((typeof d==='number'||(typeof d==='string'&&/^\d+(\.\d+)?$/.test(d)))&&parseFloat(d)>25000&&parseFloat(d)<60000){
+        // Bare Google Sheets serial date (days since Dec 30 1899, no Date()/formatted
+        // counterpart) — some rows arrive this way with no human-readable form at all.
+        const serial=parseFloat(d);
+        d=new Date(Date.UTC(1899,11,30)+Math.round(serial)*86400000).toISOString().slice(0,10);
+      }
       else{
         // Try multiple date formats
         let fd=String(c[0]?.f||d).replace(/\s+at\s+.*/i,'').trim();
