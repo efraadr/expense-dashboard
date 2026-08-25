@@ -620,7 +620,14 @@ async function fetchD(){
       // TEMP DIAGNOSTIC — logs how each QNB Arabic row is routed. Remove once confirmed.
       if(isQNBArabic&&/PENDING|UBER|TaxiF|UBR/i.test(rawAny)){
         window._qnbDiag=window._qnbDiag||[];
-        window._qnbDiag.push({date:d,dateLen:(d||'').length,inG:!!rawG,inB:!!rawB,isCBQRow,skipped:(!isCBQRow&&!isQNBArabic&&(!d||d.length<10))});
+        const dl=(d||'').length;
+        const diagEntry={date:d,dateLen:dl,inG:!!rawG,inB:!!rawB,isCBQRow,skipped:(!isCBQRow&&!isQNBArabic&&(!d||dl<10))};
+        if(dl===0){
+          const testP=parseSMS(rawAny);
+          diagEntry.parsedAmount=testP?testP.amount:'parseSMS returned null';
+          diagEntry.rawText=rawAny.slice(0,300);
+        }
+        window._qnbDiag.push(diagEntry);
       }
       if(!isCBQRow&&!isQNBArabic&&(!d||d.length<10))continue;
       const hasArabicG=rawG&&/[\u0600-\u06FF]/.test(rawG);
