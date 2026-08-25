@@ -584,6 +584,7 @@ async function fetchD(){
     const r=await fetch(SURL),txt=await r.text();
     const si2=txt.indexOf('{'),ei=txt.lastIndexOf('}');if(si2===-1)throw new Error('No JSON');
     const j=JSON.parse(txt.substring(si2,ei+1));const rows=j.table.rows||[];E=[];
+    let lastKnownDate='';
     for(const row of rows){
       const c=row.c||[];
       let d=c[0]?.v||'';
@@ -606,6 +607,7 @@ async function fetchD(){
         }
         if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);else d='';
       }
+      if(d&&d.length>=10)lastKnownDate=d;
       const valB=c[1]?.v;const rawB=(valB&&valB!=='-')?valB:'';
       const numC=(c[2]?.v&&c[2].v!=='-')?parseFloat(c[2].v):0;
       const valG=c[6]?.v;const rawG=(valG&&valG!=='-')?valG:'';
@@ -634,8 +636,8 @@ async function fetchD(){
       const hasArabicB=rawB&&/[\u0600-\u06FF]/.test(rawB);
       const isLegacy=rawG&&numC>0&&rawB;
       if(isLegacy){E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:rawG,fxConfirmed:true,source:'QNB'})}
-      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':(!d||d.length<10)?'_pending_recent':d,...p,raw:rawG,source:'QNB'})}
-      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':(!d||d.length<10)?'_pending_recent':d,...p,raw:rawB,source:'QNB'})}
+      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':((!d||d.length<10)?(lastKnownDate||td()):d),...p,raw:rawG,source:'QNB'})}
+      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':((!d||d.length<10)?(lastKnownDate||td()):d),...p,raw:rawB,source:'QNB'})}
       else if(isCBQTransfer(rawG)){const rs=parseCBQTransfer(rawG);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawG})})}
       else if(isCBQTransfer(rawB)){const rs=parseCBQTransfer(rawB);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawB})})}
       else if(isCBQSMS(rawG)){
@@ -653,9 +655,8 @@ async function fetchD(){
     // thousands) are unrelated scales; chaining them together mis-slots QNB rows and
     // corrupts ordering. So resolve each source's pending rows against only that
     // source's already-dated rows.
-    const dated=E.filter(e=>e.date!=='_pending'&&e.date!=='_pending_recent');
+    const dated=E.filter(e=>e.date!=='_pending');
     const pendingAll=E.filter(e=>e.date==='_pending');
-    const pendingRecent=E.filter(e=>e.date==='_pending_recent');
     for(const src of ['QNB','CBQ']){
       const pend=pendingAll.filter(e=>e.source===src);
       const placedSrc=dated.filter(e=>e.source===src).sort((a,b)=>a.date.localeCompare(b.date));
@@ -669,12 +670,6 @@ async function fetchD(){
         placedSrc.splice(bestIdx,0,p);
       }
     }
-    // Rows with NO date field at all (as opposed to an explicit "missing/backfill" flag)
-    // are live pending pre-auth charges (QNB just never sends a settlement date for
-    // these) — they're always current, not historical. Balance-sandwich matching against
-    // settled history is unreliable here since balance isn't monotonic once card loads
-    // are in the mix, and can mis-slot them weeks into the past. Anchor to today instead.
-    pendingRecent.forEach(p=>{p.date=td()});
     // Reassemble in ascending chronological order — crossCheckFX and dL both walk the
     // array oldest→newest comparing consecutive balances, so E must stay ascending.
     // The Ledger view reverses it for newest-first display.
