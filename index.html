@@ -584,12 +584,24 @@ async function fetchD(){
     const r=await fetch(SURL),txt=await r.text();
     const si2=txt.indexOf('{'),ei=txt.lastIndexOf('}');if(si2===-1)throw new Error('No JSON');
     const j=JSON.parse(txt.substring(si2,ei+1));const rows=j.table.rows||[];E=[];
+    let lastKnownDate='';
     for(const row of rows){
       const c=row.c||[];
-      let d=c[0]?.v||'';
+      let d=c[0]?.v;
+      // gviz infers one type per column; a numeric outlier in an otherwise text/date
+      // column can come back with v:null even though the formatted string still has it.
+      // Fall back to .f before giving up, or bare-serial rows like this vanish entirely.
+      if(d===null||d===undefined||d==='')d=c[0]?.f||'';
+      if(typeof d==='string')d=d.trim();
       if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`}
       else if(d instanceof Date)d=d.toISOString().slice(0,10);
       else if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}/.test(d))d=d.slice(0,10);
+      else if((typeof d==='number'||(typeof d==='string'&&/^[\d,]+(\.\d+)?$/.test(d)))&&parseFloat(String(d).replace(/,/g,''))>25000&&parseFloat(String(d).replace(/,/g,''))<60000){
+        // Bare Google Sheets serial date (days since Dec 30 1899, no Date()/formatted
+        // counterpart) — some rows arrive this way with no human-readable form at all.
+        const serial=parseFloat(String(d).replace(/,/g,''));
+        d=new Date(Date.UTC(1899,11,30)+Math.round(serial)*86400000).toISOString().slice(0,10);
+      }
       else{
         // Try multiple date formats
         let fd=String(c[0]?.f||d).replace(/\s+at\s+.*/i,'').trim();
@@ -606,6 +618,7 @@ async function fetchD(){
         }
         if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);else d='';
       }
+      if(d&&d.length>=10)lastKnownDate=d;
       const valB=c[1]?.v;const rawB=(valB&&valB!=='-')?valB:'';
       const numC=(c[2]?.v&&c[2].v!=='-')?parseFloat(c[2].v):0;
       const valG=c[6]?.v;const rawG=(valG&&valG!=='-')?valG:'';
@@ -620,15 +633,22 @@ async function fetchD(){
       // TEMP DIAGNOSTIC — logs how each QNB Arabic row is routed. Remove once confirmed.
       if(isQNBArabic&&/PENDING|UBER|TaxiF|UBR/i.test(rawAny)){
         window._qnbDiag=window._qnbDiag||[];
-        window._qnbDiag.push({date:d,dateLen:(d||'').length,inG:!!rawG,inB:!!rawB,isCBQRow,skipped:(!isCBQRow&&!isQNBArabic&&(!d||d.length<10))});
+        const dl=(d||'').length;
+        const diagEntry={date:d,dateLen:dl,inG:!!rawG,inB:!!rawB,isCBQRow,skipped:(!isCBQRow&&!isQNBArabic&&(!d||dl<10))};
+        if(dl===0){
+          const testP=parseSMS(rawAny);
+          diagEntry.parsedAmount=testP?testP.amount:'parseSMS returned null';
+          diagEntry.rawText=rawAny.slice(0,300);
+        }
+        window._qnbDiag.push(diagEntry);
       }
       if(!isCBQRow&&!isQNBArabic&&(!d||d.length<10))continue;
       const hasArabicG=rawG&&/[\u0600-\u06FF]/.test(rawG);
       const hasArabicB=rawB&&/[\u0600-\u06FF]/.test(rawB);
       const isLegacy=rawG&&numC>0&&rawB;
       if(isLegacy){E.push({date:d,merchant:rawB,amount:numC,currency:c[3]?.v||'QAR',category:c[4]?.v||categorize(rawB,numC),balance:parseFloat(c[5]?.v)||0,raw:rawG,fxConfirmed:true,source:'QNB'})}
-      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:(p.isMissing||!d||d.length<10)?'_pending':d,...p,raw:rawG,source:'QNB'})}
-      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:(p.isMissing||!d||d.length<10)?'_pending':d,...p,raw:rawB,source:'QNB'})}
+      else if(hasArabicG){const p=parseSMS(rawG);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':((!d||d.length<10)?(lastKnownDate||td()):d),...p,raw:rawG,source:'QNB'})}
+      else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':((!d||d.length<10)?(lastKnownDate||td()):d),...p,raw:rawB,source:'QNB'})}
       else if(isCBQTransfer(rawG)){const rs=parseCBQTransfer(rawG);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawG})})}
       else if(isCBQTransfer(rawB)){const rs=parseCBQTransfer(rawB);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawB})})}
       else if(isCBQSMS(rawG)){
