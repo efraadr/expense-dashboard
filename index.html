@@ -204,7 +204,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 <div class="hr"><h1 class="pt">Ledger</h1><div style="font-size:13px;font-family:var(--mf);color:var(--dm)" id="lC"></div></div>
 <div class="search-bar">
 <input type="text" id="lS" placeholder="Search merchant..." oninput="rLed()">
-<select id="lCat" onchange="rLed()"><option value="">All Categories</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Clothing</option><option>Electronics</option><option>Home</option><option>Personal Care</option><option>General Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Savings</option><option>Wiring Fees</option><option>Other</option><option value="_transfers">↗ All Transfers</option><option value="_missing">⚠ Missing TX</option></select>
+<select id="lCat" onchange="rLed()"><option value="">All Categories</option><option>Groceries</option><option>Transport</option><option>Dining</option><option>Clothing</option><option>Electronics</option><option>Home</option><option>Personal Care</option><option>General Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Subscriptions</option><option>Savings</option><option>Wiring Fees</option><option>Refund</option><option>Other</option><option value="_transfers">↗ All Transfers</option><option value="_missing">⚠ Missing TX</option></select>
 <select id="lP" onchange="rLed()"><option value="">All Time</option><option value="week">This Week</option><option value="month">This Month</option><option value="last">Last Month</option></select>
 </div>
 <div class="cd"><div style="overflow-x:auto"><table class="lt"><thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Balance</th><th>Flag</th></tr></thead><tbody id="lB"></tbody></table></div></div>
@@ -232,7 +232,7 @@ body{font-family:var(--bf);background:var(--bg);color:var(--tx);min-height:100vh
 const SID='1_LQk-qFx6ZbpkNk7vV0m-GyxNzMqmwcStWfPFixORZo';
 const SURL=`https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
 const FX_RATES={USD:3.717,EUR:3.98,GBP:4.62,SAR:0.97,AED:0.99,KWD:11.88,BHD:9.66};
-const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Clothing:{c:'#72A8E8',i:'👔'},Electronics:{c:'#5490C4',i:'⚡'},Home:{c:'#8BC4E8',i:'⌂'},'Personal Care':{c:'#D4A1C4',i:'✿'},'General Shopping':{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Savings:{c:'#4DAA72',i:'↗'},'Wiring Fees':{c:'#D4853A',i:'⚡'},Other:{c:'#8899AA',i:'○'}};
+const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Clothing:{c:'#72A8E8',i:'👔'},Electronics:{c:'#5490C4',i:'⚡'},Home:{c:'#8BC4E8',i:'⌂'},'Personal Care':{c:'#D4A1C4',i:'✿'},'General Shopping':{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Savings:{c:'#4DAA72',i:'↗'},'Wiring Fees':{c:'#D4853A',i:'⚡'},Refund:{c:'#4DAA72',i:'↩'},Other:{c:'#8899AA',i:'○'}};
 function gc(n){if(n&&n.startsWith('Wired to'))return{c:'#9B8EC4',i:'↗'};return CATS[n]||CATS.Other}
 function f$(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function td(){return new Date().toISOString().slice(0,10)}
@@ -390,7 +390,34 @@ function parseCBQ(raw){
   return r;
 }
 
-function isCBQSMS(raw){return/card ending|Available Limit|a\/c debit|Card Payment|debited with/i.test(raw)}
+function isCBQSMS(raw){return/card ending|Available Limit|a\/c debit|Card Payment|debited with|Refund of/i.test(raw)}
+
+// ═══ CBQ REFUND SMS PARSER ═══
+// Format: "Refund of QAR 1,213.20\nfrom QAR SELFDRIVE QA DUBAI\nat 15:47, 03-Sep-26\non card ending **3583\nAvailable limit: QAR 24,161.77"
+function isCBQRefund(raw){return/Refund of\s+QAR/i.test(raw)}
+function parseCBQRefund(raw){
+  if(!raw)return null;
+  const r={merchant:'',amount:0,balance:0,currency:'QAR',category:'Refund',source:'CBQ',fxConfirmed:true,isMissing:false,isRefund:true};
+  const t=raw.replace(/\r\n/g,'\n');
+  // Amount: "Refund of QAR 1,213.20"
+  const am=t.match(/Refund of\s+QAR\s+([\d,.]+)/i);
+  if(am)r.amount=parseFloat(am[1].replace(',',''));
+  // Merchant: "from QAR SELFDRIVE QA DUBAI" — take everything after "from"
+  const fr=t.match(/^from\s+(.+)$/im);
+  if(fr)r.merchant=fr[1].trim();
+  // Available limit: "Available limit: QAR 24,161.77" (this bank sometimes lowercases "limit")
+  const lim=t.match(/Available [Ll]imit[:\s]+(?:QAR\s+)?([\d,.]+)/i);
+  if(lim)r.balance=parseFloat(lim[1].replace(',',''));
+  // Date: "03-Sep-26"
+  const dt=t.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
+  if(dt){
+    const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+    let yr=dt[3];if(yr.length===2)yr='20'+yr;
+    r.smsDate=`${yr}-${months[dt[2].toLowerCase()]}-${dt[1].padStart(2,'0')}`;
+  }
+  if(/missing|missed|forgot|manual|old|backfill/i.test(raw))r.isMissing=true;
+  return r;
+}
 
 // Parse CBQ account debit/payment SMS
 function parseCBQDebit(raw){
@@ -651,6 +678,8 @@ async function fetchD(){
       else if(hasArabicB){const p=parseSMS(rawB);if(p&&p.amount>0)E.push({date:p.isMissing?'_pending':((!d||d.length<10)?(lastKnownDate||td()):d),...p,raw:rawB,source:'QNB'})}
       else if(isCBQTransfer(rawG)){const rs=parseCBQTransfer(rawG);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawG})})}
       else if(isCBQTransfer(rawB)){const rs=parseCBQTransfer(rawB);if(rs)rs.forEach(p=>{if(p.smsDate)E.push({date:p.smsDate,...p,raw:rawB})})}
+      else if(isCBQRefund(rawG)){const p=parseCBQRefund(rawG);if(p&&p.amount>0&&p.smsDate)E.push({date:p.isMissing?'_pending':p.smsDate,...p,raw:rawG})}
+      else if(isCBQRefund(rawB)){const p=parseCBQRefund(rawB);if(p&&p.amount>0&&p.smsDate)E.push({date:p.isMissing?'_pending':p.smsDate,...p,raw:rawB})}
       else if(isCBQSMS(rawG)){
         if(/a\/c debit|Card Payment/i.test(rawG)){const p=parseCBQDebit(rawG);if(p&&p.smsDate)E.push({date:p.smsDate,...p,raw:rawG})}
         else{const p=parseCBQ(rawG);if(p&&p.amount>0&&p.smsDate)E.push({date:p.isMissing?'_pending':p.smsDate,...p,raw:rawG})}
@@ -854,7 +883,7 @@ function mkG(v,m,c,h=7){const p=m>0?(v/m)*100:0;const fl2=p>100?'var(--rd)':p>80
 // ═══ RENDER ═══
 function renderAll(){
   const tw=wR(0),lw=wR(1),mr=mR();
-  const wT=fl(E,tw.s,tw.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings'),lwT=fl(E,lw.s,lw.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings'),mT=fl(E,mr.s,mr.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings');
+  const wT=fl(E,tw.s,tw.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings'&&e.category!=='Refund'),lwT=fl(E,lw.s,lw.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings'&&e.category!=='Refund'),mT=fl(E,mr.s,mr.e).filter(e=>e.category!=='_payment'&&e.category!=='Savings'&&e.category!=='Refund');
   const ws=wT.reduce((s,e)=>s+e.amount,0),ls2=lwT.reduce((s,e)=>s+e.amount,0),ms=mT.reduce((s,e)=>s+e.amount,0);
   const wd=ls2>0?((ws-ls2)/ls2*100):0,bal=E.length>0?E[E.length-1].balance:0;
   const mLd=CL.filter(l=>l.date>=mr.s&&l.date<=mr.e),mLt=mLd.reduce((s,l)=>s+l.amt,0);
@@ -1001,7 +1030,7 @@ function rCF(mr,mT,mLd,mLt,bal){
   
   // CBQ tab
   const cbqTx=E.filter(e=>e.source==='CBQ');
-  const cbqMonth=cbqTx.filter(e=>e.date>=mr.s&&e.date<=mr.e);
+  const cbqMonth=cbqTx.filter(e=>e.date>=mr.s&&e.date<=mr.e&&isSpend(e));
   // Transfer rows are CBQ-sourced but carry no card-credit reading (balance:0),
   // so they must be excluded when determining available credit.
   const cbqBalRows=cbqTx.filter(e=>!e.isTransfer&&typeof e.balance==='number'&&e.balance>0);
@@ -1070,7 +1099,7 @@ function rLed(){
   const total=rows.reduce((s,e)=>s+e.amount,0);
   document.getElementById('lC').textContent=rows.length+' of '+E.length;
   const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
-  document.getElementById('lB').innerHTML=rows.slice(0,200).map((e,idx)=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';const eidx=E.indexOf(e);const srcBadge=e.source==='CBQ'?'<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(201,84,84,.12);color:var(--rd);font-family:var(--mf)">CBQ</span> ':'';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${srcBadge}${e.merchant}</td><td style="font-family:var(--mf);font-weight:500" class="${amtClass}">${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td style="cursor:pointer" onclick="editCat(${eidx})"><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}</td></tr>`}).join('');
+  document.getElementById('lB').innerHTML=rows.slice(0,200).map((e,idx)=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.isRefund?'':e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';const eidx=E.indexOf(e);const srcBadge=e.source==='CBQ'?'<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(201,84,84,.12);color:var(--rd);font-family:var(--mf)">CBQ</span> ':'';const amtStyle=e.isRefund?'color:var(--gn)':'';const amtPrefix=e.isRefund?'+':'';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${srcBadge}${e.merchant}</td><td style="font-family:var(--mf);font-weight:500;${amtStyle}" class="${amtClass}">${amtPrefix}${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td style="cursor:pointer" onclick="editCat(${eidx})"><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}${e.isRefund?'<span class="miss-badge" style="background:rgba(77,170,114,.12);color:var(--gn)">↩ Refund</span>':''}</td></tr>`}).join('');
   const cats=Object.entries(rows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
   document.getElementById('lSm').innerHTML=`${rows.length} tx · Total: ${f$(total)}${cats?' · '+cats:''}`;
 }
@@ -1079,7 +1108,7 @@ function rLed(){
 // Transfers, savings moves, wiring fees, and credit-card payments are NOT spending.
 // Lumping them into weekly/monthly totals made a 10,000 savings transfer read as
 // money "torched", so spend and money-movement are reported separately below.
-function isMoneyMove(e){return !!(e.isTransfer||e.isPayment||e.category==='Savings'||e.category==='Wiring Fees'||e.category==='_payment')}
+function isMoneyMove(e){return !!(e.isTransfer||e.isPayment||e.isRefund||e.category==='Savings'||e.category==='Wiring Fees'||e.category==='_payment'||e.category==='Refund')}
 function isSpend(e){return !isMoneyMove(e)}
 function buildCtx(){const tw=wR(0),lw=wR(1),mr=mR();const wT=fl(E,tw.s,tw.e),lwT=fl(E,lw.s,lw.e),mT=fl(E,mr.s,mr.e);
 const wS=wT.filter(isSpend),lwS=lwT.filter(isSpend),mS=mT.filter(isSpend);
