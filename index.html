@@ -235,7 +235,12 @@ const FX_RATES={USD:3.717,EUR:3.98,GBP:4.62,SAR:0.97,AED:0.99,KWD:11.88,BHD:9.66
 const CATS={Groceries:{c:'#5DBE8A',i:'◉'},Transport:{c:'#C4A1D4',i:'▷'},Dining:{c:'#E8927C',i:'◈'},Clothing:{c:'#72A8E8',i:'👔'},Electronics:{c:'#5490C4',i:'⚡'},Home:{c:'#8BC4E8',i:'⌂'},'Personal Care':{c:'#D4A1C4',i:'✿'},'General Shopping':{c:'#72A8E8',i:'□'},Bills:{c:'#E8C872',i:'⬡'},Health:{c:'#E87C8A',i:'✦'},Entertainment:{c:'#8BC4E8',i:'♦'},Subscriptions:{c:'#A1D4B2',i:'◆'},Savings:{c:'#4DAA72',i:'↗'},'Wiring Fees':{c:'#D4853A',i:'⚡'},Refund:{c:'#4DAA72',i:'↩'},Other:{c:'#8899AA',i:'○'}};
 function gc(n){if(n&&n.startsWith('Wired to'))return{c:'#9B8EC4',i:'↗'};return CATS[n]||CATS.Other}
 function f$(n){return'QAR '+Math.abs(Number(n)||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
-function td(){return new Date().toISOString().slice(0,10)}
+// Format a Date as YYYY-MM-DD using LOCAL calendar fields.
+// Using .toISOString() here would convert to UTC first, which in Qatar (UTC+3)
+// rolls local midnight back to the previous day — e.g. local Sep 1 00:00 becomes
+// "2026-08-31". That silently dragged Aug 31 into every "this month" range.
+function fmtD(dt){const y=dt.getFullYear(),m=String(dt.getMonth()+1).padStart(2,'0'),d=String(dt.getDate()).padStart(2,'0');return`${y}-${m}-${d}`}
+function td(){return fmtD(new Date())}
 
 let E=[],CL=[],gaps=[],rm='w',dgm='w';
 function lJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f}catch{return f}}
@@ -621,7 +626,7 @@ async function fetchD(){
       if(d===null||d===undefined||d==='')d=c[0]?.f||'';
       if(typeof d==='string')d=d.trim();
       if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`}
-      else if(d instanceof Date)d=d.toISOString().slice(0,10);
+      else if(d instanceof Date)d=fmtD(d);
       else if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}/.test(d))d=d.slice(0,10);
       else if((typeof d==='number'||(typeof d==='string'&&/^[\d,]+(\.\d+)?$/.test(d)))&&parseFloat(String(d).replace(/,/g,''))>25000&&parseFloat(String(d).replace(/,/g,''))<60000){
         // Bare Google Sheets serial date (days since Dec 30 1899, no Date()/formatted
@@ -643,7 +648,7 @@ async function fetchD(){
           const dmy2=fd.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
           if(dmy2){const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};let yr=dmy2[3];if(yr.length===2)yr='20'+yr;d=`${yr}-${months[dmy2[2].toLowerCase()]}-${dmy2[1].padStart(2,'0')}`;pd=new Date(d);}
         }
-        if(!isNaN(pd.getTime()))d=pd.toISOString().slice(0,10);else d='';
+        if(!isNaN(pd.getTime()))d=fmtD(pd);else d='';
       }
       if(d&&d.length>=10)lastKnownDate=d;
       const valB=c[1]?.v;const rawB=(valB&&valB!=='-')?valB:'';
@@ -791,12 +796,12 @@ function overrideLoadPrompt(sig,detected){
   fetchD();
 }
 
-function genDemo(){const ms=[{n:'HOT BAKE CATERING',c:'Dining',a:[2,2,2]},{n:'LULU HYPERMARKET',c:'Groceries',a:[120,85,210]},{n:'UBER TRIP',c:'Transport',a:[18,25]},{n:'CARREFOUR',c:'Groceries',a:[65,92]},{n:'NETFLIX.COM',c:'Subscriptions',a:[45]},{n:'ZARA QATAR',c:'Clothing',a:[189,350]},{n:'KAHRAMAA',c:'Bills',a:[280]},{n:'TALABAT ORDER',c:'Dining',a:[42,68]},{n:'WOQOD PETROL',c:'Transport',a:[100,150]}];const d=[];let b=800;for(let i=45;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);if(i%12===0&&i>0)b+=500+Math.floor(Math.random()*1000);const n=Math.floor(Math.random()*3)+1;for(let t=0;t<n;t++){const m=ms[Math.floor(Math.random()*ms.length)];const a=m.a[Math.floor(Math.random()*m.a.length)]+Math.round(Math.random()*10-5);b=Math.max(b-a,50);d.push({date:dt.toISOString().slice(0,10),merchant:m.n,amount:Math.max(a,5),currency:'QAR',category:m.c,balance:Math.round(b*100)/100,raw:'',fxConfirmed:true})}}return d}
+function genDemo(){const ms=[{n:'HOT BAKE CATERING',c:'Dining',a:[2,2,2]},{n:'LULU HYPERMARKET',c:'Groceries',a:[120,85,210]},{n:'UBER TRIP',c:'Transport',a:[18,25]},{n:'CARREFOUR',c:'Groceries',a:[65,92]},{n:'NETFLIX.COM',c:'Subscriptions',a:[45]},{n:'ZARA QATAR',c:'Clothing',a:[189,350]},{n:'KAHRAMAA',c:'Bills',a:[280]},{n:'TALABAT ORDER',c:'Dining',a:[42,68]},{n:'WOQOD PETROL',c:'Transport',a:[100,150]}];const d=[];let b=800;for(let i=45;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);if(i%12===0&&i>0)b+=500+Math.floor(Math.random()*1000);const n=Math.floor(Math.random()*3)+1;for(let t=0;t<n;t++){const m=ms[Math.floor(Math.random()*ms.length)];const a=m.a[Math.floor(Math.random()*m.a.length)]+Math.round(Math.random()*10-5);b=Math.max(b-a,50);d.push({date:fmtD(dt),merchant:m.n,amount:Math.max(a,5),currency:'QAR',category:m.c,balance:Math.round(b*100)/100,raw:'',fxConfirmed:true})}}return d}
 
 // ═══ HELPERS ═══
-function wR(w=0){const n=new Date();const dow=n.getDay();const sun=new Date(n);sun.setDate(n.getDate()-dow-w*7);const sat=new Date(sun);sat.setDate(sun.getDate()+6);const end=w===0&&sat>n?n:sat;return{s:sun.toISOString().slice(0,10),e:end.toISOString().slice(0,10)}}
-function mR(){const n=new Date();return{s:new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10),e:n.toISOString().slice(0,10),de:n.getDate(),dm:new Date(n.getFullYear(),n.getMonth()+1,0).getDate()}}
-function lmR(){const n=new Date();const s=new Date(n.getFullYear(),n.getMonth()-1,1);const e2=new Date(n.getFullYear(),n.getMonth(),0);return{s:s.toISOString().slice(0,10),e:e2.toISOString().slice(0,10)}}
+function wR(w=0){const n=new Date();const dow=n.getDay();const sun=new Date(n);sun.setDate(n.getDate()-dow-w*7);const sat=new Date(sun);sat.setDate(sun.getDate()+6);const end=w===0&&sat>n?n:sat;return{s:fmtD(sun),e:fmtD(end)}}
+function mR(){const n=new Date();return{s:fmtD(new Date(n.getFullYear(),n.getMonth(),1)),e:fmtD(n),de:n.getDate(),dm:new Date(n.getFullYear(),n.getMonth()+1,0).getDate()}}
+function lmR(){const n=new Date();const s=new Date(n.getFullYear(),n.getMonth()-1,1);const e2=new Date(n.getFullYear(),n.getMonth(),0);return{s:fmtD(s),e:fmtD(e2)}}
 function fl(a,s,e){return a.filter(x=>x.date>=s&&x.date<=e)}
 function cbk(a){const m={};a.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount});return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([c,s])=>({cat:c,spent:s,...gc(c)}))}
 
@@ -910,7 +915,7 @@ function renderAll(){
   document.getElementById('k5d').textContent=cbqOwed>0?`${cbqUtilPct}% used · ${f$(cbqAvailable)} free`:'No balance';
   document.getElementById('k5').style.color=cbqUtilPct>50?'var(--rd)':cbqUtilPct>30?'var(--am)':'var(--gn)';
 
-  const tm={};for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);tm[d.toISOString().slice(0,10)]=0}E.forEach(e=>{if(tm[e.date]!==undefined)tm[e.date]+=e.amount});
+  const tm={};for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);tm[fmtD(d)]=0}E.forEach(e=>{if(tm[e.date]!==undefined)tm[e.date]+=e.amount});
   document.getElementById('tc').innerHTML=mkS(Object.values(tm),'#D4A843',480,90);
 
   const wC=cbk(wT),mxC=wC.length>0?wC[0].spent:1;
@@ -1096,12 +1101,22 @@ function rLed(){
   if(period==='week'){const tw=wR(0);rows=rows.filter(e=>e.date>=tw.s&&e.date<=tw.e)}
   else if(period==='month'){const mr=mR();rows=rows.filter(e=>e.date>=mr.s&&e.date<=mr.e)}
   else if(period==='last'){const l=lmR();rows=rows.filter(e=>e.date>=l.s&&e.date<=l.e)}
-  const total=rows.reduce((s,e)=>s+e.amount,0);
+  // The footer must use the SAME exclusion rules as the Command Center, otherwise a
+  // refund gets added as if it were a purchase (it was inflating the total by 2x the
+  // refund amount and counting the refund row in the tx count).
+  const spendRows=rows.filter(isSpend);
+  const total=spendRows.reduce((s,e)=>s+e.amount,0);
+  const moveRows=rows.filter(e=>!isSpend(e));
+  const refundTotal=rows.filter(e=>e.isRefund||e.category==='Refund').reduce((s,e)=>s+e.amount,0);
   document.getElementById('lC').textContent=rows.length+' of '+E.length;
   const lm=new Map();CL.forEach(l=>lm.set(l.date+'|'+l.ba.toFixed(2),l.amt));
   document.getElementById('lB').innerHTML=rows.slice(0,200).map((e,idx)=>{const c=gc(e.category);const ld=lm.get(e.date+'|'+e.balance.toFixed(2));const amtClass=e.isRefund?'':e.fxConfirmed===true?'':e.fxConfirmed==='estimated'?'estimated':'confirmed';const eidx=E.indexOf(e);const srcBadge=e.source==='CBQ'?'<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(201,84,84,.12);color:var(--rd);font-family:var(--mf)">CBQ</span> ':'';const amtStyle=e.isRefund?'color:var(--gn)':'';const amtPrefix=e.isRefund?'+':'';return`<tr><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${e.date}</td><td style="cursor:pointer;color:var(--cy)" onclick="showMerch('${e.merchant.replace(/'/g,"\\'")}')">${srcBadge}${e.merchant}</td><td style="font-family:var(--mf);font-weight:500;${amtStyle}" class="${amtClass}">${amtPrefix}${f$(e.amount)}${e.currency&&e.currency!=='QAR'?` <span style="font-size:10px;color:var(--dm)">${e.currency}</span>`:''}</td><td style="cursor:pointer" onclick="editCat(${eidx})"><span style="color:${c.c}">${c.i}</span> ${e.category}</td><td style="font-family:var(--mf);font-size:13px;color:var(--dm)">${f$(e.balance)}</td><td>${ld?`<span class="tu">↑ +${f$(ld)}</span>`:''}${e.isMissing?'<span class="miss-badge">recovered</span>':''}${e.isRefund?'<span class="miss-badge" style="background:rgba(77,170,114,.12);color:var(--gn)">↩ Refund</span>':''}</td></tr>`}).join('');
-  const cats=Object.entries(rows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
-  document.getElementById('lSm').innerHTML=`${rows.length} tx · Total: ${f$(total)}${cats?' · '+cats:''}`;
+  const cats=Object.entries(spendRows.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`${c}: ${f$(v)}`).join(' · ');
+  const extra=[];
+  if(refundTotal>0)extra.push(`<span style="color:var(--gn)">Refunds: +${f$(refundTotal)}</span>`);
+  const moveCount=moveRows.length;
+  if(moveCount>0)extra.push(`${moveCount} non-spend row${moveCount===1?'':'s'} excluded`);
+  document.getElementById('lSm').innerHTML=`${spendRows.length} tx · Spend: ${f$(total)}${cats?' · '+cats:''}${extra.length?' · '+extra.join(' · '):''}`;
 }
 
 // ═══ AI ═══
@@ -1287,7 +1302,7 @@ function timeSince(iso){
 }
 function buildAuditSys(){
   const isFollowUp=auditHist&&auditHist.length>0;
-  const today=new Date().toISOString().slice(0,10);
+  const today=td();
   let priorCtx;
   if(isFollowUp){
     const last=auditHist[auditHist.length-1];
@@ -1367,7 +1382,7 @@ async function closeAuditSession(){
   try{
     const transcript=aH.map(m=>`${m.role.toUpperCase()}: ${m.content}`).join('\n');
     const sumSys=`Summarize this financial audit session into strict JSON only, no markdown, no prose outside the JSON: {"date":"...","issues":"...","actions":"...","notes":"..."}. "issues" = key problems found this session in one sentence. "actions" = concrete steps he agreed to in one sentence. "notes" = any personal/life context worth remembering for next time, one sentence, or empty string if none.`;
-    const t=await callAI(sumSys,`Today's date: ${new Date().toISOString().slice(0,10)}\n\nSESSION TRANSCRIPT:\n${transcript}`);
+    const t=await callAI(sumSys,`Today's date: ${td()}\n\nSESSION TRANSCRIPT:\n${transcript}`);
     const rec=JSON.parse(t.replace(/```json|```/g,'').trim());
     rec.timestamp=new Date().toISOString(); // exact instant, computed here rather than trusted from the model — this is what buildAuditSys() diffs against next session
     await saveAuditRecord(rec);
@@ -1493,7 +1508,7 @@ function detectSubs(){
       amount:lastCharge.amount,
       currency:lastCharge.currency||'QAR',
       lastDate:lastCharge.date,
-      renewalDate:expectedRenewal.toISOString().slice(0,10),
+      renewalDate:fmtD(expectedRenewal),
       daysUntil,
       renewedThisMonth:!!thisMonth,
       charges:allTx.length,
@@ -1589,7 +1604,7 @@ function calcStreak(){
   let current=0;
   for(let i=0;i<365;i++){
     const d=new Date(today);d.setDate(d.getDate()-i);
-    const key=d.toISOString().slice(0,10);
+    const key=fmtD(d);
     if(i===0&&dateSet.has(key)){current=0;break} // spent today
     if(!dateSet.has(key))current++;
     else break;
@@ -1598,7 +1613,7 @@ function calcStreak(){
   let best=0,run=0;
   for(let i=90;i>=0;i--){
     const d=new Date(today);d.setDate(d.getDate()-i);
-    if(!dateSet.has(d.toISOString().slice(0,10))){run++;best=Math.max(best,run)}
+    if(!dateSet.has(fmtD(d))){run++;best=Math.max(best,run)}
     else run=0;
   }
   return{current,best};
