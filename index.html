@@ -277,6 +277,27 @@ Reply entirely in Egyptian/Sudanese colloquial Arabic (عامية مصرية/س�
 - Merchant, brand and place names in Arabic script so they read correctly aloud (Watan Hypermarket → وطن هايبرماركت، Apple → آبل، Talabat → طلبات، Fuddruckers → فدركرز).
 - The response is read aloud, so write it as speech. No markdown, no bullet characters, no asterisks.`;
 
+// Shared cultural layer for the roast + the live audit. Saif is Sudanese, living in Doha,
+// sending money home — the humour and the accountability both land harder when they come
+// from inside that world rather than from a generic American finance-bro voice.
+const CULTURE_MODE=`
+
+CULTURAL REGISTER — you are inside this community, not observing it:
+Speak like a Sudanese/Egyptian who grew up in this. Khaleeji expat life in Doha, Sudanese family obligations, Egyptian street-level sarcasm. The humour is the kind traded between people who share the same background — sharp, familiar, affectionate underneath, never explained.
+
+- Use the dialect's own comedic instruments naturally: يا زول، يا باشا، يا معلم، والله العظيم، يا أخي، ده كلام؟، الله يكون في عونك، ربنا يستر، يا حبيبي يا بتاع. Don't translate or explain them.
+- Reach for references from the culture, not from American finance: مواصلات، القهوة والجبنة، ست الشاي، الفول والطعمية، العزومات، الحلة والفريق، عيد وعزايم، حق الله، زيارة العيلة، الشغل في الخليج، الغربة.
+- Diaspora-specific pressure points are fair game because they're real: what things cost back home versus here, الأهل واللي بيسألوا عنك, أم اللي هتسمع بالكلام ده, العمو اللي بيقارنك بولد خالتك, العين والحسد, نظرة الناس, العيب. Lean on them.
+- Compare his spending to things that mean something in that world — how many people you could feed, a سلفة you'd be too embarrassed to ask for, what that money is worth in جنيه, a wedding contribution, a plane ticket home.
+- Mocking the shared culture from within is the point. Never mock the culture from outside, never punch at people's poverty, religion, ethnicity or at Sudan itself. The target is always Saif and his choices.
+
+ACCOUNTABILITY — this is not optional, and it is where the sarcasm stops:
+When the numbers show something that genuinely matters, drop the jokes for a beat and say it plainly, the way an older brother would. Then you may resume.
+- If he's sending money to family while burning comparable amounts on taxis, delivery, or impulse buys, put those two numbers side by side and let him sit with it. No punchline on that one.
+- If a habit is compounding — the same merchant climbing week over week, debt creeping up, savings stalling — name the trajectory and where it lands in 6 months if nothing changes.
+- If he made a real improvement, say so once, directly, with the number. He gets credit when he's earned it. Once — then back to work.
+- Never moralise, never lecture, never guilt-trip about family duty itself. Sending money home is not a flaw. The waste around it is.`;
+
 async function speak(spokenText){
   if(!VOX||!PX)return;
   const seq=++voxSeq; // guards against an older, slower request finishing after a newer one starts
@@ -639,7 +660,40 @@ function crossCheckFX(txs){
 }
 
 // ═══ AI ═══
-async function callAI(sys,msg){if(!PX)throw new Error('No proxy URL. Go to Settings.');const r=await fetch(PX,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:1400,system:sys,messages:Array.isArray(msg)?msg:[{role:'user',content:msg}]})});const raw=await r.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`API ${r.status}: ${raw.slice(0,200)}`)}if(!r.ok||d.error)throw new Error(d.error?.message||`API ${r.status}: ${raw.slice(0,200)}`);return d.content?.map(b=>b.text||'').join('')||'No response.'}
+// opts: {max_tokens, temperature, retries}
+// The old version did content.map(b=>b.text||'') across ALL blocks. If the reply came back
+// as a non-text block (or got truncated before any text block was emitted) that collapsed
+// to an empty string and surfaced as the mysterious "No response." Now we select text
+// blocks explicitly, surface stop_reason when there genuinely is no text, and retry the
+// transient failures (429/5xx/empty) instead of dead-ending.
+async function callAI(sys,msg,opts={}){
+  if(!PX)throw new Error('No proxy URL. Go to Settings.');
+  const {max_tokens=1400,temperature=1,retries=2}=opts;
+  let lastErr='';
+  for(let attempt=0;attempt<=retries;attempt++){
+    if(attempt)await new Promise(r=>setTimeout(r,600*attempt));
+    let r,raw;
+    try{
+      r=await fetch(PX,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-5',max_tokens,temperature,system:sys,
+          messages:Array.isArray(msg)?msg:[{role:'user',content:msg}]})});
+      raw=await r.text();
+    }catch(e){lastErr='Network: '+e.message;continue}
+    let d;try{d=JSON.parse(raw)}catch{lastErr=`API ${r.status}: ${raw.slice(0,200)}`;continue}
+    if(!r.ok||d.error){
+      const em=d.error?.message||`API ${r.status}`;
+      // 429 = rate limited, 529 = overloaded, 5xx = transient -> worth retrying
+      if(r.status===429||r.status>=500){lastErr=em;continue}
+      throw new Error(em);
+    }
+    const txt=(d.content||[]).filter(b=>b&&b.type==='text'&&b.text).map(b=>b.text).join('').trim();
+    if(txt)return txt;
+    lastErr=d.stop_reason==='max_tokens'
+      ?'Reply was cut off before any text came back — try again.'
+      :`Empty reply${d.stop_reason?' (stop_reason: '+d.stop_reason+')':''}.`;
+  }
+  throw new Error(lastErr||'No response after retries.');
+}
 
 // ═══ HABIT ENGINE ═══
 function learnHabits(){
@@ -1265,12 +1319,25 @@ async function genRst(){
   const merch={};tx.filter(isSpend).forEach(e=>{merch[e.merchant]=(merch[e.merchant]||0)+1});
   const reps=Object.entries(merch).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
   // Anti-repetition seed
-  const seeds=['Lead with the single most pathetic transaction.','Open with a timeline of one specific bad day.','Start by calculating how much he spent per hour this period.','Begin with his most visited merchant and make it deeply personal.','Open by comparing his spending to something absurd he could have bought instead.','Start with his largest single purchase and work backward through the damage.','Lead with the gap between what he budgeted and what actually happened.'];
+  const seeds=[
+    'Open by reading his single most pathetic transaction aloud like evidence in a trial.',
+    'Reconstruct one specific catastrophic day hour by hour, like a crime scene.',
+    'Open with his cost-per-hour for this period and refuse to let it go.',
+    'Pick his most-visited merchant and treat the relationship like a toxic romance.',
+    'Open by listing what he could have bought instead with the same money. Be absurdly specific.',
+    'Start at his largest purchase and work backwards through the wreckage.',
+    'Compare his spending to a household appliance, an animal, or a natural disaster. Commit to it.',
+    'Open mid-sentence like you have already been yelling at him for ten minutes.',
+    'Address his bank account directly, as a hostage that wants out.',
+    'Open by congratulating him for something, then reveal it is not a compliment.',
+    'Narrate his week as a nature documentary about a creature with no impulse control.',
+    'Pick the smallest transaction and act more offended by it than the largest one.'
+  ];
   const seed=seeds[Math.floor(Math.random()*seeds.length)];
   const ts=Date.now(); // timestamp to ensure uniqueness
   const spendTx=tx.filter(isSpend),moveTotal=tx.filter(isMoneyMove).reduce((s,e)=>s+e.amount,0);
   const extra=`Period: ${rm==='w'?'this week Sun-Sat':'this month'}, SPENDING total: ${spendTx.reduce((s,e)=>s+e.amount,0).toFixed(2)} across ${spendTx.length} tx (separately, ${moveTotal.toFixed(2)} was moved to savings / paid to the credit card — that is NOT spending), Repeats: ${JSON.stringify(reps.slice(0,8))}, Timeline: ${JSON.stringify(spendTx.map(e=>({d:e.date,m:e.merchant,a:e.amount})))}`;
-  try{const t=await callAI(`You are a savage, unfiltered financial critic — think Caleb Hammer doing Financial Audit on Saif's spending in Doha. QAR.
+  try{const t=await callAI(`You are a completely unhinged financial auditor tearing into Saif's spending in Doha. Caleb Hammer if he'd skipped his medication and had a personal stake in the outcome. Currency is QAR. This is HIS money and HIS request — he asked to be roasted, so hold nothing back.
 
 READING THE NUMBERS — get this wrong and the roast is just wrong:
 - CBQ Credit Card (limit 24,000): OUTSTANDING is what he OWES. AVAILABLE CREDIT is what he has NOT used. They are opposites. High available credit = low debt = GOOD. Only call him near maxed-out if OUTSTANDING is near the limit.
@@ -1279,16 +1346,21 @@ READING THE NUMBERS — get this wrong and the roast is just wrong:
 
 APPROACH FOR THIS SESSION (seed ${ts}): ${seed}
 
-RULES:
-- Reference SPECIFIC merchants, EXACT amounts, dates, visit counts. Every sentence should have a number in it.
-- Be ruthless. Direct. Personal. No padding. No "to be fair." No bright sides.
-- Swear when it hits harder. Don't hold back.
-- Notice patterns — repeat visits, escalating amounts, suspicious timing.
-- Mock the actual spending behavior, not generic jokes. This is an audit, not a comedy show.
-- CRITICAL: Your opening sentence must be COMPLETELY UNIQUE. Never start with "Let's" or "So" or "Alright." Use the approach seed above.
-- CRITICAL: Do NOT repeat any sentence structure you've used before. Vary paragraph length. Vary insult style.
-- End with ONE buried useful insight.
-- 150-300 words. No markdown. Raw paragraphs.`+ARABIC_MODE,extra+'\n'+buildCtx());document.getElementById('rO').innerHTML=`<div class="ro" dir="auto">${t}</div>`;speak(t)}
+VOICE — this is the whole point, do not soften it:
+- You are LOUD, unhinged, and having the time of your life. This is a man's finances on trial and you are the prosecutor, the judge, and the guy heckling from the gallery.
+- Go BIG. Absurd comparisons, wild exaggeration, theatrical disbelief. "You spent 59.76 on a taxi. FIFTY-NINE. You could have walked and bought a sandwich with the change and still had enough left to feel bad about it."
+- Swear freely and naturally when it lands. Don't be precious about it. Don't censor yourself with asterisks either.
+- Escalate. Start annoyed, end apoplectic. Rant. Use sentence fragments. USE CAPS when you snap.
+- Ask him rhetorical questions he cannot answer. Do not wait for the answer.
+- Roast the PATTERN, not just the purchase. Four taxis in two days isn't four purchases, it's a personality flaw.
+- Callbacks: bring back a merchant you mocked earlier in the same roast. Make it hurt twice.
+- ZERO diplomatic hedging. No "to be fair." No "on the bright side." No "but hey." If you catch yourself being nice, delete it.
+
+HARD RULES:
+- Every claim uses a REAL number from the data. Specific merchants, exact amounts, real dates, actual visit counts. Invented numbers kill the joke.
+- Never repeat an opening, a structure, or a joke shape from a previous roast. Vary paragraph length wildly — one-word paragraphs are allowed.
+- Bury exactly ONE genuinely useful financial observation near the end. Do not flag it as advice. Let him find it.
+- 180-320 words. No markdown, no headers, no bullets. Raw unhinged paragraphs.`+CULTURE_MODE+ARABIC_MODE,extra+'\n'+buildCtx(),{max_tokens:1800,temperature:1});document.getElementById('rO').innerHTML=`<div class="ro" dir="auto">${t}</div>`;speak(t)}
   catch(e){document.getElementById('rO').innerHTML=`<div style="color:var(--rd);padding:22px">${e.message}</div>`}
   b.disabled=false;b.textContent='🔥 Roast Me';
 }
@@ -1367,6 +1439,8 @@ READING THE NUMBERS — get this wrong and the whole audit is worthless:
 
 PERSONA: Sarcastic, blunt, ruthless — reference specific merchants, exact amounts, dates, visit counts. This is an audit, not a comedy bit — mock the actual behavior, not generic jokes.
 
+HOLDING HIM ACCOUNTABLE: Don't let him slide. If he deflects, minimises, or gives you a vague answer, push back and ask again with the number in your hand. If he promised something in a prior session and the data says otherwise, open with that and make him account for it before anything else. If he gives you a real reason, accept it and move on — you're after the truth, not a confession. Ask the uncomfortable follow-up question instead of moving to the next category politely.
+
 FREEDOM: This isn't a rigid script. He can go off on tangents — job stress, a big purchase coming up, why he's spending the way he is — follow the thread, probe, then work back toward whatever's uncovered. Don't force a checklist tone.
 
 CATEGORIES TO COVER OVER THE CONVERSATION (not necessarily in order, not necessarily one per message):
@@ -1384,7 +1458,7 @@ async function openAudit(){
   const kickoff='[Begin the session. Open in character — reference his real numbers immediately. Do not wait for him to speak first.]';
   aH.push({role:'user',content:kickoff});
   try{
-    const t=await callAI(buildAuditSys()+ARABIC_MODE,[{role:'user',content:`[DATA]\n${buildCtx()}\n\n${kickoff}`}]);
+    const t=await callAI(buildAuditSys()+CULTURE_MODE+ARABIC_MODE,[{role:'user',content:`[DATA]\n${buildCtx()}\n\n${kickoff}`}]);
     remAudTD();
     const clean=t.replace('<<AUDIT_END>>','').trim();
     addAudM('ai',clean);
@@ -1407,7 +1481,7 @@ async function sendAudit(forceEnd){
   const msgs=aH.map((m,i)=>(i===0||i%10===0)?{role:m.role,content:`[DATA]\n${ctx}\n\n${m.content}`}:m);
   if(msgs.length>24)msgs.splice(0,msgs.length-24);
   try{
-    const t=await callAI(sys+ARABIC_MODE,msgs);
+    const t=await callAI(sys+CULTURE_MODE+ARABIC_MODE,msgs);
     remAudTD();
     const ended=t.includes('<<AUDIT_END>>');
     const clean=t.replace('<<AUDIT_END>>','').trim();
