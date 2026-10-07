@@ -357,7 +357,7 @@ function parseSMS(raw){
   // Check if manual/missing recovery
   const stdEnd=/في حال كانت العملية/;
   const hasStd=stdEnd.test(raw);
-  const extraText=raw.replace(/تمت عملية[\s\S]*?الاتصال على \d+/,'').trim();
+  const extraText=raw.replace(/تمت عملية[\s\S]*?الاتصال على\s*\d+/,'').trim();
   if(extraText.length>3||/missing|missed|forgot|manual|old|backfill|ناقص|مفقود/i.test(raw))r.isMissing=true;
   // Detect currency
   const amMatch=t.match(/المبلغ\s*[:：]\s*(?:(QAR|USD|EUR|GBP|SAR|AED|KWD|BHD)\s*)?(?:تقريباً\s*)?([\d,.]+)/i)||t.match(/المبلغ\s*[:：]\s*([\d,.]+)\s*(QAR|USD|EUR|GBP|SAR|AED|KWD|BHD)?/i);
@@ -709,45 +709,115 @@ function learnHabits(){
 }
 
 // ═══ FETCH ═══
-async function fetchD(){
+// ═══ SHEET LOADING (format-proof) ═══
+const SCSV=`https://docs.google.com/spreadsheets/d/${SID}/export?format=csv&gid=0`;
+
+// RFC 4180 CSV parser: handles quoted fields, embedded newlines (multi-line SMS),
+// escaped quotes ("") and CRLF.
+function parseCSV(text){
+  const out=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}
+      else f+=ch;
+    }else if(ch==='"')q=true;
+    else if(ch===','){row.push(f);f=''}
+    else if(ch==='\n'||ch==='\r'){
+      if(ch==='\r'&&text[i+1]==='\n')i++;
+      row.push(f);out.push(row);row=[];f='';
+    }else f+=ch;
+  }
+  if(f!==''||row.length){row.push(f);out.push(row)}
+  return out;
+}
+
+// Returns rows in the gviz shape ({c:[{v,f}]}) so the rest of fetchD is unchanged.
+async function loadSheetRows(){
   try{
+    const r=await fetch(SCSV);
+    if(!r.ok)throw new Error('CSV '+r.status);
+    const txt=await r.text();
+    if(/^\s*<(!doctype|html)/i.test(txt))throw new Error('CSV returned HTML'); // sign-in page
+    const grid=parseCSV(txt);
+    // Drop the header row (A1 = "Date") if present.
+    if(grid.length&&/^\s*date\s*$/i.test(grid[0][0]||''))grid.shift();
+    return grid.map(cells=>({c:cells.map(x=>{const t=(x||'').trim();return t===''?null:{v:t,f:t}})}));
+  }catch(e){
+    console.warn('CSV export unavailable, falling back to gviz:',e.message);
     const r=await fetch(SURL),txt=await r.text();
     const si2=txt.indexOf('{'),ei=txt.lastIndexOf('}');if(si2===-1)throw new Error('No JSON');
-    const j=JSON.parse(txt.substring(si2,ei+1));const rows=j.table.rows||[];E=[];
+    const j=JSON.parse(txt.substring(si2,ei+1));
+    return j.table.rows||[];
+  }
+}
+
+// Universal date reader. Returns YYYY-MM-DD or '' — never throws.
+const MONTHS={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12,
+  'يناير':1,'كانون الثاني':1,'فبراير':2,'شباط':2,'مارس':3,'آذار':3,'أبريل':4,'ابريل':4,'نيسان':4,
+  'مايو':5,'أيار':5,'يونيو':6,'حزيران':6,'يوليو':7,'تموز':7,'أغسطس':8,'اغسطس':8,'آب':8,
+  'سبتمبر':9,'أيلول':9,'أكتوبر':10,'اكتوبر':10,'تشرين الأول':10,'نوفمبر':11,'تشرين الثاني':11,'ديسمبر':12,'كانون الأول':12};
+function ymd(y,m,d){
+  y=+y;m=+m;d=+d;if(y<100)y+=2000;
+  if(!(y>=2000&&y<=2100&&m>=1&&m<=12&&d>=1&&d<=31))return'';
+  const dt=new Date(y,m-1,d);
+  if(dt.getMonth()!==m-1)return''; // rejects 31 Feb etc.
+  return fmtD(dt);
+}
+function monthNum(s){
+  s=(s||'').toLowerCase().replace(/\.$/,'');
+  if(MONTHS[s])return MONTHS[s];
+  const k=s.slice(0,3);return MONTHS[k]||0;
+}
+function parseAnyDate(v){
+  if(v===null||v===undefined||v==='')return'';
+  if(v instanceof Date)return isNaN(v)?'':fmtD(v);
+  // Sheets serial (days since 30 Dec 1899). floor, not round: 46302.8 is still the 46302nd day.
+  const serialOf=n=>(n>20000&&n<80000)?new Date(Date.UTC(1899,11,30)+Math.floor(n)*864e5).toISOString().slice(0,10):'';
+  if(typeof v==='number')return serialOf(v);
+  let s=String(v).trim()
+    .replace(/[٠-٩]/g,ch=>ch.charCodeAt(0)-0x0660)   // Arabic-Indic digits
+    .replace(/[۰-۹]/g,ch=>ch.charCodeAt(0)-0x06F0)   // Persian digits
+    .replace(/[‎‏‪-‮ ]/g,' ')         // RTL marks, nbsp
+    .replace(/\s+/g,' ').trim();
+  let m;
+  if((m=s.match(/^Date\((\d+),(\d+),(\d+)/)))return ymd(m[1],+m[2]+1,m[3]); // gviz, 0-based month
+  if(/^[\d,]+(\.\d+)?$/.test(s))return serialOf(parseFloat(s.replace(/,/g,'')));
+  if((m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/)))return ymd(m[1],m[2],m[3]); // ISO / Y-M-D
+  // Strip time parts so only the calendar date is left.
+  const core=s.replace(/\s+(at|في|الساعة)\s+.*$/i,'').replace(/,?\s*\d{1,2}:\d{2}(:\d{2})?(\s*[ap]\.?m\.?|\s*[صم])?.*$/i,'').replace(/,/g,' ').replace(/\s+/g,' ').trim();
+  // 6 Oct 2026 · 06-Oct-26 · 6.Oct.2026 · 6 أكتوبر 2026
+  if((m=core.match(/(\d{1,2})(?:st|nd|rd|th)?[\s\-\/.]+([A-Za-z؀-ۿ]+(?: [؀-ۿ]+)?)\.?[\s\-\/.]+(\d{2,4})/))&&monthNum(m[2]))return ymd(m[3],monthNum(m[2]),m[1]);
+  // Oct 6 2026 · Tuesday, October 6, 2026
+  if((m=core.match(/([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s+(\d{2,4})/))&&monthNum(m[1]))return ymd(m[3],monthNum(m[1]),m[2]);
+  // Numeric 6/10/2026 or 10/6/2026 — resolve D/M vs M/D unambiguously when one part >12,
+  // otherwise pick whichever reading is not in the future and closest to today.
+  if((m=core.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/))){
+    const a=+m[1],b=+m[2];
+    if(a>12)return ymd(m[3],b,a);
+    if(b>12)return ymd(m[3],a,b);
+    const dm=ymd(m[3],b,a),md=ymd(m[3],a,b),t=td();
+    const ok=[dm,md].filter(x=>x&&x<=t).sort().reverse();
+    return ok[0]||dm||md;
+  }
+  const pd=new Date(core||s);
+  return isNaN(pd.getTime())?'':fmtD(pd);
+}
+
+async function fetchD(){
+  try{
+    // Primary source: the CSV export. Every cell arrives as its displayed text, so a
+    // column mixing text dates ("6 Oct 2026 at 4:36 PM") and a bare number (46302)
+    // can't lose cells. The gviz JSON feed picks ONE type per column and returns the
+    // minority-type cells as null — that is what made the last SMS's date vanish.
+    // gviz stays as the automatic fallback if the export is ever unreachable.
+    const rows=await loadSheetRows();E=[];
     let lastKnownDate='';
     for(const row of rows){
       const c=row.c||[];
-      let d=c[0]?.v;
-      // gviz infers one type per column; a numeric outlier in an otherwise text/date
-      // column can come back with v:null even though the formatted string still has it.
-      // Fall back to .f before giving up, or bare-serial rows like this vanish entirely.
-      if(d===null||d===undefined||d==='')d=c[0]?.f||'';
-      if(typeof d==='string')d=d.trim();
-      if(typeof d==='string'&&d.startsWith('Date(')){const p=d.match(/Date\((\d+),(\d+),(\d+)/);if(p)d=`${p[1]}-${String(+p[2]+1).padStart(2,'0')}-${p[3].padStart(2,'0')}`}
-      else if(d instanceof Date)d=fmtD(d);
-      else if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}/.test(d))d=d.slice(0,10);
-      else if((typeof d==='number'||(typeof d==='string'&&/^[\d,]+(\.\d+)?$/.test(d)))&&parseFloat(String(d).replace(/,/g,''))>25000&&parseFloat(String(d).replace(/,/g,''))<60000){
-        // Bare Google Sheets serial date (days since Dec 30 1899, no Date()/formatted
-        // counterpart) — some rows arrive this way with no human-readable form at all.
-        const serial=parseFloat(String(d).replace(/,/g,''));
-        d=new Date(Date.UTC(1899,11,30)+Math.round(serial)*86400000).toISOString().slice(0,10);
-      }
-      else{
-        // Try multiple date formats
-        let fd=String(c[0]?.f||d).replace(/\s+at\s+.*/i,'').trim();
-        let pd=new Date(fd);
-        // Safari fix: "15 Aug 2026" → rearrange to "Aug 15, 2026"
-        if(isNaN(pd.getTime())){
-          const dmy=fd.match(/^(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{2,4})$/i);
-          if(dmy){let yr=dmy[3];if(yr.length===2)yr='20'+yr;pd=new Date(`${dmy[2]} ${dmy[1]}, ${yr}`);}
-        }
-        // Try "DD-Mon-YY" format
-        if(isNaN(pd.getTime())){
-          const dmy2=fd.match(/(\d{1,2})[- ](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[- ](\d{2,4})/i);
-          if(dmy2){const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};let yr=dmy2[3];if(yr.length===2)yr='20'+yr;d=`${yr}-${months[dmy2[2].toLowerCase()]}-${dmy2[1].padStart(2,'0')}`;pd=new Date(d);}
-        }
-        if(!isNaN(pd.getTime()))d=fmtD(pd);else d='';
-      }
+      // One parser for every date shape: text, ISO, slashes, serials, gviz Date().
+      // Tries the raw value first, then the formatted string.
+      let d=parseAnyDate(c[0]?.v)||parseAnyDate(c[0]?.f);
       if(d&&d.length>=10)lastKnownDate=d;
       const valB=c[1]?.v;const rawB=(valB&&valB!=='-')?valB:'';
       const numC=(c[2]?.v&&c[2].v!=='-')?parseFloat(c[2].v):0;
